@@ -1,0 +1,28 @@
+name: Build Project (MSVC)
+
+on:
+  push:
+    paths:
+      - 'Plugin/**'
+      - '.github/workflows/build.yml'
+
+  pull_request:
+    paths:
+      - 'Plugin/**'
+      - '.github/workflows/build.yml'
+
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build (Release)
+        run: |
+          msbuild plugin/RainJIT.sln /p:Configuration=Release /p:Platform=x64

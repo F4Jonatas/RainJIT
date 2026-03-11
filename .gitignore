@@ -1,0 +1,9 @@
+.qodo
+.vs
+*zip
+**/.env
+
+assets/images/modelo.png
+assets/images/logo.psd
+
+private.md

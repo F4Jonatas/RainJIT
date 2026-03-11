@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\RainJIT.cpp" />
+    <ClCompile Include="src\rain.cpp" />
+    <ClCompile Include="src\binding.cpp" />
+    <ClCompile Include="src\Modules\hotkey\hotkey.cpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\core.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\http.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\lua.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\depot\depot.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\utils\filesystem.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\strings.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\util.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\binding.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\rain.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\rainmeter\include\RainmeterAPI.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\lua.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\wrapper.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\hotkey\hotkey.hpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\core.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\fetch.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\http.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\lua.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\depot\depot.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RainJIT.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Modules">
+      <UniqueIdentifier>{f634f97f-8120-4743-8d68-8f72b381e679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\depot">
+      <UniqueIdentifier>{92e7c36b-e92a-44aa-8db9-75d0f35a6598}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\hotkey">
+      <UniqueIdentifier>{947a6567-512f-4ba2-9dac-a597c9f54a90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\fetch">
+      <UniqueIdentifier>{cc70566e-759a-4426-8fdd-207db5ef73c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{a72643db-b822-46b7-8967-9d2d87270e3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{6bd68a40-59f6-4087-bd93-dc1e329b36f1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

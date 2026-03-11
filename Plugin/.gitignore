@@ -1,0 +1,11 @@
+.qodo
+.vs
+*.vcxproj.user
+*zip
+build
+.vscode/tasks.json
+
+packages/Lua-cURLv3-master
+packages/luacurl-1.2.1
+packages/luasec
+packages/luasocket

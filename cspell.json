@@ -1,0 +1,23 @@
+{
+	"version": "0.2",
+	"language": "en",
+	"useGitignore": true,
+	"files": [
+		"!*.rc",
+		"!cspell.json"
+	],
+	"words": [
+		"CURRENTCONFIGWIDTH",
+		"CURRENTPATH",
+		"Jonatas",
+		"𝐿𝑢𝑎𝐽𝐼𝑇",
+		"rainjit",
+		"Rainmeter",
+		"𝑅𝑎𝑖𝑛𝑚𝑒𝑡𝑒𝑟",
+		"𝑅𝑢𝑛𝑡𝑖𝑚𝑒",
+		"SCREENAREAWIDTH",
+		"SETTINGSPATH",
+		"SKINSPATH",
+		"wtoi"
+	]
+}

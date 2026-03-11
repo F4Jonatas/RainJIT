@@ -1,0 +1,11 @@
+*.code-workspace
+private.md
+Shotcut/*.yml
+
+@Resources/assets
+@Resources/depot
+@Resources/powershell
+AudioWave
+Battery
+Downloader
+Tinta

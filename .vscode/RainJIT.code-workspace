@@ -1,0 +1,74 @@
+{
+	"folders": [
+		{
+			"name": "RainJIT - root",
+			"path": "../"
+		},
+		{
+			"name": "Plugin",
+			"path": "../Plugin"
+		},
+		{
+			"name": "Skins",
+			"path": "../../Skins/Rain"
+		},
+		{
+			"name": "Lua Modules",
+			"path": "../../Skins/@Vault/Lua"
+		}
+	],
+
+	"settings": {
+		"explorer.fileNesting.expand": false,
+		"explorer.fileNesting.patterns": {
+			"README*": "README*.md, AUTHORS, Authors, BACKERS*, Backers*, CHANGELOG*, CITATION*, CODEOWNERS, CODE_OF_CONDUCT*, CONTRIBUTING*, CONTRIBUTORS, COPYING*, CREDITS, Changelog*, Citation*, Code_Of_Conduct*, Codeowners, Contributing*, Contributors, Copying*, Credits, GOVERNANCE.MD, Governance.md, HISTORY.MD, History.md, LICENSE*, License*, MAINTAINERS, Maintainers, README-*, README_*, RELEASE_NOTES*, ROADMAP.MD, Readme-*, Readme_*, Release_Notes*, Roadmap.md, SECURITY.MD, SPONSORS*, Security.md, Sponsors*, authors, backers*, changelog*, citation*, code_of_conduct*, codeowners, contributing*, contributors, copying*, credits, governance.md, history.md, license*, maintainers, readme-*, readme_*, release_notes*, roadmap.md, security.md, sponsors*",
+			".editorconfig": "cspell.json, .clang-format",
+			"*.sln": "*.vcxproj, *.vcxproj.user, *.rc, *.filters",
+		},
+
+
+		"search.exclude": {
+			"**/.git": true,
+			"**src/API": true,
+			"include": true,
+			"**/.qodo": true,
+		},
+
+		"files.associations": {
+			"*.rc": "c",
+			"*.hta": "html",
+			"*.depot": "ini",
+		},
+
+		"material-icon-theme.files.associations": {
+			"*.vcxproj.user": "visualstudio",
+			"tasks.json": "vscode",
+			"extensions.json": "vscode",
+			"*.filters": "visualstudio",
+			"packages.config": "nuget",
+			"*.depot": "deepsource"
+		},
+
+		"material-icon-theme.folders.associations": {
+			"@Resources": "tools",
+			"@Resources/depot": "database"
+		},
+
+		"files.exclude": {
+			"**/.git": true,
+			"**/build": true,
+			"**/.svn": true,
+			"**/.hg": true,
+			"**/.DS_Store": true,
+			"**/Thumbs.db": true,
+			"x64": true,
+			"x86": true,
+			"**/.qodo": true,
+			"**/.vs": true,
+			"*.aps": true,
+			"*.zip": true
+		},
+
+		"codium.codeCompletion.enable": true
+	}
+}

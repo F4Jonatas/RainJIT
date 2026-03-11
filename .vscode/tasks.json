@@ -1,0 +1,36 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Config Project",
+			"type": "shell",
+			"command": "mshta",
+			"args": [
+				"${workspaceFolder}\\assets\\scripts\\Config.hta"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"icon": {
+				"id": "server-process",
+				"color": "terminal.ansiMagenta"
+			},
+			"problemMatcher": [
+				{
+					"owner": "lua",
+					"pattern": [
+						{
+							"regexp": "^(?:.*):(.*):([0-9]+):(([0-9]+):)? (.*)",
+							"file": 1,
+							"line": 2,
+							"column": 3,
+							"message": 5
+						}
+					],
+					"severity": "error"
+				}
+			]
+		}
+	]
+}

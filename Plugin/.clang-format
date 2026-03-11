@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+IndentWidth: 2
+TabWidth: 2
+UseTab: Always
+ColumnLimit: 500
+MaxEmptyLinesToKeep: 7
+SpacesInParentheses: true
+KeepEmptyLinesAtTheStartOfBlocks: true
+AllowShortFunctionsOnASingleLine: false
+PackConstructorInitializers: Never
+BreakConstructorInitializers: AfterColon
+ConstructorInitializerIndentWidth: 2
+NamespaceIndentation: All
+AlignTrailingComments: false
