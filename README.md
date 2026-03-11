@@ -110,10 +110,10 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 ## Manual Installation
 
-1. Download `RainJIT.dll` to your **Rainmeter** `Plugins` directory
-3. Download `lua51.dll` to [**Rainmeter folder installed**](https://docs.rainmeter.net/manual/installing-rainmeter/)<br>
+1. Download [**RainJIT.dll**](./build) to your **Rainmeter** [**Plugins**](https://docs.rainmeter.net/manual/plugins/) directory.
+3. Download `lua51.dll` to [**Rainmeter folder installed**](https://docs.rainmeter.net/manual/installing-rainmeter/).<br>
    > RainJIT dynamically links against the **LuaJIT** runtime (`lua51.dll`).
-4. Download **Lua modules** to [**@Vault Folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)
+4. Download [**Lua Folder**](./Lua) to [**@Vault Folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/).
 
 <br>
 
@@ -594,9 +594,9 @@ This function allows **Rainmeter** to execute Lua code via variable substitution
 I decided to create these modules to reduce the amount of `Measure` required for Skins.
 
 
-- [**Hotkey**](./assets/doc/HOTKEY-README.md) - Equivalent [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll)
-- [**Fetch**](./assets/doc/FETCH-README.md) - Equivalent [**WebParser Measure**](https://docs.rainmeter.net/manual/measures/webparser)
-- [**Depot**](./assets/doc/DEPOT-README.md) - Equivalent [**SettingsFile**](https://docs.rainmeter.net/developers/plugin/guidelines/#SettingsFile)
+- [**Hotkey**](./assets/doc/HOTKEY-README.md) -  **_RainJIT_** - <sub>(Equivalent [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll))</sub>
+- [**Fetch**](./assets/doc/FETCH-README.md) - **_RainJIT_**
+- [**Depot**](./assets/doc/DEPOT-README.md) - **_RainJIT_**
 
 ---
 
@@ -702,6 +702,10 @@ This project also relies on external libraries that may use different open-sourc
 If you are contributing documentation or changes to the source code, please ensure that your contributions comply with the project's licensing guidelines.
 
 <br>
+
+---
+
+<br>
 <br>
 
 
@@ -715,6 +719,8 @@ If you are contributing documentation or changes to the source code, please ensu
   - [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem)
   - [**winapi**](https://github.com/stevedonovan/winapi)
 
+---
+
 <br>
 <br>
 
@@ -723,10 +729,12 @@ If you are contributing documentation or changes to the source code, please ensu
 
 Please follow the existing code style:
 - Indentation with tabs
-- Doxygen-style documentation in English
+- Doxygen-style documentation
 - No line breaks in code blocks
 - LLVM formatting with MSVC 2022
 - C++20 standard
+
+---
 
 <br>
 <br>
@@ -742,7 +750,7 @@ RainJIT Repository
  ├ Skins
  |  └ Example skins demonstrating RainJIT usage
  |
- └ Lua Modules
+ └ Lua
     └ Optional Lua/LuaJIT modules
 ```
 
@@ -753,7 +761,7 @@ A[RainJIT Repository]
 
 A --> B[Plugin]
 A --> C[Skins]
-A --> D[Lua Modules]
+A --> D[Lua]
 
 B --> B1[Rainmeter Plugin Source]
 C --> C1[Example Skins]
