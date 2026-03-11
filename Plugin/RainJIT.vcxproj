@@ -194,6 +194,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -219,6 +220,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <ResourceCompile>
       <PreprocessorDefinitions>_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>

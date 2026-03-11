@@ -896,7 +896,7 @@ namespace hotkey {
 			}
 
 			bool hasValidCombination = false;
-			for (int i = 1; i <= len; i++) {
+			for (size_t i = 1; i <= len; i++) {
 				lua_rawgeti(L, -1, i);
 				if (lua_isstring(L, -1)) {
 					const char* comboStr = lua_tostring(L, -1);
