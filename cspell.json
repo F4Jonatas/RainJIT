@@ -3,12 +3,12 @@
 	"language": "en",
 	"useGitignore": true,
 	"files": [
-		"!*.rc",
-		"!cspell.json"
+		"!*.rc"
 	],
 	"words": [
 		"CURRENTCONFIGWIDTH",
 		"CURRENTPATH",
+		"ROOTCONFIGPATH",
 		"Jonatas",
 		"𝐿𝑢𝑎𝐽𝐼𝑇",
 		"rainjit",

@@ -16,7 +16,7 @@
   ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue?logo=c%2B%2B)
   ![LLVM Style](https://img.shields.io/badge/style-LLVM-orange)
   ![Docs](https://img.shields.io/badge/docs-Doxygen-blue)
- 
+
   <br>
   <br>
 
@@ -35,8 +35,8 @@
 <summary><ins>Table of contents</ins></summary>
 
 - [Overview](#overview)
-- [Motivation](#motivation)
-- [Features](#features)
+- [Motivation](#dart-motivation)
+- [Features](#green_book-features)
 - [Manual Installation](#manual-installation)
 - [Quick Example](#quick-example)
   - [Skin Configuration](#skin-configuration)
@@ -62,11 +62,11 @@
 - [Execute Bang](#execute-bang)
   - [CommandMeasure](#commandmeasure)
   - [Section Variables `eval()`](#section-variables-eval)
-- [Native Modules](#native-modules)
+- [Native Modules](#paperclip-links)
 - [File Locations](#file-locations)
 - [Debugging Tips](#debugging-tips)
 - [Performance Considerations](#performance-considerations)
-- [Lifecycle Flowchart](#chart_with_downwards_trend-lifecycle-flowchart)
+- [Lifecycle Flowchart](#cyclone-lifecycle-flowchart)
 - [License](#scroll-license)
 - [Links](#paperclip-links)
 - [Contributing](#handshake-contributing)
@@ -86,7 +86,7 @@ This plugin acts as a seamless bridge between the **Rainmeter** skins and the po
 <br>
 
 
-## Motivation
+## :dart: Motivation
 
 Initially, my intention was to try to create a plugin to run C scripts without needing to compile them, and the [**TinyCC**](https://bellard.org/tcc/) offers this functionality.<br>
 I found myself needing simple Windows features, such as a [**MessageBox**](https://learn.microsoft.com/pt-br/windows/win32/api/winuser/nf-winuser-messagebox). However, this approach diverges from typical **Rainmeter** [**community**](https://forum.rainmeter.net/) practices and I opted to use **LuaJIT** which also allows execution of C code without compilation and has slightly better performance than traditional Lua.
@@ -95,7 +95,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 <br>
 
 
-## Features
+## :green_book: Features
 
 - **Full LuaJIT 2.1 Integration**: Complete Lua 5.1 compatibility with JIT compilation
 - **Per-Measure Isolation**: Each Measure maintains its own Lua state
@@ -110,10 +110,11 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 ## Manual Installation
 
-1. Download [**RainJIT.dll**](./build) to your **Rainmeter** [**Plugins**](https://docs.rainmeter.net/manual/plugins/) directory.
-3. Download `lua51.dll` to [**Rainmeter folder installed**](https://docs.rainmeter.net/manual/installing-rainmeter/).<br>
+1. Download [**RainJIT.dll**](./build) to your **Rainmeter** [**Plugins directory**](https://docs.rainmeter.net/manual/plugins/).
+3. Download [**`lua51.dll`**](./Lua/bin/) to [**Rainmeter folder installed**](https://docs.rainmeter.net/manual/installing-rainmeter/).<br>
    > RainJIT dynamically links against the **LuaJIT** runtime (`lua51.dll`).
 4. Download [**Lua Folder**](./Lua) to [**@Vault Folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/).
+   > Contains modules compatible with **LuaJIT** and **Rainmeter**.
 
 <br>
 
@@ -131,6 +132,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 [MeterText]
   Meter=String
   Text=[RainJIT:eval(return rain:var("CURRENTPATH"))]
+  DynamicVariables=1
 ```
 
 ### Inline Script
@@ -366,7 +368,7 @@ end
 
 ### :large_orange_diamond: Method `rain:bang()`
 
-Executes a **Rainmeter** default [**Bang**](https://docs.rainmeter.net/manual/bangs/). 
+Executes a **Rainmeter** default [**Bang**](https://docs.rainmeter.net/manual/bangs/).
 
 ```lua
 -- @usage rain:bang( bang [, arg1, arg2, ...])
@@ -588,22 +590,6 @@ This function allows **Rainmeter** to execute Lua code via variable substitution
 <br>
 
 
-### Native Modules
-
-**RainJIT** has modules developed exclusively for **Rainmeter** to improve performance and ease of use.<br>
-I decided to create these modules to reduce the amount of `Measure` required for Skins.
-
-
-- [**Hotkey**](./assets/doc/HOTKEY-README.md) -  **_RainJIT_** - <sub>(Equivalent [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll))</sub>
-- [**Fetch**](./assets/doc/FETCH-README.md) - **_RainJIT_**
-- [**Depot**](./assets/doc/DEPOT-README.md) - **_RainJIT_**
-
----
-
-<br>
-<br>
-
-
 ### File Locations
 
 **RainJIT** resolves [**Lua modules**](./Lua_Modules) using the following search order:
@@ -611,7 +597,7 @@ I decided to create these modules to reduce the amount of `Measure` required for
 > [!TIP]
 > Vault Folder is the ideal place to store all Lua modules, allowing all skins to use the same modules and avoiding unnecessary duplication.
 
-| Folder Path              | Type                                                                                               | Info                                                        | 
+| Folder Path              | Type                                                                                               | Info                                                        |
 | :--:                     | :--:                                                                                               | :---                                                        |
 | `#SKINSPATH#@Vault\lua\` | [@Vault Folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)                | :trophy: ⠀**Recommended** – Shared by all skins             |
 | `#@#\lua\`               | [@Resources Folder](https://docs.rainmeter.net/manual/skins/resources-folder/)                     | :thumbsup: ⠀**Works well** – Good for skin-specific modules |
@@ -643,7 +629,7 @@ I decided to create these modules to reduce the amount of `Measure` required for
 <br>
 
 
-## :chart_with_downwards_trend: Lifecycle Flowchart
+## :cyclone: Lifecycle Flowchart
 
 <details>
 
@@ -711,13 +697,22 @@ If you are contributing documentation or changes to the source code, please ensu
 
 ## :paperclip: Links
 
+> [!TIP]
+> **RainJIT** has modules developed exclusively for **Rainmeter** to improve performance and ease of use.<br>
+> I decided to create these modules to reduce the amount of `Measure` required for Skins.
+
 - [**Rainmeter Documentation**](https://docs.rainmeter.net)
 - [**LuaJIT Website**](https://luajit.org)
 - [**Lua 5.1 Reference Manual**](https://www.lua.org/manual/5.1/)
   <br><br>
   **Lua Modules**
-  - [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem)
-  - [**winapi**](https://github.com/stevedonovan/winapi)
+  - [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem) - **_(Lunar Modules) Module_**
+  - [**winapi**](https://github.com/stevedonovan/winapi/blob/master/readme.md) - [**_(Steve J Donovan) Module_**](https://github.com/stevedonovan/winapi)
+  - [**Hotkey**](./assets/doc/HOTKEY-README.md) -  **_RainJIT_** - (_Inspiration_ [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll))
+  - [**Fetch**](./assets/doc/FETCH-README.md) - **_RainJIT_**
+  - [**Depot**](./assets/doc/DEPOT-README.md) - **_RainJIT_**
+  - [**Glass**](./Lua/glass/README.md) - **_Module_** - (_Inspiration_ [**FrostedGlass**](https://github.com/KazukiGames82/FrostedGlass))
+  - [**JSON**](https://github.com/rxi/json.lua) - [**_(rxi) Module_**](https://github.com/rxi/json.lua)
 
 ---
 
@@ -727,12 +722,12 @@ If you are contributing documentation or changes to the source code, please ensu
 
 ## :handshake: Contributing
 
-Please follow the existing code style:
-- Indentation with tabs
-- Doxygen-style documentation
-- No line breaks in code blocks
-- LLVM formatting with MSVC 2022
-- C++20 standard
+Contributions are welcome.
+
+To get started, please read [**CONTRIBUTING.md**](./CONTRIBUTING.md) for:
+- Development setup
+- Code style guidelines
+- Pull request process
 
 ---
 
@@ -776,7 +771,7 @@ D --> D1[LuaJIT Compatible Modules]
 
 <div align="center">
 
-#### Made with :heart: for the [_community_](https://forum.rainmeter.net/).
+  #### Made with :heart: for the [_community_](https://forum.rainmeter.net/).
 
 </div>
 

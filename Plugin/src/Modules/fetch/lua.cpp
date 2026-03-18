@@ -75,13 +75,15 @@ namespace lua {
 			wc.hInstance = GetModuleHandle( nullptr );
 			wc.lpszClassName = L"RainJIT_FetchNotifyWindow";
 
-			if ( RegisterClassEx( &wc ) )
-				classRegistered = true;
-
-			else {
-				RmLog( rain->rm, LOG_ERROR, L"Failed to register fetch notify window class" );
-				return;
+			if ( ! RegisterClassEx( &wc )) {
+				DWORD err = GetLastError();
+				if ( err != ERROR_CLASS_ALREADY_EXISTS ) {
+					RmLog(rain->rm, LOG_ERROR, L"Failed to register fetch notify window class");
+					return;
+				}
 			}
+
+			classRegistered = true;
 		}
 
 		// clang-format off

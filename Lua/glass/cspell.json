@@ -1,0 +1,28 @@
+{
+	"version": "0.2",
+	"language": "en",
+	"words": [
+		"ACRYLICBLURBEHIND",
+		"dwmapi",
+		"ntdll",
+		"cdef",
+		"HRESULT",
+		"OSVERSIONINFOW",
+		"WINDOWCOMPOSITIONATTRIBDATA",
+		"TRANSPARENTGRADIENT",
+		"BLURBEHIND",
+		"ALLBORDERS",
+		"DWMWA",
+		"NCRENDERING",
+		"SYSTEMBACKDROP",
+		"DWMNCRP",
+		"DWMWCP",
+		"DONOTROUND",
+		"ROUNDSMALL",
+		"DWMSBT",
+		"ARGB",
+		"winver",
+		"RRGGBB",
+		"lshift"
+	]
+}

@@ -1,7 +1,7 @@
 <div align="center">
 
   # Fetch Module
-  
+
   ### HTTP Client for RainJIT
 
   <br>
@@ -705,7 +705,7 @@ function uploadFile(url, filepath, filename)
   if not file then return nil, "Cannot open file" end
   local data = file:read("*a")
   file:close()
-    
+
   -- Create boundary for multipart
   local boundary = "----WebKitFormBoundary" .. os.time()
   local body = "--" .. boundary .. "\r\n"
@@ -713,7 +713,7 @@ function uploadFile(url, filepath, filename)
   body = body .. "Content-Type: application/octet-stream\r\n\r\n"
   body = body .. data .. "\r\n"
   body = body .. "--" .. boundary .. "--\r\n"
-    
+
   local request = fetch.async(url, {
     method = "POST",
     headers = {
@@ -721,7 +721,7 @@ function uploadFile(url, filepath, filename)
     },
     body = body
   })
-    
+
   request:callback(function(self, response)
     if response.ok then
       print("Upload complete!")
@@ -729,7 +729,7 @@ function uploadFile(url, filepath, filename)
       print("Upload failed:", response.error)
     end
   end)
-    
+
   request:send()
   return true
 end
@@ -747,13 +747,13 @@ uploadFile("https://httpbin.org/post", "document.pdf", "document.pdf")
 function safeFetch(url, options)
   options = options or {}
   options.timeout = options.timeout or 15000
-    
+
   local response = fetch.get(url, options)
-    
+
   if response.ok then
     return response, nil
   end
-    
+
   -- Map status codes to user-friendly messages
   local errors = {
     [404] = "Resource not found",
@@ -766,7 +766,7 @@ function safeFetch(url, options)
     [-3] = "Invalid URL",
     [-2] = "Request cancelled"
   }
-    
+
   local message = (
     errors[response.status]
     or
@@ -799,14 +799,14 @@ local function apiRequest(endpoint)
       ["Content-Type"] = "application/x-www-form-urlencoded"
     }
   })
-    
+
   if not loginResp.ok then
     return nil, "Login failed"
   end
-    
+
   -- Session cookie is automatically extracted!
   local sessionId = loginResp.cookies.session
-    
+
   -- Use session for authenticated request
   return fetch.get("https://api.example.com/" .. endpoint, {
     headers = {
@@ -868,7 +868,7 @@ sequenceDiagram
     Fetch->>Fetch: Creates temporary context
     Fetch->>Worker: Starts thread
     Worker->>WinHTTP: Executes HTTP request
-    
+
     alt WinHTTP Success
         WinHTTP-->>Worker: Response received
     else WinHTTP Fails with E_ABORT & No Data
@@ -876,7 +876,7 @@ sequenceDiagram
         WinINet-->>Worker: Response received
         Note over Worker: Status preserved,<br/>error mapped to -6 to -14
     end
-    
+
     Worker-->>Fetch: Fills context with result
     Fetch->>Lua: Returns response (blocking)
     Note over Lua: Script continues
@@ -886,14 +886,14 @@ sequenceDiagram
     Fetch->>Fetch: Creates persistent context
     Fetch->>Fetch: Registers in ContextRegistry
     Fetch->>Lua: Returns fetch object immediately
-    
+
     Lua->>Fetch: :callback(handler)
     Lua->>Fetch: :send()
     Fetch->>Worker: Starts thread
-    
+
     par HTTP Request Execution
         Worker->>WinHTTP: Executes HTTP request
-        
+
         alt WinHTTP Success
             WinHTTP-->>Worker: Response received
         else WinHTTP Fails with E_ABORT & No Data
@@ -901,25 +901,25 @@ sequenceDiagram
             WinINet-->>Worker: Response received
             Note over Worker: Status code mapped<br/>to appropriate error
         end
-        
+
         Worker-->>Fetch: Fills context with result
     end
-    
+
     Worker->>WndProc: PostMessage(WM_FETCH_COMPLETE, ctxId)
     Note over WndProc: Message enters Windows queue
-    
+
     Rainmeter->>Rainmeter: Processes message loop
     Rainmeter->>WndProc: DispatchMessage() calls WndProc
     WndProc->>Fetch: Obtains context by ctxId
-    
+
     Fetch->>Lua: Executes fetch_dispatch(user's callback)
-    
+
     alt Response Successful
         Lua-->>Fetch: Processes data
     else Error Occurred
         Note over Lua: Check response.status:<br/>-6 (ABORTED)<br/>-7 (CONNECTION_LOST)<br/>-8 (SSL_ERROR)<br/>-9 (PROXY_ERROR)<br/>-10 to -13 (TIMEOUTS)<br/>-14 (CHUNKED_ERROR)
     end
-    
+
     Fetch->>Fetch: Removes context from registry
 
     Note over Fetch,WinINet: 🌟 New Features:<br/>• HTTP version control (1.0/1.1)<br/>• Intelligent WinINet fallback<br/>• 8 new specific error codes<br/>• Enhanced error messages

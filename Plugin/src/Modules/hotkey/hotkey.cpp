@@ -887,16 +887,20 @@ namespace hotkey {
 
 		else if (lua_istable(L, -1)) {
 			// Table of combination strings
-			size_t len = lua_objlen(L, -1);
-			if (len == 0) {
+			size_t rawLen = lua_objlen(L, -1);
+			if ( rawLen == 0 ) {
 				lua_pop(L, 1);
-				lua_pushnil(L);
 				lua_pushstring(L, "Empty combinations table");
 				return 2;
 			}
 
 			bool hasValidCombination = false;
-			for (size_t i = 1; i <= len; i++) {
+
+			// Eliminate C4018 / C4267 / C4244
+			int len = static_cast<int>( rawLen );
+
+
+			for (int i = 1; i <= len; i++) {
 				lua_rawgeti(L, -1, i);
 				if (lua_isstring(L, -1)) {
 					const char* comboStr = lua_tostring(L, -1);

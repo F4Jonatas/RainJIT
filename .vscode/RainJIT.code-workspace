@@ -10,11 +10,11 @@
 		},
 		{
 			"name": "Skins",
-			"path": "../../Skins/Rain"
+			"path": "../Skins"
 		},
 		{
-			"name": "Lua Modules",
-			"path": "../../Skins/@Vault/Lua"
+			"name": "Lua",
+			"path": "../Lua"
 		}
 	],
 
@@ -37,7 +37,7 @@
 		"files.associations": {
 			"*.rc": "c",
 			"*.hta": "html",
-			"*.depot": "ini",
+			"*.depot": "ini"
 		},
 
 		"material-icon-theme.files.associations": {
