@@ -131,7 +131,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 [MeterText]
   Meter=String
-  Text=[RainJIT:eval(return rain:var("CURRENTPATH"))]
+  Text=[RainJIT:eval(return rain.name)]
   DynamicVariables=1
 ```
 
