@@ -5,6 +5,8 @@
 build
 .vscode/tasks.json
 
+src/Modules/interval
+
 packages/Lua-cURLv3-master
 packages/luacurl-1.2.1
 packages/luasec

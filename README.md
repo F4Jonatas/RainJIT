@@ -38,7 +38,7 @@
 - [Motivation](#dart-motivation)
 - [Features](#green_book-features)
 - [Manual Installation](#manual-installation)
-- [Quick Example](#quick-example)
+- [Quick Example](#jigsaw-quick-example)
   - [Skin Configuration](#skin-configuration)
   - [Inline Script](#inline-script)
   - [Command with Inline Script](#command-with-inline-script)
@@ -119,7 +119,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 <br>
 
 
-## Quick Example
+## :jigsaw: Quick Example
 
 ### Skin Configuration
 
@@ -254,7 +254,7 @@ This function returns `true` if the Skin window is in focus; otherwise, it retur
 ```lua
 -- @usage rain:isFocused() → boolean
 
-function rain:update(cs, dt)
+function rain:update(au, dt)
 
   if rain:isFocused() then
     -- ...
@@ -450,13 +450,13 @@ If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defi
 > If you need a value for the Measure, use the [`eval`](#large_orange_diamond-method-eval) function, but the idea is to maintain greater control in Lua scripts.
 
 > [!TIP]
-> **Param `cs`:** cumulative seconds (resets every ~9 quadrillion seconds)
-> This parameter represents the total number of seconds accumulated since the start of Skin execution.
-> It can be used for operations that depend on the total elapsed time, such as animations and
-> time-based conditions. It is important to note that it is reset every ~9 quadrillion seconds,
-> therefore, for most skins, you will not need to worry about resetting it.
+> **Param `au`:** accumulated updates (resets every ~9 quadrillion seconds)<br>
+> A counter of the total number of updates since the skin started.
+> This value increments each time the Plugin Update() function is called, representing how many times the measure has been updated.
+> The counter automatically resets to zero when it reaches approximately 9 quadrillion (2^53 – 1), ensuring no loss of precision in numeric representations.
+> Ideal for frame‑based operations such as step‑by‑step animations, sequences, or any logic that depends on update counts.
 >
-> **Param `dt`:** delta time in seconds (clamped to 0.0-1.0)
+> **Param `dt`:** delta time in seconds (clamped to 0.0-1.0)<br>
 > This parameter indicates the elapsed time between the current frame and the previous one. The value is limited between 0.0 and 1.0,
 > which avoids large variations that could cause unwanted behavior in animations or Skin logic.
 > **dt** is especially useful for ensuring that movement and interactions in the Skin are smooth and
@@ -466,16 +466,16 @@ If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defi
 
 > [!WARNING]
 > To ensure smooth animation, it's necessary to set the Skin to [`Update=1`](https://docs.rainmeter.net/manual/skins/rainmeter-section/#Update). However, this setting can be risky as it may result in an overload of updates.
-> Therefore, it's recommended to keep all `Meter` and `Measure` elements set to [`UpdateDivider=-1`](https://docs.rainmeter.net/manual/meters/general-options/#UpdateDivider). This approach prevents **Rainmeter** from updating them with every update, allowing you to manually update only when necessary. This not only improves performance but also provides greater control over the flow of animations and updates in the Skin.
+> Therefore, it's recommended to keep all `Meter` and `Measure` elements set to [`UpdateDivider=-1`](https://docs.rainmeter.net/manual/meters/general-options/#UpdateDivider) _(except the **RainJIT Measure**)_. This approach prevents **Rainmeter** from updating them with every update, allowing you to manually update only when necessary. This not only improves performance but also provides greater control over the flow of animations and updates in the Skin.
 
 ```lua
 -- Called every frame
--- @param cs: cumulative seconds (resets every ~9 quadrillion seconds)
+-- @param au: accumulated updates (resets every ~9 quadrillion seconds)
 -- @param dt: delta time in seconds (clamped to 0.0-1.0)
 
-function rain:update(cs, dt)
+function rain:update(au, dt)
   -- Example: Rotating animation
-  local angle = (cs * 360) % 360
+  local angle = (au * 360) % 360
   rain:var("Rotation", tostring(angle))
 end
 ```

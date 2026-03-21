@@ -14,9 +14,9 @@
 #include <thread>
 
 #include <Includes/rain.hpp>
-
 #include <utils/strings.hpp>
 #include <utils/util.hpp>
+
 
 
 
@@ -50,15 +50,16 @@ Rain::~Rain() {
 
 
 /**
- * @brief Accumulate elapsed time safely.
+ * @brief Increment the update counter and apply safety wrap.
+ * @return The new accumulated update count (raw unsigned long long).
  */
-double Rain::addAndGetCumulatedSeconds( double deltaTime ) {
-	cumulatedSeconds += deltaTime;
+unsigned long long Rain::incrementAndGetUpdates() {
+	accumulatedUpdates++;
 
-	if ( cumulatedSeconds >= MAX_SECONDS_COUNT )
-		cumulatedSeconds = 0.0;
+	if ( accumulatedUpdates >= MAX_UPDATES_COUNT )
+		accumulatedUpdates = 0;
 
-	return cumulatedSeconds;
+	return accumulatedUpdates;
 }
 
 
@@ -66,13 +67,11 @@ double Rain::addAndGetCumulatedSeconds( double deltaTime ) {
 /**
  * @brief Per-frame update dispatcher.
  *
- * Calls Lua `rain:update(cs, dt)` if present.
+ * Calls Lua `rain:update(au, dt)` if present.
  */
 void Rain::onUpdate( double deltaTime ) {
 	if ( !ready )
 		return;
-
-	double cs = addAndGetCumulatedSeconds( deltaTime );
 
 	lua_getglobal( L, "rain" );
 
@@ -81,20 +80,21 @@ void Rain::onUpdate( double deltaTime ) {
 
 		if ( lua_isfunction( L, -1 ) ) {
 			lua_pushvalue( L, -2 );
-			lua_pushnumber( L, cs );
+			lua_pushinteger( L, static_cast<lua_Integer>( accumulatedUpdates ));
 			lua_pushnumber( L, deltaTime );
 
 			if ( lua_pcall( L, 3, 0, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L, -1 );
 				if ( err && *err ) {
-					std::wstring werr = L"Error in rain:update(dt): " + utf8_to_wstring( err );
+					std::wstring werr = L"Error in rain:update(): " + utf8_to_wstring( err );
 					RmLog( rm, LOG_WARNING, werr.c_str() );
 				}
 				lua_pop( L, 1 );
 			}
-		} else {
-			lua_pop( L, 1 );
 		}
+
+		else
+			lua_pop( L, 1 );
 	}
 
 	lua_pop( L, 1 );

@@ -24,6 +24,7 @@
 - [Request Methods - _async_](#diamond_shape_with_a_dot_inside-request-object-methods---async)
   - [`:send()`](#large_orange_diamond-method-requestsend)
   - [`:callback()`](#large_orange_diamond-method-requestcallback)
+  - [`:save()`](#large_orange_diamond-method-requestsave)
   - [`:hasCompleted()`](#large_orange_diamond-method-requesthascompleted)
   - [`:getResponse()`](#large_orange_diamond-method-requestgetresponse)
   - [`:cancel()`](#large_orange_diamond-method-requestcancel)
@@ -405,7 +406,6 @@ request:send()
 
 > [!NOTE]
 > Only one callback can be set per request; calling `:callback()` again replaces the previous one.<br>
-> The callback is invoked automatically if `autoDispatch` is `true` (is default). Otherwise, you must call `:dispatch()` manually after checking `:hasCompleted()`.<br>
 > The `response` table contains the same fields as returned by synchronous methods (`ok`, `status`, `body`, `text`, `headers`, `cookies`, `error`).
 
 ```lua
@@ -420,6 +420,31 @@ fetch.async("https://api.example.com/data")
     end
   end)
   :send()
+```
+
+<br>
+
+
+## :large_orange_diamond: Method `request:save()`
+
+**Saves the raw response body to a file.** This is particularly useful for binary data (images, archives, PDFs) or when you need to persist the downloaded content.
+
+> [!NOTE]
+> The method creates any missing directories in the path automatically.<br>
+> The file is written in binary mode – the exact bytes received from the server are stored.<br>
+> If the response body is empty, the method returns `false` with an appropriate error message.
+
+```lua
+-- @param (string) filePath: Full filesystem path where the file should be saved
+-- @return (boolean) success: true if saved successfully, false otherwise
+-- @return (string|nil) error: Error message if saving failed, nil otherwise
+local success, err = response:save("#@#image.jpg")
+
+if success then
+  print("File saved!")
+else
+  print("Save failed:", err)
+end
 ```
 
 <br>

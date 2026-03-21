@@ -71,7 +71,6 @@
 
 
 
-
 /**
  * @brief Initialize the Rainmeter Measure.
  *
@@ -111,7 +110,7 @@ PLUGIN_EXPORT void Initialize( void **data, void *rm ) {
 	rain->hwnd = RmGetSkinWindow( rm );
 	rain->L = luaL_newstate();
 
-	/** Initialize delta-time tracking */
+	// Initialize delta-time tracking
 	QueryPerformanceFrequency( &rain->freq );
 	QueryPerformanceCounter( &rain->lastTick );
 	rain->timeInitialized = true;
@@ -274,7 +273,7 @@ PLUGIN_EXPORT void Reload( void *data, void *rm, double *maxValue ) {
 PLUGIN_EXPORT double Update( void *data ) {
 	auto *rain = static_cast<Rain *>( data );
 
-	/** Delta-Time implementation */
+	// Delta-Time implementation
 	double deltaTime = 0.0;
 
 	if ( rain->timeInitialized ) {
@@ -284,18 +283,19 @@ PLUGIN_EXPORT double Update( void *data ) {
 		deltaTime = double( now.QuadPart - rain->lastTick.QuadPart ) / double( rain->freq.QuadPart );
 		rain->lastTick = now;
 
-		// Protection against absurd values (e.g., frozen skin)
-		deltaTime = std::clamp( deltaTime, 0.0, 1.0 );
+		rain->incrementAndGetUpdates();
 	}
 
+	// Protection against absurd values (e.g., frozen skin)
+	deltaTime = std::clamp( deltaTime, 0.0, 1.0 );
 
-	// Execute rain:update( cs, dt ) if it exists and after init is complete
+	// Execute rain:update( au, dt ) if it exists and after init is complete
 	rain->onUpdate( deltaTime );
 
 
 	// FPS
 	// return 1 / deltaTime;
-	return rain->cumulatedSeconds;
+	return static_cast<double>( rain->accumulatedUpdates );
 }
 
 

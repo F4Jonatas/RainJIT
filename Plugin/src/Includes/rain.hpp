@@ -101,13 +101,13 @@ struct Rain {
 	/// @brief Indicates whether time tracking has been initialized.
 	bool timeInitialized;
 
-	/// @brief Accumulated elapsed time in seconds.
-	/// @details Used as the cumulative time (cs) passed to Lua update.
-	double cumulatedSeconds = 0.0;
+	/// @brief Number of updates since the measure was initialized.
+	/// @details Incremented each time the plugin Update() function is called.
+	unsigned long long accumulatedUpdates = 0;
 
-	/// @brief Maximum safe accumulated seconds value.
-	/// @details Matches the maximum safe integer for Lua/JavaScript (2^53 − 1).
-	static constexpr double MAX_SECONDS_COUNT = 9007199254740991.0;
+	/// @brief Maximum safe value for accumulated updates.
+	/// @details Based on 2^53 - 1 (largest integer representable exactly in double).
+	static constexpr unsigned long long MAX_UPDATES_COUNT = 9007199254740991ULL;
 
 
 
@@ -140,15 +140,15 @@ struct Rain {
 
 
 	/**
-	 * @brief Accumulate elapsed time and return the current value.
+	 * @brief Increment the update counter and wrap at the maximum safe value.
 	 *
-	 * Adds the given delta time to the internal accumulator.
-	 * Automatically resets when exceeding MAX_SECONDS_COUNT.
+	 * Increments the internal counter of update cycles. If the counter reaches
+	 * or exceeds MAX_UPDATES_COUNT, it resets to zero to prevent overflow while
+	 * preserving exact representation in double-precision floating point.
 	 *
-	 * @param deltaTime Elapsed time in seconds.
-	 * @return Updated accumulated seconds.
+	 * @return The new update count (raw unsigned long long) after increment.
 	 */
-	double addAndGetCumulatedSeconds(double deltaTime);
+	unsigned long long incrementAndGetUpdates();
 
 
 
