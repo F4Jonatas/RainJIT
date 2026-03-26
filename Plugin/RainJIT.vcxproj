@@ -136,7 +136,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
@@ -158,7 +158,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <AdditionalLibraryDirectories>$(MSBuildProjectDirectory);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -192,7 +192,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <MergeSections>.rdata=.text</MergeSections>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
@@ -218,7 +218,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <MergeSections>.rdata=.text</MergeSections>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>

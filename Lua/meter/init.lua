@@ -371,7 +371,10 @@ return setmetatable({}, {
 			name = name,
 			type = tipo,
 			super = meter,
-			EVENTLISTER = {}
+			EVENTLISTER = {},
+
+			-- Store original dimensions for each meter
+			originalRect = {}
 		}
 
 

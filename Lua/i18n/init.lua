@@ -106,7 +106,7 @@ M.path = ''
 -- @tparam string text Source string
 -- @treturn string translated string or original text
 M.__call = function( self, text )
-	return self.dict[ text ] or text
+	return self.dict and self.dict[ text ] or text
 end
 
 

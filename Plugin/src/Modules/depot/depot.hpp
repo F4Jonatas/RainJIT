@@ -103,7 +103,16 @@ struct Depot {
 			}
 		}
 
-		WritePrivateProfileStringW( SectionW.c_str(), key.empty() ? nullptr : wkey.c_str(), value_ptr, FilePath.c_str() );
+		// clang-format off
+		WritePrivateProfileStringW(
+			SectionW.c_str(),
+			key.empty()
+				? nullptr
+				: wkey.c_str(),
+			value_ptr,
+			FilePath.c_str()
+		);
+		// clang-format on
 	}
 
 

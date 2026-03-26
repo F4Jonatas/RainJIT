@@ -95,7 +95,8 @@ dp:set("first", "value")
 
 ### :large_orange_diamond: Method `depot:get()`
 
-Retrieves a value from the file with automatic type conversion.
+Retrieves a value from the file with automatic type conversion.<br>
+When `raw = true`, the value is returned exactly as stored (as a string), without any conversion.
 
 > [!NOTE]
 > | Stored Value         | Lua Type  | Example        |
@@ -105,10 +106,12 @@ Retrieves a value from the file with automatic type conversion.
 > | Numeric integer      | `integer` | `42`           |
 > | Everything else      | `string`  | `"hello"`      |
 
+
 ```lua
 -- @usage depot:get( key [, default ]) → any
 -- @param (string) key - Key name
 -- @param (any) default - Default value if key doesn't exist
+-- @param (boolean) raw - Returns the value without conversion.
 -- @return (any) - The converted value, default if provided, or nil
 
 -- Basic retrieval
@@ -118,10 +121,15 @@ local name = dp:get("username")
 local port = dp:get("port", 8080)
 
 -- Automatic type conversion
-local count = dp:get("counter")     -- Returns as number
-local enabled = dp:get("active")    -- Returns as boolean
-local label = dp:get("label")       -- Returns as string
-local value = dp:get("not_exists")  -- Returns as nil
+local count   = dp:get("counter")    -- Returns as number
+local enabled = dp:get("active")     -- Returns as boolean
+local label   = dp:get("label")      -- Returns as string
+local value   = dp:get("not_exists") -- Returns as nil
+
+-- Raw retrieval (preserves original string)
+dp:set("code", "001")
+print(dp:get("code"))               -- 1 (number)
+print(dp:get("code", nil, true))    -- "001" (string)
 ```
 
 <br>

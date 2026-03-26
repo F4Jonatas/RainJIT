@@ -4,8 +4,7 @@
 -- Rainmeter **Shape meters** programmatically.
 --
 -- Rainmeter Shape meters normally require complex strings such as:
---
---     Shape=Rectangle 0,0,100,50 | Fill Color 255,0,0 | StrokeWidth 2
+--   Shape=Rectangle 0,0,100,50 | Fill Color 255,0,0 | StrokeWidth 2
 --
 -- This submodule exposes a Lua DSL that allows building these shapes
 -- through chained method calls, improving readability and maintainability.
@@ -14,10 +13,9 @@
 -- whenever a meter with `Meter=Shape` is detected.
 --
 -- Each instance represents a specific shape entry:
---
---     Shape
---     Shape2
---     Shape3
+--   Shape
+--   Shape2
+--   Shape3
 --
 -- The module maintains the shape definition internally and updates the
 -- corresponding Rainmeter option via `!SetOption`.
@@ -30,12 +28,28 @@
 -- local shape = meter("Background")
 --
 -- shape:rectangle(0, 0, 200, 100)
---      :fill(40, 40, 40)
---      :strokecolor(255, 255, 255)
---      :strokewidth(2)
---      :update()
+--   :fill(40, 40, 40)
+--   :strokecolor(255, 255, 255)
+--   :strokewidth(2)
+--   :update()
 --
 -- Multiple shapes can be created using `add()`:
+--
+-- Supported operations include:
+--   geometric primitives (rectangle, ellipse, path, polygon, polyline)
+--   stroke configuration (width, color, join, caps)
+--   fill configuration (solid colors, gradients, transparency)
+--   shape transformations (scale, anchor)
+--   gradient definitions
+--
+-- The API is designed to be **chainable** and integrates with the base
+-- `meter` methods such as `update()`, `event()`, and `option()`.
+--
+-- @submodule meter.shape
+-- @version: 0.2.2
+-- @see meter
+-- @see https://docs.rainmeter.net/manual/meters/shape/
+-- @see https://docs.rainmeter.net/manual/bangs/#SetOption
 --
 -- @usage
 -- local meter = require("meter")
@@ -46,22 +60,6 @@
 -- local shape2 = shape1:add()
 -- shape2:ellipse(100,25,30,30):fill(255,0,0)
 --
--- Supported operations include:
---
--- • geometric primitives (rectangle, ellipse, path, polygon, polyline)
--- • stroke configuration (width, color, join, caps)
--- • fill configuration (solid colors, gradients, transparency)
--- • shape transformations (scale, anchor)
--- • gradient definitions
---
--- The API is designed to be **chainable** and integrates with the base
--- `meter` methods such as `update()`, `event()`, and `option()`.
---
--- @submodule meter.shape
--- @version: 0.2.2
--- @see meter
--- @see https://docs.rainmeter.net/manual/meters/shape/
--- @see https://docs.rainmeter.net/manual/bangs/#SetOption
 
 local PATHS = 0
 local GRADIENT = 0
@@ -72,16 +70,16 @@ local SHAPE_PARAM = '([%s,%d%.%(%)%+%*-]+)'
 
 
 
-local valofperc = function( value, percent )
-	local mult = 10 ^ 2
-	return math.floor(( value * percent / 100 ) * mult + 0.5 ) / mult
+local percentOf = function( value, percent )
+	local multi = 10 ^ 2
+	return math.floor(( value * percent / 100 ) * multi + 0.5 ) / multi
 end
 
 
 
-local shape = {}
+local shape   = {}
 shape.__index = shape
-shape.paths = 0
+shape.paths   = 0
 
 
 
@@ -94,24 +92,25 @@ shape.paths = 0
 -- relative to the parent meter dimensions.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] number|string x Left coordinate.
--- @tparam[opt] number|string y Top coordinate.
--- @tparam[opt] number|string width Rectangle width.
--- @tparam[opt] number|string height Rectangle height.
+-- @tparam (number|string) x Left coordinate.
+-- @tparam (number|string) y Top coordinate.
+-- @tparam (number|string) width Rectangle width.
+-- @tparam (number|string) height Rectangle height.
 --
 -- @treturn shape When used as setter.
--- @treturn[2] string|nil When used as getter.
+-- @treturn[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:rectangle(0,0,200,100)
---
--- @usage
 -- shape:rectangle("10%","10%","80%","50%")
-function shape:rectangle( left, top, width, height, radiusx, radiusy )
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Rectangle
+--
+function shape:rectangle( left, top, width, height, radiusX, radiusY )
 	local value = self.content:lower():match( 'rectangle%s*'.. SHAPE_PARAM )
 	height = height and height or width
-	radiusx = radiusx and radiusx or 0
-	radiusy = radiusy and radiusy or radiusx
+	radiusX = radiusX and radiusX or 0
+	radiusY = radiusY and radiusY or radiusX
 
 	if not left and not top and not width then
 		local result = value:gsub( '%s*|', '' )
@@ -119,24 +118,24 @@ function shape:rectangle( left, top, width, height, radiusx, radiusy )
 	end
 
 
-	-- suport for percentage
+	-- support for percentage
 	if type( width ) == 'string' then
 		width = width:gsub( '%%', '' )
-		width = valofperc( self.meter:width(), tonumber( width ))
+		width = percentOf( self.meter:width(), tonumber( width ))
 	end
 	if type( height ) == 'string' then
 		height = height:gsub( '%%', '' )
-		height = valofperc( self.meter:height(), tonumber( height ))
+		height = percentOf( self.meter:height(), tonumber( height ))
 	end
 
 
 	if value then -- If exists, substitute.
 		self.content = self.content:lower():gsub( '%s*rectangle%s*'.. SHAPE_PARAM ..'%s*',
-			'rectangle ' .. left .. ',' .. top .. ',' .. width .. ',' .. height .. ',' .. radiusx .. ',' .. radiusy )
+			'rectangle ' .. left .. ',' .. top .. ',' .. width .. ',' .. height .. ',' .. radiusX .. ',' .. radiusY )
 
 	else -- Add
 		self.content = self.content ..
-			'rectangle ' ..left.. ',' ..top.. ',' ..width.. ',' ..height.. ',' ..radiusx.. ',' ..radiusy
+			'rectangle ' ..left.. ',' ..top.. ',' ..width.. ',' ..height.. ',' ..radiusX.. ',' ..radiusY
 	end
 
 	self.meter:option( self.name, self.content )
@@ -154,36 +153,41 @@ end
 -- definition is returned.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] number|string x Center X coordinate.
--- @tparam[opt] number|string y Center Y coordinate.
--- @tparam[opt] number|string radiusX Horizontal radius.
--- @tparam[opt] number|string radiusY Vertical radius.
+-- @tparam (number|string) x Center X coordinate.
+-- @tparam (number|string) y Center Y coordinate.
+-- @tparam (number|string) radiusX Horizontal radius.
+-- @tparam (number|string) radiusY Vertical radius.
 --
 -- @treturn shape When used as setter.
--- @treturn[2] string|nil When used as getter.
+-- @treturn[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:ellipse(100,50,40,40)
-function shape:ellipse( left, top, radiusx, radiusy )
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Ellipse
+--
+function shape:ellipse( left, top, radiusX, radiusY )
 	local value = self.content:lower():match( 'ellipse%s*'.. SHAPE_PARAM )
-	radiusy = radiusy and radiusy or radiusx
+	radiusY = radiusY and radiusY or radiusX
 
-	if not left and not top and not radiusx and not radiusy then
+	if not left and not top and not radiusX and not radiusY then
 		return value
 	end
 
 
 	if value then -- if exists, substitute.
-		self.content = self.content:lower():gsub( '%s*ellipse%s*'.. SHAPE_PARAM ..'%s*',
-			'ellipse ' .. left .. ',' .. top .. ',' .. radiusx .. ',' .. radiusy )
+		self.content = self.content:lower():gsub(
+			'%s*ellipse%s*'.. SHAPE_PARAM ..'%s*',
+			'ellipse '.. left ..','.. top ..','.. radiusX ..','.. radiusY
+		)
 
 	else -- add
-		self:changeType( 'ellipse ' .. left .. ',' .. top .. ',' .. radiusx .. ',' .. radiusy )
+		self:changeType( 'ellipse '.. left ..','.. top ..','.. radiusX ..','.. radiusY )
 	end
 
 
-	SKIN:Bang( '!SetOption', self.meter:GetName(), self.name, self.content )
 	self.type = 'ellipse'
+	self.meter:option( self.meter.name, self.name, self.content )
 	return self
 end
 
@@ -193,7 +197,7 @@ end
 --
 -- Accepts a simplified path syntax similar to SVG commands.
 -- The method automatically converts commands to Rainmeter
--- path segments such as `lineto`, `curveto`, and `arcto`.
+-- path segments such as LineTo, CurveTo, and ArcTo.
 --
 -- Supported commands include:
 --   `L` → line to
@@ -205,17 +209,20 @@ end
 -- @tparam[opt] string path Path definition string.
 --
 -- @treturn shape When used as setter.
--- @treturn[2] string|nil When used as getter.
+-- @treturn[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:path("0,0 L 100,0 L 100,50 Z")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Path
+--
 function shape:path( inner )
 	local Name = self.content:lower():match( 'path%s*([%d%w]+)' )
 
 	-- Getter
 	if not inner then
 		if Name then
-			return self.meter:option( '!setOption', Name )
+			return self.meter:option( Name )
 		end
 
 		return nil
@@ -223,7 +230,6 @@ function shape:path( inner )
 
 
 	inner =
-		-- ( inner:find( "^%s*|%s*" ) and "" or "|" ) ..
 		inner:gsub( '|', ' ' )
 		:gsub( '%s*[Cc]%s*', '|curveTo ' )
 		:gsub( '%s*[Aa]%s*', '|arcTo ' )
@@ -232,7 +238,7 @@ function shape:path( inner )
 
 
 	if Name then
-		self.meter:option( '!setOption', Name, inner )
+		self.meter:option( Name, inner )
 
 	else
 		PATHS = PATHS + 1
@@ -253,12 +259,15 @@ end
 -- Creates a sequence of connected line segments.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] string points List of points `"x1,y1 x2,y2 x3,y3"`.
+-- @tparam[opt] (string) points List of points `"x1,y1 x2,y2 x3,y3"`.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:polyline("0,0 50,20 100,0")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Path
+--
 function shape:polygon( points )
 	return self:polyline( points, true )
 end
@@ -270,12 +279,15 @@ end
 -- Similar to `polyline` but automatically closes the path.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] string points List of points `"x1,y1 x2,y2 x3,y3"`.
+-- @tparam[opt] (string) points List of points `"x1,y1 x2,y2 x3,y3"`.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:polygon("0,0 50,50 100,0")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Path
+--
 function shape:polyline( points, close )
 	local name = self.content:lower():match( 'path%s*'.. SHAPE_PARAM )
 	local inner = ''
@@ -284,13 +296,13 @@ function shape:polyline( points, close )
 		if inner == '' then
 			inner = value
 		else
-			inner = inner .. '|lineTo ' .. value
+			inner = inner ..'|lineTo '.. value
 		end
 	end
 
 	-- use for polygon
 	if close == true then
-		inner = inner .. '|closePath 1'
+		inner = inner ..'|closePath 1'
 		self.type = 'polygon'
 	else
 		self.type = 'polyline'
@@ -298,8 +310,8 @@ function shape:polyline( points, close )
 
 
 	if name then
-		-- local Value = self.meter:GetOption( name, "undefined" )
-		SKIN:Bang( '!setOption', self.meter:GetName(), name, inner )
+		-- local Value = self.meter:option( name )
+		self.meter:option( self.name, inner )
 
 	else
 		self.paths = self.paths + 1
@@ -337,37 +349,36 @@ end
 --- Set or get the fill color.
 --
 -- Supports multiple formats:
---   RGB → `fill(255,0,0)`
---   RGBA → `fill(255,0,0,150)`
---   Hex → `fill("FF0000")`
---   Short hex → `fill("f00")`
---   Transparent → `fill("transparent")`
+--   RGB         → fill(255,0,0)
+--   RGBA        → fill(255,0,0,150)
+--   Hex         → fill("FF0000")
+--   Short hex   → fill("f00")
+--   Transparent → fill("transparent")
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] number|string r Red value or hex string.
--- @tparam[opt] number g Green value.
--- @tparam[opt] number b Blue value.
--- @tparam[opt] number a Alpha value (0-255).
+-- @tparam (number|string) r Red value or hex string.
+-- @tparam (number) g Green value.
+-- @tparam (number) b Blue value.
+-- @tparam (number) a Alpha value (0-255).
 --
 -- @treturn shape When used as setter.
--- @treturn[2] string|nil When used as getter.
+-- @treturn[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:fill(255,0,0)
---
--- @usage
 -- shape:fill(255,0,0,120)
---
--- @usage
 -- shape:fill("FF0000")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Fill
+--
 function shape:fill( red, green, blue, alpha )
 	local value = self.content:lower():match( 'fill%s+[colringadet]+%s+([%s,%.%d%w]+)' )
 
-	-- Getter.
+	-- Getter
 	if not red and not green and not blue and not alpha then
 		-- if linear or radial gradient
 		if value and self.content:lower():match( 'gradient' ) then
-			return self.meter:GetOption( value:gsub( '%s*', '' )):gsub( '^[%s-+]*%d+%.*%d*%s*|%s*', '' ), value
+			return self.meter:option( value:gsub( '%s*', '' )):gsub( '^[%s-+]*%d+%.*%d*%s*|%s*', '' ), value
 
 		else
 			return value and value or 'FFFFFF'
@@ -394,34 +405,25 @@ function shape:fill( red, green, blue, alpha )
 
 
 	else
-		green = ',' .. green
-		blue  = ',' .. blue
-		alpha = alpha and ',' .. alpha or ''
+		green = ','.. green
+		blue  = ','.. blue
+		alpha = alpha and ','.. alpha or ''
 	end
 
 
 	if value then -- substitute fill, if exist
 		-- remove fill attribute
 		self.content = self.content:lower():gsub(
-			'|%s*fill%s+[colringadet]+%s+[%s,%d%.%d%w]+%s*',
-			'|fill color ' .. red .. green .. blue .. alpha
+			'%s*fill%s+[colringadet]+%s+[%s,%d%.%d%w]+%s*',
+			'fill color '.. red .. green .. blue .. alpha
 		)
 
-
-		-- if not value:match( "," ) then -- Gradient
-				-- self.content = self.content:gsub( "%s*[FfIiLl]+%s+[CcOoLlRrIiNnGgAaDdEeTt]+%s+([%s,%d%w]+)%s*",
-				-- "Fill Color " .. red .. green .. blue .. alpha )
-
-		-- else
-			-- self.content = self.content:gsub( "%s*[Ff][Ii][Ll][Ll]%s*[Cc][Oo][Ll][Oo][Rr]%s*([%s,%d%w]+)%s*",
-				-- "Fill Color " .. red .. green .. blue .. alpha )
-		-- end
 
 	else -- add fill.
 		self.content =
 			self.content ..
 			( self.content:find( '|$' ) and '' or '|' ) ..
-			'fill color ' .. red .. green .. blue .. alpha
+			'fill color '.. red .. green .. blue .. alpha
 	end
 
 	self.meter:option( self.name, self.content )
@@ -435,15 +437,18 @@ end
 -- Defines the outline color of the shape.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] number r Red component.
--- @tparam[opt] number g Green component.
--- @tparam[opt] number b Blue component.
--- @tparam[opt] number a Alpha component.
+-- @tparam (number) r Red component.
+-- @tparam (number) g Green component.
+-- @tparam (number) b Blue component.
+-- @tparam (number) a Alpha component.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:strokecolor(255,255,255)
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Stroke
+--
 function shape:strokecolor( red, green, blue, alpha )
 	local param = self.content:lower():match( 'stroke%s*[colringadet]+%s*([%s,%.%d%w]+)' )
 
@@ -478,22 +483,23 @@ function shape:strokecolor( red, green, blue, alpha )
 
 	-- if rgba
 	else
-		green = ',' .. green
-		blue  = ',' .. blue
-		alpha = alpha and ',' .. alpha or ''
+		green = ','.. green
+		blue  = ','.. blue
+		alpha = alpha and ','.. alpha or ''
 	end
 
 
 	if param then
 		self.content = self.content:lower():gsub(
 			'%s*stroke%s*color%s*([%s,%d%.]+)%s*',
-			'stroke color ' .. red .. green .. blue .. alpha
+			'stroke color '.. red .. green .. blue .. alpha
 		)
 
 	else
-		if not self.content:find( '|$' ) then self.content = self.content .. '|' end
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'stroke color '.. red .. green .. blue .. alpha
 
-		self.content = self.content .. 'stroke color ' .. red .. green .. blue .. alpha
 	end
 
 	self.meter:option( self.name, self.content )
@@ -507,12 +513,15 @@ end
 -- Defines the thickness of the shape outline.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] number width Stroke width in pixels.
+-- @tparam[opt] (number) width Stroke width in pixels.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:strokewidth(2)
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeWidth
+--
 function shape:strokewidth( width )
 	local value = self.content:lower():match( 'strokewidth%s*(%d+)' )
 
@@ -523,11 +532,13 @@ function shape:strokewidth( width )
 
 	if value then
 		self.content = self.content:lower():gsub( '%s*strokewidth%s*(%d+)%s*',
-			'strokewidth ' .. width )
+			'strokewidth '.. width )
 
 	else
-		if not self.content:find( '|$' ) then self.content = self.content .. '|' end
-		self.content = self.content .. 'strokewidth ' .. width
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'strokewidth '.. width
+
 	end
 
 
@@ -542,17 +553,20 @@ end
 -- Determines how two connected stroke segments join.
 --
 -- Common values:
---   `"miter"`
---   `"bevel"`
---   `"round"`
+--   "miter"
+--   "bevel"
+--   "round"
 --
 -- @tparam shape self Shape instance.
--- @tparam string join Join style.
+-- @tparam (string) join Join style.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:strokelinejoin("round")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeLineJoin
+--
 function shape:strokelinejoin( type, limit )
 	local value = self.content:lower():match( 'strokelinejoin%s*([%.,%s%d%w]+)' )
 
@@ -564,18 +578,20 @@ function shape:strokelinejoin( type, limit )
 	if not limit then
 		limit = ''
 	else
-		limit = ',' .. limit
+		limit = ','.. limit
 	end
 
 	if value then
 		self.content = self.content:lower():gsub(
 			'%s*strokelinejoin%s*([%.,%s%d%w]+)%s*',
-			'strokelinejoin ' .. type .. limit
+			'strokelinejoin '.. type .. limit
 		)
 
 	else
-		if not self.content:find( '|$' ) then self.content = self.content .. '|' end
-		self.content = self.content .. 'strokelinejoin ' .. type .. limit
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'strokelinejoin '.. type .. limit
+
 	end
 
 
@@ -590,28 +606,31 @@ end
 -- Defines the cap applied to the beginning of stroke segments.
 --
 -- @tparam shape self Shape instance.
--- @tparam string cap Cap style (`"round"`, `"square"`, `"butt"`).
+-- @tparam (string) cap Cap style (`"round"`, `"square"`, `"butt"`).
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:strokestartcap("round")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeStartCap
+--
 function shape:strokestartcap( captype )
 	local Value = self.content:lower():match( 'strokestartcap%s*(%d+)' )
 
 	if Value then
 		self.content = self.content:lower():gsub( '%s*strokestartcap%s*(%d+)%s*',
-			'strokestartcap ' .. captype )
-	else
-		if not self.content:find( '|$' ) then
-			self.content = self.content .. '|'
-		end
+			'strokestartcap '.. captype )
 
-		self.content = self.content .. 'strokestartcap ' .. captype
+	else
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'strokestartcap '.. captype
+
 	end
 
 
-	SKIN:Bang( '!setOption', self.meter:GetName(), self.name, self.content )
+	self.meter:option( self.name, self.content )
 	return self
 end
 
@@ -622,36 +641,41 @@ end
 -- Scales the shape relative to an anchor point.
 --
 -- @tparam shape self Shape instance.
--- @tparam number scaleX Horizontal scale factor.
--- @tparam number scaleY Vertical scale factor.
--- @tparam[opt] number anchorX Anchor X coordinate.
--- @tparam[opt] number anchorY Anchor Y coordinate.
+-- @tparam (number) scaleX Horizontal scale factor.
+-- @tparam (number) scaleY Vertical scale factor.
+-- @tparam (number) anchorX Anchor X coordinate.
+-- @tparam (number) anchorY Anchor Y coordinate.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:scale(1.5,1.5,50,50)
-function shape:scale( axisx, axisy, anchorx, anchory )
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Scale
+--
+function shape:scale( axisX, axisY, anchorX, anchorY )
 	local value = self.content:lower():match( 'scale%s*([%s,%d]+)' )
-	axisy = axisy and axisy or axisx
-	anchory = anchory and anchory or anchorx
+	axisY = axisY and axisY or axisX
+	anchorY = anchorY and anchorY or anchorX
 
-	if not axisx and not axisy and not anchorx and not anchory then
+	if not axisX and not axisY and not anchorX and not anchorY then
 		return value and value or '1,1'
 	end
 
 	if value then
-		self.content = self.content:lower():gsub( '%s*scale%s*([%s,%d]+)%s*',
-			'scale ' .. axisx .. ',' .. axisy .. ( anchorx and ',' .. anchorx .. ',' .. anchory or '' ))
+		self.content = self.content:lower():gsub(
+			'%s*scale%s*([%s,%d]+)%s*',
+			'scale '.. axisX ..','.. axisY .. ( anchorX and ','.. anchorX ..','.. anchorY or '' ))
 
 	else
-		if not self.content:find( '|$' ) then self.content = self.content .. '|' end
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'scale '.. axisX ..','.. axisY .. ( anchorX and ','.. anchorX ..','.. anchorY or '' )
 
-		self.content = self.content .. 'scale ' .. axisx .. ',' .. axisy .. ( anchorx and ',' .. anchorx .. ',' .. anchory or '' )
 	end
 
 
-	SKIN:Bang( '!setoption', self.meter:GetName(), self.name, self.content )
+	self.meter:option( self.name, self.content )
 	return self
 end
 
@@ -663,24 +687,26 @@ end
 -- to the current shape fill.
 --
 -- @tparam shape self Shape instance.
--- @tparam number x1 Start X.
--- @tparam number y1 Start Y.
--- @tparam number x2 End X.
--- @tparam number y2 End Y.
--- @tparam string ... Gradient color stops.
---
+-- @tparam (number) x1 Start X.
+-- @tparam (number) y1 Start Y.
+-- @tparam (number) x2 End X.
+-- @tparam (number) y2 End Y.
+-- @tparam (string) ... Gradient color stops.
 -- @treturn shape
 --
 -- @usage
 -- shape:lgradient(0,0,100,0,"255,0,0;0","0,0,255;1")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#DefiningGradients
+--
 function shape:gradient( attr )
-	local value = self.content:lower():match( "fill%s+lringadet]+%s+([%s,%d%w]+)" )
+	local value = self.content:lower():match( 'fill%s+lringadet]+%s+([%s,%d%w]+)' )
 
 	if attr then
 		-- Remove fill attribute
-		self.content = self.content:lower():gsub( "|%s*fill%s+[lringadet]+%s+[%s,%d%w]+%s*", "" )
-		self.content = self.content .. "| Fill" .. attr:lower():gsub( "^[linear]+%s+", "LinearGradient " )
-		SKIN:Bang( "!setoption", self.meter:GetName(), self.name, self.content )
+		self.content = self.content:lower():gsub( '|%s*fill%s+[lringadet]+%s+[%s,%d%w]+%s*', '' )
+		self.content = self.content ..'| Fill'.. attr:lower():gsub( '^[linear]+%s+', 'LinearGradient ' )
+		self.meter:option( self.name, self.content )
 	end
 end
 
@@ -692,29 +718,31 @@ end
 -- to the current shape fill.
 --
 -- @tparam shape self Shape instance.
--- @tparam number x1 Start X.
--- @tparam number y1 Start Y.
--- @tparam number x2 End X.
--- @tparam number y2 End Y.
--- @tparam string ... Gradient color stops.
---
+-- @tparam (number) x1 Start X.
+-- @tparam (number) y1 Start Y.
+-- @tparam (number) x2 End X.
+-- @tparam (number) y2 End Y.
+-- @tparam (string) ... Gradient color stops.
 -- @treturn shape
 --
 -- @usage
 -- shape:lgradient( 90, "0 255, 10, 10", ".9 20, 20, 255, 250" )
 -- shape:lgradient( 90, "0% 10, 10, 10", "90% 20, 20, 20, 254" )
 -- shape:lgradient( "90 | 10, 10, 10 ; 0.0 | 20, 20, 20, 254 ; 1.0" )
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#LinearGradient
+--
 function shape:lgradient( angle, ... )
-	local value = self.content:lower():match( 'fill%s+[lringadet]+%s+([%s,%d%w]+)' )
+	local value  = self.content:lower():match( 'fill%s+[lringadet]+%s+([%s,%d%w]+)' )
 	local result = ''
-	local new = false
-	local arg = { ... }
+	local new    = false
+	local arg    = { ... }
 
 	-- If not exists gradient.
 	if not value then
 		new = true
 		GRADIENT = GRADIENT + 1
-		value = 'gradient' .. GRADIENT
+		value = 'gradient'.. GRADIENT
 		-- Remove fill attribute
 		self.content = self.content:lower():gsub( '%s*|%s*fill%s*color%s*[%s,%d%w]+%s*', '' )
 	end
@@ -733,20 +761,19 @@ function shape:lgradient( angle, ... )
 			color = arg[ index ]:match( '%x%x%x%x%x%x%x?%x?' )
 		end
 
-		result = result .. '|' .. color .. ';' .. percentage
+		result = result ..'|'.. color ..';'.. percentage
 	end
 
 
 	result = ( angle .. result ):gsub( '%s*', '' )
-	-- SKIN:Bang( "!SetOption", self.meter:GetName(), value, "" )
 	self.meter:option( value:gsub( '%s*', '' ), result )
 
 
 	if new then
-		if not self.content:find( '|$' ) then self.content = self.content .. '|' end
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'fill linearGradient '.. value
 
-		value = 'fill linearGradient ' .. value
-		self.content = self.content .. value
 		self.meter:option( self.name, '' )
 		self.meter:option( self.name, self.content )
 	end
@@ -761,26 +788,29 @@ end
 -- Similar to `lgradient` but produces a radial gradient.
 --
 -- @tparam shape self Shape instance.
--- @tparam number x Center X.
--- @tparam number y Center Y.
--- @tparam number radius Gradient radius.
--- @tparam string ... Gradient stops.
+-- @tparam (number) x Center X.
+-- @tparam (number) y Center Y.
+-- @tparam (number) radius Gradient radius.
+-- @tparam (string) ... Gradient stops.
 --
 -- @treturn shape
 --
 -- @usage
 -- shape:rgradient(50,50,40,"255,0,0;0","0,0,255;1")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#RadialGradient
+--
 function shape:rgradient( ... )
-	local value = self.content:lower():match( 'fill%s+[radilgent]+%s+([%s,%d%w]+)' )
-	local result = ''
-	local new = false
-	local centerx = 0
-	local centery = 0
-	local offsetx = ''
-	local offsety = ''
-	local radiusx = ''
-	local radiusy = ''
-	local arg = {...}
+	local value   = self.content:lower():match( 'fill%s+[radilgent]+%s+([%s,%d%w]+)' )
+	local result  = ''
+	local new     = false
+	local centerX = 0
+	local centerY = 0
+	local offsetX = ''
+	local offsetY = ''
+	local radiusX = ''
+	local radiusY = ''
+	local arg     = {...}
 
 	for index = 1, #arg do -- organize syntax.
 		local tipo = type( arg[ index ])
@@ -798,16 +828,16 @@ function shape:rgradient( ... )
 				color = arg[ index ]:match( '%x%x%x%x%x%x%x?%x?' )
 			end
 
-			result = result .. '|' .. color .. ';' .. percentage
+			result = result ..'|'.. color ..';'.. percentage
 
 
 		elseif tipo == 'number' then
-			if centerx == 0 then centerx = arg[ index ]
-			elseif centery == 0 then centery = arg[ index ] .. ','
-			elseif offsetx == '' then offsetx = arg[ index ] .. ','
-			elseif offsety == '' then offsety = arg[ index ] .. ','
-			elseif radiusx == '' then radiusx = arg[ index ] .. ','
-			elseif radiusy == '' then radiusy = arg[ index ] .. ','
+			    if centerX == 0  then centerX = arg[ index ]
+			elseif centerY == 0  then centerY = arg[ index ] ..','
+			elseif offsetX == '' then offsetX = arg[ index ] ..','
+			elseif offsetY == '' then offsetY = arg[ index ] ..','
+			elseif radiusX == '' then radiusX = arg[ index ] ..','
+			elseif radiusY == '' then radiusY = arg[ index ] ..','
 			else error( 'param error' )
 			end
 		end
@@ -818,28 +848,27 @@ function shape:rgradient( ... )
 	if not value then
 		new = true
 		GRADIENT = GRADIENT + 1
-		value = 'gradient' .. GRADIENT
+		value = 'gradient'.. GRADIENT
 		-- Remove fill attribute
 		self.content = self.content:lower():gsub( '%s*|%s*fill%s*color]%s*[%s,%d%w]+%s*', '' )
 	end
 
 
-	result = (
-		centerx .. ',' ..
-		centery .. offsetx ..
-		offsety .. radiusx ..
-		radiusy .. result
-	)
+	result =
+		centerX ..','..
+		centerY .. offsetX ..
+		offsetY .. radiusX ..
+		radiusY .. result
 
-	SKIN:Bang( '!setoption', self.meter:GetName(), value:gsub( '%s*', '' ), result )
+	self.meter:option( value:gsub( '%s*', '' ), result )
 
 
 	if new then
-		if not self.content:find( '|$' ) then self.content = self.content .. '|' end
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'fill radialgradient '.. value
 
-		value = 'fill radialgradient ' .. value
-		self.content = self.content .. value
-		SKIN:Bang( '!setoption', self.meter:GetName(), self.name, self.content )
+		self.meter:option( self.name, self.content )
 	end
 end
 
@@ -900,14 +929,14 @@ end
 -- the remaining parameters.
 --
 -- @tparam shape self Shape instance.
--- @tparam string newtype New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
---
+-- @tparam (string) newtype New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
 -- @treturn shape Returns the shape instance for chaining.
 --
 -- @usage
 -- shape:changeType("ellipse")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/
+--
 function shape:changeType( newType )
 	local option = {
 		rectangle = 'rectangle%s*[%s,%d]+',
@@ -935,14 +964,15 @@ end
 -- (`Shape2`, `Shape3`, etc.) and returns a new shape instance.
 --
 -- @tparam shape self Shape instance.
---
 -- @treturn shape New shape instance.
 --
 -- @usage
 -- local shape1 = meter("Graph"):rectangle(0,0,100,50)
 -- local shape2 = shape1:add()
---
 -- shape2:ellipse(50,25,20,20)
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
+--
 function shape:add()
 	index = 2
 
@@ -986,7 +1016,7 @@ end
 
 return function( super, name, index )
 	local class = clone( {}, super )
-	class.name = 'shape' .. ( index and index or '' )
+	class.name = 'shape'.. ( index and index or '' )
 	class.meter = super
 
 	class.content = class.meter:option( class.name )

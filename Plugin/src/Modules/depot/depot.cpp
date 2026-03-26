@@ -136,26 +136,29 @@ static int depot_set( lua_State *L ) {
 
 
 /**
- * @brief Lua: d:get(key [, default])
+ * @brief Lua: d:get(key [, default [, raw]])
  *
- * Reads a string value from the INI file.
+ * Reads a value from the INI file. If raw is true, returns the raw string
+ * without type conversion; otherwise applies automatic Lua type detection.
  *
  * @param L Lua state.
- * @return 1 string value, or nil if not found.
+ * @return 1 value (converted or raw), or nil if not found and no default.
  *
  * @pre Depot instance in upvalue 1.
  * @param[in] key Key name (string).
  * @param[in] default Optional default value if key doesn't exist.
+ * @param[in] raw Optional boolean; if true, return raw string (no conversion).
  *
- * @retval string The value if found.
+ * @retval string|number|boolean The value if found (converted or raw).
  * @retval nil If key not found and no default provided.
  *
  * @example
  * @code{.lua}
  * local depot = require("depot")
  * local d = depot("MySection", "config.ini")
- * local value = d:get("Username", "Guest")
- * print(value)  -- "JohnDoe" or "Guest"
+ * d:set("code", "001")
+ * print(d:get("code"))            -- 1 (number)
+ * print(d:get("code", nil, true)) -- "001" (string)
  * @endcode
  */
 static int depot_get( lua_State *L ) {
@@ -165,11 +168,16 @@ static int depot_get( lua_State *L ) {
 
 	const int argc = lua_gettop( L );
 	const bool hasDefault = argc >= 3;
+	const bool raw = (argc >= 4) && lua_toboolean( L, 4 );
 
 	auto value = D->getOptional( key );
 
 	if ( value ) {
-		push_typed( L, *value );
+		if ( raw )
+			lua_pushstring( L, value->c_str() );
+		else
+			push_typed( L, *value );
+
 		return 1;
 	}
 

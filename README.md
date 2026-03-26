@@ -1,3 +1,4 @@
+
 <div align="center">
 
   # RainJIT
@@ -6,6 +7,7 @@
 
   <br>
 
+  ![Views](https://img.shields.io/badge/views-0-brightgreen)
   ![Rainmeter](https://img.shields.io/badge/Rainmeter-plugin-blue)
   ![LuaJIT](https://img.shields.io/badge/LuaJIT-2.1-orange)
   ![License](https://img.shields.io/badge/license-GPLv2-green)
@@ -37,7 +39,7 @@
 - [Overview](#overview)
 - [Motivation](#dart-motivation)
 - [Features](#green_book-features)
-- [Manual Installation](#manual-installation)
+- [Manual Installation](#installation)
 - [Quick Example](#jigsaw-quick-example)
   - [Skin Configuration](#skin-configuration)
   - [Inline Script](#inline-script)
@@ -108,14 +110,18 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 <br>
 
 
-## Manual Installation
+## Installation
 
-1. Download [**RainJIT.dll**](./build) to your **Rainmeter** [**Plugins directory**](https://docs.rainmeter.net/manual/plugins/).
-3. Download [**`lua51.dll`**](./Lua/bin/) to [**Rainmeter folder installed**](https://docs.rainmeter.net/manual/installing-rainmeter/).<br>
-   > RainJIT dynamically links against the **LuaJIT** runtime (`lua51.dll`).
-4. Download [**Lua Folder**](./Lua) to [**@Vault Folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/).
-   > Contains modules compatible with **LuaJIT** and **Rainmeter**.
+1. Install the package [`RainJIT.rmskin`](./build/RainJIT.rmskin)
+2. Download (or update, if already present) the Lua modules from [`./Lua`](./Lua) into the Rainmeter [@Vault folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)
+   > These modules are compatible with **LuaJIT** and **Rainmeter**.
 
+<br>
+
+> [!WARNING]
+> Previous versions required a Lua 5.1 runtime (`lua51.dll`) to be placed in the [**Rainmeter installation directory**](https://docs.rainmeter.net/manual/installing-rainmeter/). This is no longer required. You must remove this file to avoid runtime conflicts.
+
+<br>
 <br>
 
 

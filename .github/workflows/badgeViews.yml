@@ -1,0 +1,32 @@
+name: Update Badge in README
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update badge
+        run: |
+          views=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/traffic/views | jq '.count')
+
+          views=${views:-0}
+
+          sed -i "s|views-[0-9]*-brightgreen|views-$views-brightgreen|g" README.md
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git diff --quiet || git commit -am "Update badge with views count"
+          git push

@@ -1,6 +1,6 @@
 
 [icons]
-	imagePath     = #ROOTCONFIGPATH#Weather\img\WeatherIcons\
+	imagePath     = #ROOTCONFIGPATH#Weather\images\WeatherIcons\
 	imageName     = unknown
 	imageAlpha    = 240
 

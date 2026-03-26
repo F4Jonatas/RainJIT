@@ -9,13 +9,16 @@ local fetch = require( 'fetch' )
 local i18n  = require( 'i18n' )
 local json  = require( 'json' ).decode
 
+
 -- Get and set current system language
 i18n.language()
+
 
 local dp        = depot()
 local latitude  = dp:get( 'latitude', -22.8039 )
 local longitude = dp:get( 'longitude', -43.3722 )
 local reload    = 500
+
 
 -- Forward declarations
 local gatherResults
@@ -41,11 +44,16 @@ function rain:init()
 end
 
 
-function rain:update( cs, dt )
-	if math.fmod( math.round( cs ), reload ) == 0 then
+
+-- @param (int)   au number accumulated Updates
+-- @param (float) dt number deltaTime
+function rain:update( au, dt )
+	if math.fmod( au, reload ) == 0 then
 		upgrade( gatherResults())
 	end
 end
+
+
 
 
 upgrade = function( data )
@@ -56,8 +64,8 @@ upgrade = function( data )
 		meter( 'tempH'.. index ):text( math.round( item.max ) ..'°' ):update()
 		meter( 'tempL'.. index ):text( math.round( item.min ) ..'°' ):update()
 		meter( 'week-day'.. index ):text( i18n( item.weekDayName )):update()
-		meter( 'phrase'.. index ):text( item.text ):update()
-		meter( 'icon'.. index ):image( item.icon ):update()
+		meter( 'phrase'.. index ):text( i18n( item.text )):update()
+		meter( 'icon'.. index ):image( i18n( item.icon )):update()
 	end
 end
 
@@ -95,7 +103,6 @@ function mapWeather( code, isDay, dt )
 		[99] = { text = 'Severe thunderstorm', phrase = 'Thunderstorm with heavy hail', icon = isDay and 'storm-day' or 'storm-night' }
 	}
 
-
 	if dict[ code ] then
 		local _,_, year, month, day = dt:find( '(%d+)-(%d+)-(%d+)' )
 		dict[ code ].date = os.time({ year = year, month = month, day = day })
@@ -118,13 +125,13 @@ function gatherResults()
 	local current = fetch( baseURL )
 
 	if not current.ok then
-		error( 'Failed to fetch current weather data.\nError: ' .. current.error )
+		error( 'Failed to fetch current weather data.\nError: '.. current.error )
 
 	else
 		local data = json( current.text )
 		local dict = mapWeather(
 			data.current.weather_code,
-			true,
+			data.current.is_day == 1,
 			data.daily.time[1]
 		)
 
@@ -143,7 +150,7 @@ function gatherResults()
 		for index = 2, 4 do
 			local dict = mapWeather(
 				data.daily.weather_code[ index ],
-				index == 2 and data.current.is_day or true,
+				true,
 				data.daily.time[ index ]
 			)
 
