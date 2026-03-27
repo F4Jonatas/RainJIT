@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   update-readme:
@@ -16,12 +17,17 @@ jobs:
 
       - name: Update badge
         run: |
-          views=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          https://api.github.com/repos/${{ github.repository }}/traffic/views | jq '.count')
+          response=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/traffic/views)
 
-          views=${views:-0}
+          views=$(echo "$response" | jq '.count // 0')
 
-          sed -i "s|views-[0-9]*-brightgreen|views-$views-brightgreen|g" README.md
+          # fallback extra
+          if [ "$views" = "null" ] || [ -z "$views" ]; then
+            views=0
+          fi
+
+          sed -i "s|views-[^ -]*-brightgreen|views-$views-brightgreen|g" README.md
 
       - name: Commit changes
         run: |
