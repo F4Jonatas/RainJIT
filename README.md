@@ -7,7 +7,7 @@
 
   <br>
 
-  ![Views](https://img.shields.io/badge/views-null-brightgreen)
+  ![Views](https://img.shields.io/badge/views-0-brightgreen)
   ![Rainmeter](https://img.shields.io/badge/Rainmeter-plugin-blue)
   ![LuaJIT](https://img.shields.io/badge/LuaJIT-2.1-orange)
   ![License](https://img.shields.io/badge/license-GPLv2-green)
