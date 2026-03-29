@@ -3,7 +3,7 @@
 *zip
 **/.env
 
-assets/images/*
+assets/images/*.*
 !assets/images/logo-gpl-v2.png
 !assets/images/logo.png
 
