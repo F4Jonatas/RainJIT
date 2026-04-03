@@ -118,7 +118,10 @@ namespace http {
 		try {
 			if ( !IsInternetConnected() ) {
 				std::wstring errMsg = L"[RainJIT:Fetch] No internet connection detected\n";
-				RmLog( ctx->rain->rm, LOG_ERROR, errMsg.c_str() );
+				#ifdef __RAINMETERAPI_H__
+					RmLog( ctx->rain->rm, LOG_ERROR, errMsg.c_str() );
+				#endif
+
 				throw std::runtime_error( "No internet connection available" );
 			}
 
@@ -174,7 +177,9 @@ namespace http {
 
 			// Debug log
 			std::wstring debugMsg = L"[RainJIT:Fetch] Starting request to: \n" + url;
-			RmLog( ctx->rain->rm, LOG_DEBUG, debugMsg.c_str() );
+			#ifdef __RAINMETERAPI_H__
+				RmLog( ctx->rain->rm, LOG_DEBUG, debugMsg.c_str() );
+			#endif
 
 			// Open session
 			// clang-format off
@@ -222,12 +227,10 @@ namespace http {
 
 			// Helper function to check TOTAL timeout (safety net)
 			auto checkTotalTimeout = [&]() {
-				if ( std::chrono::steady_clock::now() > totalDeadline ) {
+				if ( std::chrono::steady_clock::now() > totalDeadline )
 					throw std::runtime_error( "Total operation timeout exceeded" );
-				}
-				if ( ctx->cancelled.load() ) {
+				if ( ctx->cancelled.load() )
 					throw std::runtime_error( "Request cancelled" );
-				}
 			};
 
 
@@ -369,13 +372,14 @@ namespace http {
 				}
 			}
 
-			// ============ HYBRID APPROACH: Try WinHTTP first, fallback to WinINet ============
+			// try WinHTTP first, fallback to WinINet
 			std::vector<BYTE> buffer;
 			DWORD totalBytes = 0;
 			bool readSuccess = false;
 
-			// Try WinHTTP first
-			RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Attempting WinHTTP read..." );
+			#ifdef __RAINMETERAPI_H__
+				RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Attempting WinHTTP read..." );
+			#endif
 
 			const DWORD CHUNK_SIZE = 8192;
 			buffer.resize( CHUNK_SIZE );
@@ -388,31 +392,44 @@ namespace http {
 
 				if ( availableSpace > UINT32_MAX ) {
 					dwBytesToRead = UINT32_MAX; // Máximo de 4GB por leitura
-					RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Limiting read to 4GB" );
-				} else {
-					dwBytesToRead = static_cast<DWORD>( availableSpace );
+
+					#ifdef __RAINMETERAPI_H__
+						RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Limiting read to 4GB" );
+					#endif
 				}
+
+				else
+					dwBytesToRead = static_cast<DWORD>( availableSpace );
+
 
 				if ( !WinHttpReadData( hRequest, buffer.data() + totalBytes, static_cast<DWORD>( availableSpace ), &bytesRead ) ) {
 					DWORD err = GetLastError();
 
 					// If E_ABORT and we have data, consider it success
 					if ( ( err == E_ABORT || err == ERROR_OPERATION_ABORTED ) && totalBytes > 0 ) {
-						RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] E_ABORT with " + std::to_wstring( totalBytes ) + L" bytes - treating as success" ).c_str() );
+						#ifdef __RAINMETERAPI_H__
+							RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] E_ABORT with " + std::to_wstring( totalBytes ) + L" bytes - treating as success" ).c_str() );
+						#endif
+
 						readSuccess = true;
 						break;
 					}
 
 					// If connection error at the end with data, success
 					if ( err == ERROR_WINHTTP_CONNECTION_ERROR && totalBytes > 0 ) {
-						RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Connection closed with data - success" );
+						#ifdef __RAINMETERAPI_H__
+							RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Connection closed with data - success" );
+						#endif
+
 						readSuccess = true;
 						break;
 					}
 
 					// If no data at all, fallback to WinINet
 					if ( totalBytes == 0 ) {
-						RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] WinHTTP failed with no data, falling back to WinINet" );
+						#ifdef __RAINMETERAPI_H__
+							RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] WinHTTP failed with no data, falling back to WinINet" );
+						#endif
 
 						// Cleanup WinHTTP handles
 						if ( hRequest ) {
@@ -429,12 +446,14 @@ namespace http {
 						}
 
 						// Try WinINet
+						// clang-format off
 						HINTERNET hInetSession = InternetOpen(
 							HTTPVersion,
 							INTERNET_OPEN_TYPE_PRECONFIG,
 							NULL,
 							NULL, 0
 						);
+						// clang-format on
 
 						if ( hInetSession ) {
 							// Set timeouts
@@ -443,12 +462,18 @@ namespace http {
 							InternetSetOption( hInetSession, INTERNET_OPTION_SEND_TIMEOUT, &sendTimeout, sizeof( sendTimeout ) );
 
 							// Open URL with WinINet
-							HINTERNET hInetUrl = InternetOpenUrl( hInetSession, url.c_str(),
-																										NULL, // headers (simplified)
-																										0, flags, 0 );
+							HINTERNET hInetUrl = InternetOpenUrl(
+								hInetSession, url.c_str(),
+								NULL, // headers (simplified)
+								0,
+								flags,
+								0
+							);
 
 							if ( hInetUrl ) {
-								RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] WinINet connected, reading..." );
+								#ifdef __RAINMETERAPI_H__
+									RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] WinINet connected, reading..." );
+								#endif
 
 								buffer.clear();
 								char tempBuffer[8192];
@@ -464,8 +489,11 @@ namespace http {
 										memcpy( buffer.data() + oldSize, tempBuffer, bytesRead );
 										totalBytes += bytesRead;
 
-										RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] WinINet read: " + std::to_wstring( bytesRead ) + L" bytes" ).c_str() );
+										#ifdef __RAINMETERAPI_H__
+											RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] WinINet read: " + std::to_wstring( bytesRead ) + L" bytes" ).c_str() );
+										#endif
 									}
+
 								} while ( bytesRead > 0 && !ctx->cancelled.load() );
 
 								InternetCloseHandle( hInetUrl );
@@ -478,12 +506,18 @@ namespace http {
 					}
 
 					// Other error, break
-					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] Read error: " + std::to_wstring( err ) ).c_str() );
+					#ifdef __RAINMETERAPI_H__
+						RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] Read error: " + std::to_wstring( err ) ).c_str() );
+					#endif
+
 					break;
 				}
 
 				if ( bytesRead == 0 ) {
-					RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] End of WinHTTP data" );
+					#ifdef __RAINMETERAPI_H__
+						RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] End of WinHTTP data" );
+					#endif
+
 					readSuccess = true;
 					break;
 				}
@@ -491,12 +525,16 @@ namespace http {
 				totalBytes += bytesRead;
 				readSuccess = true;
 
-				RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] WinHTTP read: " + std::to_wstring( bytesRead ) + L" bytes (total: " + std::to_wstring( totalBytes ) + L")" ).c_str() );
+				#ifdef __RAINMETERAPI_H__
+					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] WinHTTP read: " + std::to_wstring( bytesRead ) + L" bytes (total: " + std::to_wstring( totalBytes ) + L")" ).c_str() );
+				#endif
 
 				// Preview
 				if ( totalBytes == bytesRead && bytesRead > 0 ) {
 					std::string preview( (char *)buffer.data(), min( bytesRead, 200 ) );
-					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] PREVIEW: " + utf8_to_wstring( preview ) ).c_str() );
+					#ifdef __RAINMETERAPI_H__
+						RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] PREVIEW: " + utf8_to_wstring( preview ) ).c_str() );
+					#endif
 				}
 
 				// Expand buffer
@@ -512,9 +550,16 @@ namespace http {
 				response.text = std::string( reinterpret_cast<const char *>( response.body.data() ), response.body.size() );
 				response.error.clear();
 
-				RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] SUCCESS! " + std::to_wstring( response.body.size() ) + L" bytes received" ).c_str() );
-			} else {
-				RmLog( ctx->rain->rm, LOG_ERROR, L"[RainJIT:Fetch] FAILED to read any data" );
+				#ifdef __RAINMETERAPI_H__
+					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] SUCCESS! " + std::to_wstring( response.body.size() ) + L" bytes received" ).c_str() );
+				#endif
+			}
+
+			else {
+				#ifdef __RAINMETERAPI_H__
+					RmLog( ctx->rain->rm, LOG_ERROR, L"[RainJIT:Fetch] FAILED to read any data" );
+				#endif
+
 				response.body.clear();
 
 				DWORD lastErr = GetLastError();
@@ -524,19 +569,19 @@ namespace http {
 				}
 			}
 
-			// ============ END OF HYBRID APPROACH ============
 
 			// Clear error on successful completion
-			if ( response.status >= 200 && response.status < 600 ) {
+			if ( response.status >= 200 && response.status < 600 )
 				response.error.clear();
-			}
 
 			// Log successful completion time
 			auto operationEnd = std::chrono::steady_clock::now();
 			auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>( operationEnd - operationStart ).count();
 
 			std::wstring timeMsg = L"[RainJIT:Fetch] Request completed in " + std::to_wstring( totalMs ) + L"ms";
-			RmLog( ctx->rain->rm, LOG_DEBUG, timeMsg.c_str() );
+			#ifdef __RAINMETERAPI_H__
+				RmLog( ctx->rain->rm, LOG_DEBUG, timeMsg.c_str() );
+			#endif
 
 		} catch ( const std::exception &e ) {
 			if ( response.body.empty() ) {
@@ -560,7 +605,9 @@ namespace http {
 				}
 			}
 
-			RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] Exception: " + utf8_to_wstring( e.what() ) ).c_str() );
+			#ifdef __RAINMETERAPI_H__
+				RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] Exception: " + utf8_to_wstring( e.what() ) ).c_str() );
+			#endif
 		} catch ( ... ) {
 			// Catch any other errors (including E_ABORT)
 			// response.body.clear();
@@ -625,7 +672,9 @@ namespace http {
 				}
 				}
 
-				RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] System error: " + std::to_wstring( lastError ) + L" - " + utf8_to_wstring( response.error ) ).c_str() );
+				#ifdef __RAINMETERAPI_H__
+					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] System error: " + std::to_wstring( lastError ) + L" - " + utf8_to_wstring( response.error ) ).c_str() );
+				#endif
 			}
 		}
 
@@ -640,11 +689,12 @@ namespace http {
 		// Log completion
 		if ( ctx && ctx->rain && ctx->rain->rm ) {
 			std::wstring statusMsg = L"[RainJIT:Fetch] Request completed with status: " + std::to_wstring( response.status );
-			if ( !response.error.empty() ) {
+			if ( !response.error.empty() )
 				statusMsg += L" - Error: " + utf8_to_wstring( response.error );
-			}
 
-			RmLog( ctx->rain->rm, LOG_DEBUG, statusMsg.c_str() );
+			#ifdef __RAINMETERAPI_H__
+				RmLog( ctx->rain->rm, LOG_DEBUG, statusMsg.c_str() );
+			#endif
 		}
 
 		// Store results

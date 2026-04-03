@@ -51,11 +51,23 @@
 
 		"material-icon-theme.folders.associations": {
 			"@Resources": "tools",
-			"@Resources/depot": "database"
+			"@Resources/depot": "database",
+			"vault": "obsidian"
 		},
+
+		"material-icon-theme.files.customClones": [
+			{
+				"name": "markdown-file",
+				"base": "markdown",
+				"color": "deep-purple-300",
+				// "fileExtensions": ["md"]
+				"fileNames": ["Private.md"]
+			}
+		],
 
 		"files.exclude": {
 			"**/.git": true,
+			"**/.obsidian": true,
 			"Plugin/build": true,
 			"**/.svn": true,
 			"**/.hg": true,

@@ -5,6 +5,9 @@
  *
  * Contains all Lua-C++ binding functions for the fetch API.
  */
+
+
+
 #pragma once
 
 #include <Windows.h>

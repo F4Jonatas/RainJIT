@@ -7,7 +7,6 @@
 
   <br>
 
-  ![Views](https://img.shields.io/badge/views-0-brightgreen)
   ![Rainmeter](https://img.shields.io/badge/Rainmeter-plugin-blue)
   ![LuaJIT](https://img.shields.io/badge/LuaJIT-2.1-orange)
   ![License](https://img.shields.io/badge/license-GPLv2-green)
@@ -110,7 +109,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 <br>
 
 
-## Installation
+## :package: Installation
 
 1. Install the package [`RainJIT.rmskin`](./build/RainJIT.rmskin)
 2. Download (or update, if already present) the Lua modules from [`./Lua`](./Lua) into the Rainmeter [@Vault folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)
@@ -164,7 +163,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 <br>
 
 
-## :green_book: Module `rain`
+## :book: Module `rain`
 
 The global `rain` object provides access to **Rainmeter** functionality from Lua.
 

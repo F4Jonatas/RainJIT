@@ -32,11 +32,12 @@ static std::mutex g_notifyMutex;
 namespace lua {
 
 	// Procedimento da janela
+	// wParam contém o ID do contexto (ctx->refSelf)
 	LRESULT CALLBACK FetchNotifyWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 		if ( msg == WM_FETCH_COMPLETE ) {
-			// wParam contém o ID do contexto (ctx->refSelf)
 			int ctxId = static_cast<int>( wParam );
 			auto ctx = core::ContextRegistry::instance().getContext( ctxId );
+
 			if ( ctx && ctx->completed.load() ) {
 				if ( ctx->rain->L ) {
 					// Coloca a função fetch_dispatch e o objeto self na pilha
@@ -47,7 +48,9 @@ namespace lua {
 					if ( lua_pcall( ctx->rain->L, 1, 1, 0 ) != LUA_OK ) {
 						const char *err = lua_tostring( ctx->rain->L, -1 );
 						if ( err )
-							RmLog( ctx->rain->rm, LOG_ERROR, utf8_to_wstring( err ).c_str() );
+							#ifdef __RAINMETERAPI_H__
+								RmLog( ctx->rain->rm, LOG_ERROR, utf8_to_wstring( err ).c_str() );
+							#endif
 
 						lua_pop( ctx->rain->L, 1 );
 					}
@@ -78,7 +81,10 @@ namespace lua {
 			if ( ! RegisterClassEx( &wc )) {
 				DWORD err = GetLastError();
 				if ( err != ERROR_CLASS_ALREADY_EXISTS ) {
-					RmLog(rain->rm, LOG_ERROR, L"Failed to register fetch notify window class");
+					#ifdef __RAINMETERAPI_H__
+						RmLog(rain->rm, LOG_ERROR, L"Failed to register fetch notify window class");
+					#endif
+
 					return;
 				}
 			}
@@ -103,8 +109,12 @@ namespace lua {
 			SetWindowLongPtr( hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( rain ) );
 			std::lock_guard<std::mutex> lock( g_notifyMutex );
 			g_notifyWindows[rain] = hWnd;
-		} else
-			RmLog( rain->rm, LOG_ERROR, L"Failed to create fetch notify window" );
+		}
+
+		else
+			#ifdef __RAINMETERAPI_H__
+				RmLog( rain->rm, LOG_ERROR, L"Failed to create fetch notify window" );
+			#endif
 	}
 
 
@@ -145,7 +155,9 @@ namespace lua {
 			int id = (int)lua_tointeger( L, -1 );
 			lua_pop( L, 1 );
 			ctx = core::ContextRegistry::instance().getContext( id );
-		} else
+		}
+
+		else
 			lua_pop( L, 1 );
 
 		return ctx;
@@ -259,11 +271,12 @@ namespace lua {
 
 		// Save file
 		bool success = fs::SaveToFile( wFilePath, reinterpret_cast<const BYTE *>( bodyData ), bodySize );
-
 		if ( success ) {
 			lua_pushboolean( L, 1 );
 			lua_pushnil( L );
-		} else {
+		}
+
+		else {
 			lua_pushboolean( L, 0 );
 
 			// Get Windows error
@@ -333,16 +346,18 @@ namespace lua {
 		std::lock_guard<std::mutex> lock( ctx->mutex );
 
 		// Limpa callback anterior
-		if ( ctx->refCallback != LUA_NOREF && ctx->rain && ctx->rain->L ) {
+		if ( ctx->refCallback != LUA_NOREF && ctx->rain && ctx->rain->L )
 			luaL_unref( ctx->rain->L, LUA_REGISTRYINDEX, ctx->refCallback );
-		}
+
 
 		if ( lua_isfunction( L, 2 ) ) {
 			if ( ctx->rain && ctx->rain->L == L ) {
 				lua_pushvalue( L, 2 );
 				ctx->refCallback = luaL_ref( L, LUA_REGISTRYINDEX );
 			}
-		} else
+		}
+
+		else
 			ctx->refCallback = LUA_NOREF;
 
 		return 1;
@@ -401,11 +416,16 @@ namespace lua {
 					const char *err = lua_tostring( L, -1 );
 					if ( err && ctx->rain ) {
 						std::wstring werr = L"[RainJIT:Fetch] Callback error: " + utf8_to_wstring( err );
-						RmLog( ctx->rain->rm, LOG_WARNING, werr.c_str() );
+
+						#ifdef __RAINMETERAPI_H__
+							RmLog( ctx->rain->rm, LOG_WARNING, werr.c_str() );
+						#endif
 					}
 					lua_pop( L, 1 );
 				}
-			} else
+			}
+
+			else
 				lua_pop( L, 1 ); // Remove não-função
 		}
 
@@ -539,7 +559,6 @@ namespace lua {
 		// Tabela de métodos usando luaL_Reg
 		lua_newtable( L );
 
-		// Array de métodos
 		// clang-format off
 		static const struct luaL_Reg methods[] = {
 			{ "send", fetch_send },
@@ -551,7 +570,6 @@ namespace lua {
 		};
 		// clang-format on
 
-		// Registrar métodos
 		for ( const luaL_Reg *m = methods; m->name; m++ ) {
 			lua_pushcfunction( L, m->func );
 			lua_setfield( L, -2, m->name );
@@ -635,10 +653,13 @@ namespace lua {
 		lua_pushcclosure( L, fetch_sync, 2 );
 		lua_pushvalue( L, 2 );
 
+
 		if ( lua_istable( L, 3 ) ) {
 			lua_pushvalue( L, 3 );
 			lua_call( L, 2, 1 );
-		} else
+		}
+
+		else
 			lua_call( L, 1, 1 );
 
 		return 1;

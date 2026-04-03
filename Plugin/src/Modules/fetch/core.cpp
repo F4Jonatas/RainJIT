@@ -46,7 +46,8 @@ namespace core {
 				luaL_unref( L, LUA_REGISTRYINDEX, refCallback );
 				refCallback = LUA_NOREF;
 			}
-		} else {
+		}
+		else {
 			refSelfLua = LUA_NOREF;
 			refCallback = LUA_NOREF;
 		}
@@ -76,6 +77,7 @@ namespace core {
 		auto it = contexts_.find( id );
 		if ( it != contexts_.end() )
 			return it->second;
+
 		return nullptr;
 	}
 
@@ -94,9 +96,10 @@ namespace core {
 			if ( it->second->rain == rain ) {
 				it->second->cancelled.store( true );
 				it = contexts_.erase( it );
-			} else {
-				++it;
 			}
+
+			else
+				++it;
 		}
 	}
 
