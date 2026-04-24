@@ -12,28 +12,28 @@
 #ifdef LIBRARY_EXPORTS
 	#define LIBRARY_EXPORT EXTERN_C
 #else
-	#define LIBRARY_EXPORT EXTERN_C __declspec(dllimport)
+	#define LIBRARY_EXPORT EXTERN_C __declspec( dllimport )
 #endif // LIBRARY_EXPORTS
 
-#define PLUGIN_EXPORT EXTERN_C __declspec(dllexport)
+#define PLUGIN_EXPORT EXTERN_C __declspec( dllexport )
 
 
 
 enum RmGetType {
-	RMG_MEASURENAME      = 0,
-	RMG_SKIN             = 1,
-	RMG_SETTINGSFILE     = 2,
-	RMG_SKINNAME         = 3,
+	RMG_MEASURENAME = 0,
+	RMG_SKIN = 1,
+	RMG_SETTINGSFILE = 2,
+	RMG_SKINNAME = 3,
 	RMG_SKINWINDOWHANDLE = 4
 };
 
 
 
 enum LOGLEVEL {
-	LOG_ERROR   = 1,
+	LOG_ERROR = 1,
 	LOG_WARNING = 2,
-	LOG_NOTICE  = 3,
-	LOG_DEBUG   = 4
+	LOG_NOTICE = 3,
+	LOG_DEBUG = 4
 };
 
 
@@ -56,7 +56,7 @@ enum LOGLEVEL {
  * }
  * @endcode
  */
-LIBRARY_EXPORT LPCWSTR __stdcall RmReadString(void* rm, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE);
+LIBRARY_EXPORT LPCWSTR __stdcall RmReadString( void *rm, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE );
 
 
 
@@ -81,16 +81,16 @@ LIBRARY_EXPORT LPCWSTR __stdcall RmReadString(void* rm, LPCWSTR option, LPCWSTR 
  */
 #ifdef LIBRARY_EXPORTS
 
-LIBRARY_EXPORT LPCWSTR __stdcall RmReadStringFromSection(void* rm, LPCWSTR section, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE);
+LIBRARY_EXPORT LPCWSTR __stdcall RmReadStringFromSection( void *rm, LPCWSTR section, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE );
 
 #else
 
-inline LPCWSTR RmReadStringFromSection(void* rm, LPCWSTR section, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE) {
-	typedef LPCWSTR(__stdcall* RmReadStringFromSectionFunc)(void*, LPCWSTR, LPCWSTR, LPCWSTR, BOOL);
-	static auto delayedFunc = (RmReadStringFromSectionFunc)GetProcAddress(GetModuleHandle(L"Rainmeter.dll"), "RmReadStringFromSection");
+inline LPCWSTR RmReadStringFromSection( void *rm, LPCWSTR section, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE ) {
+	typedef LPCWSTR( __stdcall * RmReadStringFromSectionFunc )( void *, LPCWSTR, LPCWSTR, LPCWSTR, BOOL );
+	static auto delayedFunc = (RmReadStringFromSectionFunc)GetProcAddress( GetModuleHandle( L"Rainmeter.dll" ), "RmReadStringFromSection" );
 
-	if (delayedFunc)
-		return delayedFunc(rm, section, option, defValue, replaceMeasures);
+	if ( delayedFunc )
+		return delayedFunc( rm, section, option, defValue, replaceMeasures );
 
 	return defValue;
 }
@@ -114,7 +114,7 @@ inline LPCWSTR RmReadStringFromSection(void* rm, LPCWSTR section, LPCWSTR option
  * }
  * @endcode
  */
-LIBRARY_EXPORT double __stdcall RmReadFormula(void* rm, LPCWSTR option, double defValue);
+LIBRARY_EXPORT double __stdcall RmReadFormula( void *rm, LPCWSTR option, double defValue );
 
 
 
@@ -137,14 +137,14 @@ LIBRARY_EXPORT double __stdcall RmReadFormula(void* rm, LPCWSTR option, double d
  * @endcode
  */
 #ifdef LIBRARY_EXPORTS
-LIBRARY_EXPORT double __stdcall RmReadFormulaFromSection(void* rm, LPCWSTR section, LPCWSTR option, double defValue);
+LIBRARY_EXPORT double __stdcall RmReadFormulaFromSection( void *rm, LPCWSTR section, LPCWSTR option, double defValue );
 #else
-inline double RmReadFormulaFromSection(void* rm, LPCWSTR section, LPCWSTR option, double defValue) {
-	typedef double(__stdcall* RmReadFormulaFromSectionFunc)(void*, LPCWSTR, LPCWSTR, double);
-	static auto delayedFunc = (RmReadFormulaFromSectionFunc)GetProcAddress(GetModuleHandle(L"Rainmeter.dll"), "RmReadFormulaFromSection");
+inline double RmReadFormulaFromSection( void *rm, LPCWSTR section, LPCWSTR option, double defValue ) {
+	typedef double( __stdcall * RmReadFormulaFromSectionFunc )( void *, LPCWSTR, LPCWSTR, double );
+	static auto delayedFunc = (RmReadFormulaFromSectionFunc)GetProcAddress( GetModuleHandle( L"Rainmeter.dll" ), "RmReadFormulaFromSection" );
 
-	if (delayedFunc)
-		return delayedFunc(rm, section, option, defValue);
+	if ( delayedFunc )
+		return delayedFunc( rm, section, option, defValue );
 
 	return defValue;
 }
@@ -170,8 +170,8 @@ inline double RmReadFormulaFromSection(void* rm, LPCWSTR section, LPCWSTR option
  * }
  * @endcode
  */
-__inline int RmReadIntFromSection(void* rm, LPCWSTR section, LPCWSTR option, int defValue) {
-	return (int)RmReadFormulaFromSection(rm, section, option, defValue);
+__inline int RmReadIntFromSection( void *rm, LPCWSTR section, LPCWSTR option, int defValue ) {
+	return (int)RmReadFormulaFromSection( rm, section, option, defValue );
 }
 
 
@@ -194,8 +194,8 @@ __inline int RmReadIntFromSection(void* rm, LPCWSTR section, LPCWSTR option, int
  * }
  * @endcode
  */
-__inline double RmReadDoubleFromSection(void* rm, LPCWSTR section, LPCWSTR option, double defValue) {
-	return RmReadFormulaFromSection(rm, section, option, defValue);
+__inline double RmReadDoubleFromSection( void *rm, LPCWSTR section, LPCWSTR option, double defValue ) {
+	return RmReadFormulaFromSection( rm, section, option, defValue );
 }
 
 
@@ -217,7 +217,7 @@ __inline double RmReadDoubleFromSection(void* rm, LPCWSTR section, LPCWSTR optio
  * }
  * @endcode
  */
-LIBRARY_EXPORT LPCWSTR __stdcall RmReplaceVariables(void* rm, LPCWSTR str);
+LIBRARY_EXPORT LPCWSTR __stdcall RmReplaceVariables( void *rm, LPCWSTR str );
 
 
 
@@ -237,7 +237,7 @@ LIBRARY_EXPORT LPCWSTR __stdcall RmReplaceVariables(void* rm, LPCWSTR str);
  * @endcode
  */
 
-LIBRARY_EXPORT LPCWSTR __stdcall RmPathToAbsolute(void* rm, LPCWSTR relativePath);
+LIBRARY_EXPORT LPCWSTR __stdcall RmPathToAbsolute( void *rm, LPCWSTR relativePath );
 
 
 
@@ -257,7 +257,7 @@ LIBRARY_EXPORT LPCWSTR __stdcall RmPathToAbsolute(void* rm, LPCWSTR relativePath
  * }
  * @endcode
  */
-LIBRARY_EXPORT void __stdcall RmExecute(void* skin, LPCWSTR command);
+LIBRARY_EXPORT void __stdcall RmExecute( void *skin, LPCWSTR command );
 
 
 
@@ -279,7 +279,7 @@ LIBRARY_EXPORT void __stdcall RmExecute(void* skin, LPCWSTR command);
  * }
  * @endcode
  */
-LIBRARY_EXPORT void* __stdcall RmGet(void* rm, int type);
+LIBRARY_EXPORT void *__stdcall RmGet( void *rm, int type );
 
 
 
@@ -297,7 +297,7 @@ LIBRARY_EXPORT void* __stdcall RmGet(void* rm, int type);
  * RmLog(rm, LOG_NOTICE, L"I am a 'notice' log message with a source");
  * @endcode
  */
-LIBRARY_EXPORT void __stdcall RmLog(void* rm, int level, LPCWSTR message);
+LIBRARY_EXPORT void __stdcall RmLog( void *rm, int level, LPCWSTR message );
 
 
 
@@ -317,11 +317,11 @@ LIBRARY_EXPORT void __stdcall RmLog(void* rm, int level, LPCWSTR message);
  * RmLogF(rm, LOG_NOTICE, L"I am a '%s' log message with a source", notice.c_str());
  * @endcode
  */
-LIBRARY_EXPORT void __cdecl RmLogF(void* rm, int level, LPCWSTR format, ...);
+LIBRARY_EXPORT void __cdecl RmLogF( void *rm, int level, LPCWSTR format, ... );
 
 
 /// @brief DEPRECATED: Use RmLog. Sends a message to the Rainmeter log.
-LIBRARY_EXPORT BOOL __cdecl LSLog(int level, LPCWSTR unused, LPCWSTR message);
+LIBRARY_EXPORT BOOL __cdecl LSLog( int level, LPCWSTR unused, LPCWSTR message );
 
 
 
@@ -344,9 +344,9 @@ LIBRARY_EXPORT BOOL __cdecl LSLog(int level, LPCWSTR unused, LPCWSTR message);
  * }
  * @endcode
  */
-__inline LPCWSTR RmReadPath(void* rm, LPCWSTR option, LPCWSTR defValue) {
-	LPCWSTR relativePath = RmReadString(rm, option, defValue, TRUE);
-	return RmPathToAbsolute(rm, relativePath);
+__inline LPCWSTR RmReadPath( void *rm, LPCWSTR option, LPCWSTR defValue ) {
+	LPCWSTR relativePath = RmReadString( rm, option, defValue, TRUE );
+	return RmPathToAbsolute( rm, relativePath );
 }
 
 
@@ -368,8 +368,8 @@ __inline LPCWSTR RmReadPath(void* rm, LPCWSTR option, LPCWSTR defValue) {
  * }
  * @endcode
  */
-__inline int RmReadInt(void* rm, LPCWSTR option, int defValue) {
-	return (int)RmReadFormula(rm, option, defValue);
+__inline int RmReadInt( void *rm, LPCWSTR option, int defValue ) {
+	return (int)RmReadFormula( rm, option, defValue );
 }
 
 
@@ -391,8 +391,8 @@ __inline int RmReadInt(void* rm, LPCWSTR option, int defValue) {
  * }
  * @endcode
  */
-__inline double RmReadDouble(void* rm, LPCWSTR option, double defValue) {
-	return RmReadFormula(rm, option, defValue);
+__inline double RmReadDouble( void *rm, LPCWSTR option, double defValue ) {
+	return RmReadFormula( rm, option, defValue );
 }
 
 
@@ -414,8 +414,8 @@ __inline double RmReadDouble(void* rm, LPCWSTR option, double defValue) {
  * }
  * @endcode
  */
-__inline LPCWSTR RmGetMeasureName(void* rm) {
-	return (LPCWSTR)RmGet(rm, RMG_MEASURENAME);
+__inline LPCWSTR RmGetMeasureName( void *rm ) {
+	return (LPCWSTR)RmGet( rm, RMG_MEASURENAME );
 }
 
 
@@ -437,7 +437,7 @@ __inline LPCWSTR RmGetMeasureName(void* rm) {
  * @endcode
  */
 __inline LPCWSTR RmGetSettingsFile() {
-	return (LPCWSTR)RmGet(NULL, RMG_SETTINGSFILE);
+	return (LPCWSTR)RmGet( NULL, RMG_SETTINGSFILE );
 }
 
 
@@ -459,8 +459,8 @@ __inline LPCWSTR RmGetSettingsFile() {
  * }
  * @endcode
  */
-__inline void* RmGetSkin(void* rm) {
-	return (void*)RmGet(rm, RMG_SKIN);
+__inline void *RmGetSkin( void *rm ) {
+	return (void *)RmGet( rm, RMG_SKIN );
 }
 
 
@@ -482,8 +482,8 @@ __inline void* RmGetSkin(void* rm) {
  * }
  * @endcode
  */
-__inline LPCWSTR RmGetSkinName(void* rm) {
-	return (LPCWSTR)RmGet(rm, RMG_SKINNAME);
+__inline LPCWSTR RmGetSkinName( void *rm ) {
+	return (LPCWSTR)RmGet( rm, RMG_SKINNAME );
 }
 
 
@@ -505,15 +505,15 @@ __inline LPCWSTR RmGetSkinName(void* rm) {
  * }
  * @endcode
  */
-__inline HWND RmGetSkinWindow(void* rm) {
-	return (HWND)RmGet(rm, RMG_SKINWINDOWHANDLE);
+__inline HWND RmGetSkinWindow( void *rm ) {
+	return (HWND)RmGet( rm, RMG_SKINWINDOWHANDLE );
 }
 
 
 
 /// @brief DEPRECATED: Use RmLog(rm, type, message). Sends a message to the Rainmeter log.
-__inline void RmLog(int level, LPCWSTR message) {
-	LSLog(level, NULL, message);
+__inline void RmLog( int level, LPCWSTR message ) {
+	LSLog( level, NULL, message );
 }
 
 

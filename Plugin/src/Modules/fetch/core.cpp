@@ -46,8 +46,7 @@ namespace core {
 				luaL_unref( L, LUA_REGISTRYINDEX, refCallback );
 				refCallback = LUA_NOREF;
 			}
-		}
-		else {
+		} else {
 			refSelfLua = LUA_NOREF;
 			refCallback = LUA_NOREF;
 		}
@@ -75,6 +74,7 @@ namespace core {
 	std::shared_ptr<FetchContext> ContextRegistry::getContext( int id ) {
 		std::lock_guard<std::mutex> lock( mutex_ );
 		auto it = contexts_.find( id );
+
 		if ( it != contexts_.end() )
 			return it->second;
 
@@ -92,9 +92,11 @@ namespace core {
 
 	void ContextRegistry::removeAllByRain( Rain *rain ) {
 		std::lock_guard<std::mutex> lock( mutex_ );
+
 		for ( auto it = contexts_.begin(); it != contexts_.end(); ) {
 			if ( it->second->rain == rain ) {
 				it->second->cancelled.store( true );
+				it->second->rainValid = false;
 				it = contexts_.erase( it );
 			}
 

@@ -12,3 +12,6 @@ BreakConstructorInitializers: AfterColon
 ConstructorInitializerIndentWidth: 2
 NamespaceIndentation: All
 AlignTrailingComments: false
+IndentPPDirectives: BeforeHash
+PPIndentWidth: 2
+AllowShortEnumsOnASingleLine: false

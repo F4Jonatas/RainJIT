@@ -168,7 +168,7 @@ static int depot_get( lua_State *L ) {
 
 	const int argc = lua_gettop( L );
 	const bool hasDefault = argc >= 3;
-	const bool raw = (argc >= 4) && lua_toboolean( L, 4 );
+	const bool raw = ( argc >= 4 ) && lua_toboolean( L, 4 );
 
 	auto value = D->getOptional( key );
 

@@ -645,12 +645,12 @@ When a request completes (synchronously or asynchronously), the result is return
       <h5><code>headers</code></h5>
     </td>
     <td rowspan="2">
-      <p>A key‑value table of response headers. Header names are given as they appear in the response (case‑sensitive). Example:<br><code>{ ["content-type"] = "application/json" }</code>.</p>
+      <p>Function that returns a key-value table of response headers. The header names are provided as they appear in the response. Example:<br><code>{ ["content-type"] = "application/json" }</code>.</p>
     </td>
   </tr>
   <tr>
     <td nowrap="nowrap">
-      <b>Type:</b> <code>table</code>
+      <b>Type:</b> <code>function</code>
     </td>
   </tr>
 
@@ -659,12 +659,12 @@ When a request completes (synchronously or asynchronously), the result is return
       <h5><code>cookies</code></h5>
     </td>
     <td rowspan="2">
-      <p>A key‑value table of cookies extracted from any Set-Cookie headers in the response. Each cookie name maps to its value. Example:<br><code>{ session = "abc123", user = "john" }</code>.</p>
+      <p>Function that returns a key-value table of cookies extracted from any Set-Cookie headers in the response. Each cookie name corresponds to its value. Example:<br><code>{ session = "abc123", user = "john" }</code>.</p>
     </td>
   </tr>
   <tr>
     <td nowrap="nowrap">
-      <b>Type:</b> <code>table</code>
+      <b>Type:</b> <code>function</code>
     </td>
   </tr>
 

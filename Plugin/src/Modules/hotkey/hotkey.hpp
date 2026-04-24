@@ -46,12 +46,12 @@
 #pragma once
 
 #include <Windows.h>
+#include <lua.hpp>
+#include <mutex>
+#include <queue>
+#include <string>
 #include <unordered_map>
 #include <vector>
-#include <string>
-#include <queue>
-#include <mutex>
-#include <lua.hpp>
 
 
 
@@ -73,10 +73,10 @@ namespace hotkey {
 
 	/// @brief Hotkey event structure for thread-safe buffering
 	struct HotkeyEvent {
-		int vkCode = 0;                // Virtual key code that triggered the event
-		bool isPressed = false;        // True for press, false for release
-		int configId = -1;             // Configuration ID
-		ULONGLONG timestamp = 0;       // Event timestamp in milliseconds
+		int vkCode = 0; // Virtual key code that triggered the event
+		bool isPressed = false; // True for press, false for release
+		int configId = -1; // Configuration ID
+		ULONGLONG timestamp = 0; // Event timestamp in milliseconds
 		std::vector<int> pressedCombo; // The specific combination that was pressed
 	};
 
@@ -85,12 +85,12 @@ namespace hotkey {
 	/// @brief Configuration for a single hotkey
 	struct Config {
 		std::vector<std::vector<int>> combinations; // List of key combinations (each combination is vector of VK codes)
-		EventType eventType = EVENT_BOTH;           // When to trigger callback
-		bool requireFocus = true;                   // Only trigger when skin has focus
-		int id = -1;                                // Unique identifier
-		bool enabled = true;                        // Whether this config is active
-		Rain* rain = nullptr;                       // Parent Rain instance
-		bool isAllKeys = false;                     // True if capturing all keys ("all" mode)
+		EventType eventType = EVENT_BOTH; // When to trigger callback
+		bool requireFocus = true; // Only trigger when skin has focus
+		int id = -1; // Unique identifier
+		bool enabled = true; // Whether this config is active
+		Rain *rain = nullptr; // Parent Rain instance
+		bool isAllKeys = false; // True if capturing all keys ("all" mode)
 
 
 
@@ -107,13 +107,13 @@ namespace hotkey {
 			if ( combinations.empty() )
 				return false;
 
-			for ( const auto& combo : combinations ) {
+			for ( const auto &combo : combinations ) {
 				if ( combo.empty() )
 					continue;
 
 				bool allPressed = true;
 				for ( int key : combo ) {
-					if (( GetAsyncKeyState( key ) & 0x8000 ) == 0 ) {
+					if ( ( GetAsyncKeyState( key ) & 0x8000 ) == 0 ) {
 						allPressed = false;
 						break;
 					}
@@ -135,14 +135,14 @@ namespace hotkey {
 		 *
 		 * @return Pointer to pressed combination vector, or nullptr if none
 		 */
-		const std::vector<int>* GetPressedCombination() const {
-			for ( const auto& combo : combinations ) {
+		const std::vector<int> *GetPressedCombination() const {
+			for ( const auto &combo : combinations ) {
 				if ( combo.empty() )
 					continue;
 
 				bool allPressed = true;
 				for ( int key : combo ) {
-					if (( GetAsyncKeyState( key ) & 0x8000 ) == 0 ) {
+					if ( ( GetAsyncKeyState( key ) & 0x8000 ) == 0 ) {
 						allPressed = false;
 						break;
 					}
@@ -161,8 +161,8 @@ namespace hotkey {
 	/// @brief Global context for hotkey management per Rain instance
 	struct Context {
 		std::unordered_map<int, Config> configs; // Active configurations by ID
-		Rain* rain = nullptr;                    // Parent Rain instance
-		int nextId = 1;                          // Next available configuration ID
+		Rain *rain = nullptr; // Parent Rain instance
+		int nextId = 1; // Next available configuration ID
 
 		/// @brief Thread-safe event buffer
 		std::queue<HotkeyEvent> eventBuffer;
@@ -183,7 +183,7 @@ namespace hotkey {
 	 *
 	 * @note Returns static buffer - not thread-safe for concurrent calls
 	 */
-	const char* GetVKNameFromCode( int vkCode );
+	const char *GetVKNameFromCode( int vkCode );
 
 
 
@@ -202,7 +202,7 @@ namespace hotkey {
 	 * // Returns {VK_F12, VK_MENU, VK_SHIFT}
 	 * @endcode
 	 */
-	std::vector<int> ParseCombination( const std::string& combinationStr );
+	std::vector<int> ParseCombination( const std::string &combinationStr );
 
 
 
@@ -214,7 +214,7 @@ namespace hotkey {
 	 * @param L Lua state
 	 * @param rain Pointer to Rain instance (passed as upvalue)
 	 */
-	void RegisterModule( lua_State* L, Rain* rain );
+	void RegisterModule( lua_State *L, Rain *rain );
 
 
 
@@ -226,7 +226,7 @@ namespace hotkey {
 	 * @param L Lua state
 	 * @return 1 (module table)
 	 */
-	extern "C" int luaopen_hotkey( lua_State* L );
+	extern "C" int luaopen_hotkey( lua_State *L );
 
 
 
@@ -239,7 +239,7 @@ namespace hotkey {
 	 * @param rain Pointer to Rain instance
 	 * @return Number of events processed
 	 */
-	int ProcessMessages( Rain* rain );
+	int ProcessMessages( Rain *rain );
 
 
 
@@ -251,5 +251,5 @@ namespace hotkey {
 	 *
 	 * @param rain Pointer to Rain instance to cleanup
 	 */
-	void Cleanup( Rain* rain );
-}
+	void Cleanup( Rain *rain );
+} // namespace hotkey

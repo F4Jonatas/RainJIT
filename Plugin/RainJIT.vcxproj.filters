@@ -16,7 +16,66 @@
     <ClCompile Include="src\Modules\fetch\lua.cpp">
       <Filter>Modules\fetch</Filter>
     </ClCompile>
-    <ClCompile Include="src\Modules\depot\depot.cpp" />
+    <ClCompile Include="src\Modules\mshtml\mshtml.cpp" />
+    <ClCompile Include="src\Modules\browser\browser.cpp" />
+    <ClCompile Include="src\Modules\browser\browser_core.cpp" />
+    <ClCompile Include="packages\gumbo\src\attribute.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\char_ref.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\error.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\parser.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_buffer.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_piece.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tag.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tokenizer.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\utf8.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\util.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\vector.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\depot\depot.cpp">
+      <Filter>Modules\depot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_document.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_node.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_nodelist.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_selector.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\xml\xml.cpp">
+      <Filter>Modules\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\pugixml\src\pugixml.cpp">
+      <Filter>Packages\pugixml</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -32,9 +91,6 @@
       <Filter>Includes</Filter>
     </ClInclude>
     <ClInclude Include="src\Includes\rain.hpp">
-      <Filter>Includes</Filter>
-    </ClInclude>
-    <ClInclude Include="packages\rainmeter\include\RainmeterAPI.hpp">
       <Filter>Includes</Filter>
     </ClInclude>
     <ClInclude Include="src\Includes\lua.hpp">
@@ -58,13 +114,51 @@
     <ClInclude Include="src\Modules\fetch\lua.hpp">
       <Filter>Modules\fetch</Filter>
     </ClInclude>
-    <ClInclude Include="src\Modules\depot\depot.hpp" />
+    <ClInclude Include="src\Modules\mshtml\mshtml.hpp" />
+    <ClInclude Include="src\Modules\browser\browser.hpp" />
+    <ClInclude Include="src\Includes\define.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\rainmeter\include\RainmeterAPI.hpp">
+      <Filter>Packages\Rainmeter</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\depot\depot.hpp">
+      <Filter>Modules\depot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_document.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_node.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_nodelist.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_selector.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\gumbo\src\strings.h">
+      <Filter>Packages\Gumbo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\xml\xml.hpp">
+      <Filter>Modules\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\pugixml\src\pugiconfig.hpp">
+      <Filter>Packages\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\pugixml\src\pugixml.hpp">
+      <Filter>Packages\pugixml</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RainJIT.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Modules">
@@ -84,6 +178,24 @@
     </Filter>
     <Filter Include="Includes">
       <UniqueIdentifier>{6bd68a40-59f6-4087-bd93-dc1e329b36f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages">
+      <UniqueIdentifier>{080f140f-bfd1-4b30-9a02-b59ff9a6f4ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages\Rainmeter">
+      <UniqueIdentifier>{b9359d30-8c24-4c1e-961e-d3bfe9a111dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages\Gumbo">
+      <UniqueIdentifier>{5ddb3a8e-9794-483f-8350-3eff01563f6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\html">
+      <UniqueIdentifier>{cb8057e9-8f70-4a2c-ab4b-d6e9283f83bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\xml">
+      <UniqueIdentifier>{39ae4480-6e5e-4a2d-b476-3172e7c5ebdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages\pugixml">
+      <UniqueIdentifier>{689380ae-0ebf-4ea9-a16b-227df6d0256a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

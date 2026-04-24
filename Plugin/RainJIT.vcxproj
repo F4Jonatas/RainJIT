@@ -19,20 +19,102 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="packages\gumbo\src\attribute.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\char_ref.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\error.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\parser.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_buffer.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_piece.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tag.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tokenizer.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\utf8.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\util.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\vector.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\pugixml\src\pugixml.cpp" />
+    <ClCompile Include="src\Modules\browser\browser.cpp" />
+    <ClCompile Include="src\Modules\browser\browser_core.cpp" />
     <ClCompile Include="src\Modules\depot\depot.cpp" />
     <ClCompile Include="src\Modules\fetch\core.cpp" />
     <ClCompile Include="src\Modules\fetch\http.cpp" />
     <ClCompile Include="src\Modules\fetch\lua.cpp" />
     <ClCompile Include="src\Modules\hotkey\hotkey.cpp" />
+    <ClCompile Include="src\Modules\html\html.cpp" />
+    <ClCompile Include="src\Modules\html\html_document.cpp" />
+    <ClCompile Include="src\Modules\html\html_node.cpp" />
+    <ClCompile Include="src\Modules\html\html_nodelist.cpp" />
+    <ClCompile Include="src\Modules\html\html_selector.cpp" />
+    <ClCompile Include="src\Modules\mshtml\mshtml.cpp" />
+    <ClCompile Include="src\Modules\xml\xml.cpp" />
     <ClCompile Include="src\RainJIT.cpp" />
     <ClCompile Include="src\rain.cpp" />
     <ClCompile Include="src\binding.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="packages\gumbo\src\strings.h" />
+    <ClInclude Include="packages\pugixml\src\pugiconfig.hpp" />
+    <ClInclude Include="packages\pugixml\src\pugixml.hpp" />
     <ClInclude Include="packages\rainmeter\include\RainmeterAPI.hpp" />
+    <ClInclude Include="src\Includes\define.hpp" />
+    <ClInclude Include="src\Modules\browser\browser.hpp" />
     <ClInclude Include="src\Modules\depot\depot.hpp" />
     <ClInclude Include="src\Modules\fetch\core.hpp" />
     <ClInclude Include="src\Modules\fetch\fetch.hpp" />
@@ -43,6 +125,13 @@
     <ClInclude Include="src\Includes\lua.hpp" />
     <ClInclude Include="src\Includes\rain.hpp" />
     <ClInclude Include="src\Includes\wrapper.hpp" />
+    <ClInclude Include="src\Modules\html\html.hpp" />
+    <ClInclude Include="src\Modules\html\html_document.hpp" />
+    <ClInclude Include="src\Modules\html\html_node.hpp" />
+    <ClInclude Include="src\Modules\html\html_nodelist.hpp" />
+    <ClInclude Include="src\Modules\html\html_selector.hpp" />
+    <ClInclude Include="src\Modules\mshtml\mshtml.hpp" />
+    <ClInclude Include="src\Modules\xml\xml.hpp" />
     <ClInclude Include="src\utils\filesystem.hpp" />
     <ClInclude Include="src\utils\strings.hpp" />
     <ClInclude Include="src\utils\util.hpp" />
@@ -132,7 +221,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -150,7 +239,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalModuleDependencies>
       </AdditionalModuleDependencies>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -185,7 +274,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -211,7 +300,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -231,5 +320,13 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\Microsoft.Web.WebView2.1.0.3912.50\build\native\Microsoft.Web.WebView2.targets" Condition="Exists('packages\Microsoft.Web.WebView2.1.0.3912.50\build\native\Microsoft.Web.WebView2.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>Este projeto faz referência a pacotes do NuGet que não estão presentes neste computador. Use a Restauração de Pacotes do NuGet para baixá-los.  Para obter mais informações, consulte http://go.microsoft.com/fwlink/?LinkID=322105. O arquivo ausente é {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\Microsoft.Web.WebView2.1.0.3912.50\build\native\Microsoft.Web.WebView2.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Microsoft.Web.WebView2.1.0.3912.50\build\native\Microsoft.Web.WebView2.targets'))" />
+  </Target>
 </Project>

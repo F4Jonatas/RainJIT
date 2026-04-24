@@ -32,9 +32,9 @@
 
 #pragma once
 
+#include <charconv>
 #include <codecvt>
 #include <cstdio>
-#include <charconv>
 #include <lua.hpp>
 
 #include <Includes/rain.hpp>
@@ -738,28 +738,28 @@ static int variable( lua_State *L ) {
 		}
 
 		/* Detect Rainmeter formula */
-		if (util::isRainmeterFormula( value )) {
+		if ( util::isRainmeterFormula( value ) ) {
 			/* Define temporary option */
 			std::wstring measureName = RmGetMeasureName( rain->rm );
-			rain->bang( L"!SetOption " + measureName + L" __Formula " + L"\"(" + value.c_str() + L")\"" );
+			rain->bang( L"!setOption " + measureName + L" __Formula " + L"\"(" + value.c_str() + L")\"" );
 
 			/* Evaluate formula */
-			double result = RmReadFormula(rain->rm, L"__Formula", 0.0);
+			double result = RmReadFormula( rain->rm, L"__Formula", 0.0 );
 
-			lua_pushnumber(L, result );
+			lua_pushnumber( L, result );
 			return 1;
 		}
 
 
-		std::string utf8 = wstring_to_utf8(value);
+		std::string utf8 = wstring_to_utf8( value );
 
 		/* Boolean */
-		if (_stricmp(utf8.c_str(), "true") == 0) {
-			lua_pushboolean(L, 1);
+		if ( _stricmp( utf8.c_str(), "true" ) == 0 ) {
+			lua_pushboolean( L, 1 );
 			return 1;
 		}
-		if (_stricmp(utf8.c_str(), "false") == 0) {
-			lua_pushboolean(L, 0);
+		if ( _stricmp( utf8.c_str(), "false" ) == 0 ) {
+			lua_pushboolean( L, 0 );
 			return 1;
 		}
 
@@ -767,8 +767,8 @@ static int variable( lua_State *L ) {
 		long long intVal;
 		auto [ptr, ec] = std::from_chars( utf8.data(), utf8.data() + utf8.size(), intVal );
 
-		if (ec == std::errc() && ptr == utf8.data() + utf8.size()) {
-			lua_pushinteger(L, static_cast<lua_Integer>(intVal));
+		if ( ec == std::errc() && ptr == utf8.data() + utf8.size() ) {
+			lua_pushinteger( L, static_cast<lua_Integer>( intVal ) );
 			return 1;
 		}
 
@@ -776,13 +776,13 @@ static int variable( lua_State *L ) {
 		double floatVal;
 		auto [ptrf, ecf] = std::from_chars( utf8.data(), utf8.data() + utf8.size(), floatVal );
 
-		if (ecf == std::errc() && ptrf == utf8.data() + utf8.size()) {
-			lua_pushnumber(L, floatVal);
+		if ( ecf == std::errc() && ptrf == utf8.data() + utf8.size() ) {
+			lua_pushnumber( L, floatVal );
 			return 1;
 		}
 
 		/* Fallback string */
-		lua_pushstring(L, utf8.c_str());
+		lua_pushstring( L, utf8.c_str() );
 		return 1;
 	}
 
@@ -902,6 +902,7 @@ static int option( lua_State *L ) {
 
 		raw = wdefault.c_str();
 	}
+
 
 	/* UTF-16 → UTF-8 */
 	std::string value = wstring_to_utf8( raw );

@@ -65,4 +65,4 @@ struct Rain;
  * local x = rain:getX()
  * @endcode
  */
-void exposeRainToLua(lua_State* L, Rain* rain);
+void exposeRainToLua( lua_State *L, Rain *rain );

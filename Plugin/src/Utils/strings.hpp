@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <string>
+#include <Windows.h>
 #include <codecvt>
 #include <locale>
-#include <Windows.h>
+#include <string>
 
 
 
@@ -42,16 +42,16 @@
  * std::wstring wide = utf8_to_wstring("Café");  // L"Café"
  * @endcode
  */
-inline std::wstring utf8_to_wstring(const std::string& str) {
-	if (str.empty())
+inline std::wstring utf8_to_wstring( const std::string &str ) {
+	if ( str.empty() )
 		return L"";
 
-	int wide_len = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
-	if (wide_len == 0)
+	int wide_len = MultiByteToWideChar( CP_UTF8, 0, str.c_str(), -1, nullptr, 0 );
+	if ( wide_len == 0 )
 		return L"";
 
-	std::wstring wide_str(wide_len, 0);
-	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wide_str[0], wide_len);
+	std::wstring wide_str( wide_len, 0 );
+	MultiByteToWideChar( CP_UTF8, 0, str.c_str(), -1, &wide_str[0], wide_len );
 
 	// Remove NULL terminator added by Windows API
 	wide_str.pop_back();
@@ -75,18 +75,18 @@ inline std::wstring utf8_to_wstring(const std::string& str) {
  * std::string utf8 = wstring_to_utf8(L"Café");  // "Café"
  * @endcode
  */
-inline std::string wstring_to_utf8(const std::wstring& wstr) {
-	if (wstr.empty())
+inline std::string wstring_to_utf8( const std::wstring &wstr ) {
+	if ( wstr.empty() )
 		return "";
 
-	int utf8_len = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	int utf8_len = WideCharToMultiByte( CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr );
 
-	if (utf8_len == 0)
+	if ( utf8_len == 0 )
 		return "";
 
-	std::string utf8_str(utf8_len, 0);
+	std::string utf8_str( utf8_len, 0 );
 
-	WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &utf8_str[0], utf8_len, nullptr, nullptr);
+	WideCharToMultiByte( CP_UTF8, 0, wstr.c_str(), -1, &utf8_str[0], utf8_len, nullptr, nullptr );
 
 	// Remove NULL character added by Windows API
 	utf8_str.pop_back();
@@ -141,211 +141,205 @@ inline std::string wstring_to_utf8(const std::wstring& wstr) {
  * std::string good = DetectAndConvertToUTF8(bad);  // "éça" correct
  * @endcode
  */
-inline std::string DetectAndConvertToUTF8(const std::wstring& wstr) {
+inline std::string DetectAndConvertToUTF8( const std::wstring &wstr ) {
 	if ( wstr.empty() )
 		return "";
 
 	// Case 1: Pure ASCII
 	bool isAscii = true;
-	for (wchar_t ch : wstr) {
-		if (ch >= 128) {
+	for ( wchar_t ch : wstr ) {
+		if ( ch >= 128 ) {
 			isAscii = false;
 			break;
 		}
 	}
 
-	if (isAscii) {
+	if ( isAscii ) {
 		std::string result;
-		result.reserve(wstr.length());
-		for (wchar_t ch : wstr)
-			result.push_back(static_cast<char>(ch));
+		result.reserve( wstr.length() );
+		for ( wchar_t ch : wstr )
+			result.push_back( static_cast<char>( ch ) );
 
 		return result;
 	}
 
 	// Case 2: UTF-8 incorrectly stored in wchar_t
 	bool mightBeUtf8InWide = true;
-	for (size_t i = 0; i < wstr.length(); ++i) {
-		if (wstr[i] == 0) {
+	for ( size_t i = 0; i < wstr.length(); ++i ) {
+		if ( wstr[i] == 0 ) {
 			mightBeUtf8InWide = false;
 			break;
 		}
 	}
 
-	if (mightBeUtf8InWide) {
+	if ( mightBeUtf8InWide ) {
 		std::string result;
-		result.reserve(wstr.length());
+		result.reserve( wstr.length() );
 
-		for (size_t i = 0; i < wstr.length(); ++i) {
+		for ( size_t i = 0; i < wstr.length(); ++i ) {
 			wchar_t ch = wstr[i];
-			if ((ch & 0xFF00) != 0) {
-				result.push_back(static_cast<char>((ch >> 8) & 0xFF));
-				result.push_back(static_cast<char>(ch & 0xFF));
-			}
-			else
-				result.push_back(static_cast<char>(ch & 0xFF));
+			if ( ( ch & 0xFF00 ) != 0 ) {
+				result.push_back( static_cast<char>( ( ch >> 8 ) & 0xFF ) );
+				result.push_back( static_cast<char>( ch & 0xFF ) );
+			} else
+				result.push_back( static_cast<char>( ch & 0xFF ) );
 		}
 
 		// UTF-8 validation
 		bool validUtf8 = true;
-		for (size_t i = 0; i < result.length(); ++i) {
-			unsigned char c = static_cast<unsigned char>(result[i]);
-			if (c >= 128) {
-				if ((c & 0xE0) == 0xC0) {
-					if (i + 1 >= result.length() || (result[i + 1] & 0xC0) != 0x80) {
+		for ( size_t i = 0; i < result.length(); ++i ) {
+			unsigned char c = static_cast<unsigned char>( result[i] );
+			if ( c >= 128 ) {
+				if ( ( c & 0xE0 ) == 0xC0 ) {
+					if ( i + 1 >= result.length() || ( result[i + 1] & 0xC0 ) != 0x80 ) {
 						validUtf8 = false;
 						break;
 					}
 					i++;
-				}
-				else if ((c & 0xF0) == 0xE0) {
-					if ( i + 2 >= result.length()
-					|| ( result[i + 1] & 0xC0) != 0x80
-					|| ( result[i + 2] & 0xC0) != 0x80 ) {
+				} else if ( ( c & 0xF0 ) == 0xE0 ) {
+					if ( i + 2 >= result.length() || ( result[i + 1] & 0xC0 ) != 0x80 || ( result[i + 2] & 0xC0 ) != 0x80 ) {
 						validUtf8 = false;
 						break;
 					}
 					i += 2;
 				}
 
-				else if ((c & 0xF8) == 0xF0) {
-					if ( i + 3 >= result.length()
-					|| ( result[i + 1] & 0xC0 ) != 0x80
-					|| ( result[i + 2] & 0xC0 ) != 0x80
-					|| ( result[i + 3] & 0xC0 ) != 0x80 ) {
+				else if ( ( c & 0xF8 ) == 0xF0 ) {
+					if ( i + 3 >= result.length() || ( result[i + 1] & 0xC0 ) != 0x80 || ( result[i + 2] & 0xC0 ) != 0x80 || ( result[i + 3] & 0xC0 ) != 0x80 ) {
 						validUtf8 = false;
 						break;
 					}
 					i += 3;
-				}
-				else {
+				} else {
 					validUtf8 = false;
 					break;
 				}
 			}
 		}
 
-		if (validUtf8)
+		if ( validUtf8 )
 			return result;
 	}
 
 	// Case 3: Standard UTF-16 → UTF-8 conversion
-	return wstring_to_utf8(wstr);
+	return wstring_to_utf8( wstr );
 }
 
 
 
 namespace string {
-	/**
-	* @brief Convert string to uppercase (returns new string).
-	*
-	* Uses WinAPI LCMapString for proper locale-aware uppercase conversion.
-	* Creates a copy of the input string and converts it to uppercase.
-	* Original string remains unchanged.
-	*
-	* @param str Input string to convert.
-	* @return New string converted to uppercase.
-	*
-	* @example
-	* @code{.cpp}
-	* std::wstring upper = ToUpperCase(L"Hello");  // L"HELLO"
-	* @endcode
-	*/
-	inline std::wstring ToUpperCase(const std::wstring& str) {
-		if (str.empty()) return L"";
-
-		std::wstring result = str;
-		WCHAR* srcAndDest = &result[0];
-		int strAndDestLen = static_cast<int>(result.length());
-		LCMapString(LOCALE_USER_DEFAULT, LCMAP_UPPERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen);
-		return result;
-	}
-
-
 
 	/**
-	* @brief Convert string to lowercase (returns new string).
-	*
-	* Uses WinAPI LCMapString for proper locale-aware lowercase conversion.
-	* Creates a copy of the input string and converts it to lowercase.
-	* Original string remains unchanged.
-	*
-	* @param str Input string to convert.
-	* @return New string converted to lowercase.
-	*
-	* @example
-	* @code{.cpp}
-	* std::wstring lower = ToLowerCase(L"HELLO");  // L"hello"
-	* @endcode
-	*/
-	inline std::wstring ToLowerCase(const std::wstring& str) {
-		if (str.empty())
+	 * @brief Convert string to uppercase (returns new string).
+	 *
+	 * Uses WinAPI LCMapString for proper locale-aware uppercase conversion.
+	 * Creates a copy of the input string and converts it to uppercase.
+	 * Original string remains unchanged.
+	 *
+	 * @param str Input string to convert.
+	 * @return New string converted to uppercase.
+	 *
+	 * @example
+	 * @code{.cpp}
+	 * std::wstring upper = ToUpperCase(L"Hello");  // L"HELLO"
+	 * @endcode
+	 */
+	inline std::wstring ToUpperCase( const std::wstring &str ) {
+		if ( str.empty() )
 			return L"";
 
 		std::wstring result = str;
-		WCHAR* srcAndDest = &result[0];
-		int strAndDestLen = static_cast<int>(result.length());
-		LCMapString(LOCALE_USER_DEFAULT, LCMAP_LOWERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen);
+		WCHAR *srcAndDest = &result[0];
+		int strAndDestLen = static_cast<int>( result.length() );
+		LCMapString( LOCALE_USER_DEFAULT, LCMAP_UPPERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen );
 		return result;
 	}
 
 
 
 	/**
-	* @brief Convert UTF-8 string to uppercase.
-	*
-	* Converts UTF-8 string to uppercase via UTF-16 intermediate.
-	*
-	* @param str UTF-8 input string.
-	* @return Uppercase UTF-8 string.
-	*
-	* @example
-	* @code{.cpp}
-	* std::string upper = ToUpperCase("café");  // "CAFÉ"
-	* @endcode
-	*/
-	inline std::string ToUpperCase(const std::string& str) {
-		if (str.empty())
-			return "";
+	 * @brief Convert string to lowercase (returns new string).
+	 *
+	 * Uses WinAPI LCMapString for proper locale-aware lowercase conversion.
+	 * Creates a copy of the input string and converts it to lowercase.
+	 * Original string remains unchanged.
+	 *
+	 * @param str Input string to convert.
+	 * @return New string converted to lowercase.
+	 *
+	 * @example
+	 * @code{.cpp}
+	 * std::wstring lower = ToLowerCase(L"HELLO");  // L"hello"
+	 * @endcode
+	 */
+	inline std::wstring ToLowerCase( const std::wstring &str ) {
+		if ( str.empty() )
+			return L"";
 
-		std::wstring wide = utf8_to_wstring(str);
-		if (wide.empty())
-			return "";
-
-		std::wstring result = wide;
-		WCHAR* srcAndDest = &result[0];
-		int strAndDestLen = static_cast<int>(result.length());
-		LCMapString(LOCALE_USER_DEFAULT, LCMAP_UPPERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen);
-		return wstring_to_utf8(result);
+		std::wstring result = str;
+		WCHAR *srcAndDest = &result[0];
+		int strAndDestLen = static_cast<int>( result.length() );
+		LCMapString( LOCALE_USER_DEFAULT, LCMAP_LOWERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen );
+		return result;
 	}
 
 
 
 	/**
-	* @brief Convert UTF-8 string to lowercase.
-	*
-	* Converts UTF-8 string to lowercase via UTF-16 intermediate.
-	*
-	* @param str UTF-8 input string.
-	* @return Lowercase UTF-8 string.
-	*
-	* @example
-	* @code{.cpp}
-	* std::string lower = ToLowerCase("CAFÉ");  // "café"
-	* @endcode
-	*/
-	inline std::string ToLowerCase(const std::string& str) {
-		if (str.empty())
+	 * @brief Convert UTF-8 string to uppercase.
+	 *
+	 * Converts UTF-8 string to uppercase via UTF-16 intermediate.
+	 *
+	 * @param str UTF-8 input string.
+	 * @return Uppercase UTF-8 string.
+	 *
+	 * @example
+	 * @code{.cpp}
+	 * std::string upper = ToUpperCase("café");  // "CAFÉ"
+	 * @endcode
+	 */
+	inline std::string ToUpperCase( const std::string &str ) {
+		if ( str.empty() )
 			return "";
 
-		std::wstring wide = utf8_to_wstring(str);
-		if (wide.empty())
+		std::wstring wide = utf8_to_wstring( str );
+		if ( wide.empty() )
 			return "";
 
 		std::wstring result = wide;
-		WCHAR* srcAndDest = &result[0];
-		int strAndDestLen = static_cast<int>(result.length());
-		LCMapString(LOCALE_USER_DEFAULT, LCMAP_LOWERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen);
-		return wstring_to_utf8(result);
+		WCHAR *srcAndDest = &result[0];
+		int strAndDestLen = static_cast<int>( result.length() );
+		LCMapString( LOCALE_USER_DEFAULT, LCMAP_UPPERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen );
+		return wstring_to_utf8( result );
 	}
-}
+
+
+
+	/**
+	 * @brief Convert UTF-8 string to lowercase.
+	 *
+	 * Converts UTF-8 string to lowercase via UTF-16 intermediate.
+	 *
+	 * @param str UTF-8 input string.
+	 * @return Lowercase UTF-8 string.
+	 *
+	 * @example
+	 * @code{.cpp}
+	 * std::string lower = ToLowerCase("CAFÉ");  // "café"
+	 * @endcode
+	 */
+	inline std::string ToLowerCase( const std::string &str ) {
+		if ( str.empty() )
+			return "";
+
+		std::wstring wide = utf8_to_wstring( str );
+		if ( wide.empty() )
+			return "";
+
+		std::wstring result = wide;
+		WCHAR *srcAndDest = &result[0];
+		int strAndDestLen = static_cast<int>( result.length() );
+		LCMapString( LOCALE_USER_DEFAULT, LCMAP_LOWERCASE, srcAndDest, strAndDestLen, srcAndDest, strAndDestLen );
+		return wstring_to_utf8( result );
+	}
+} // namespace string

@@ -66,6 +66,8 @@
 #include <Includes/wrapper.hpp>
 #include <Modules/fetch/fetch.hpp>
 #include <Modules/hotkey/hotkey.hpp>
+#include <Modules/mshtml/mshtml.hpp>
+//#include <Modules/browser/browser.hpp>
 #include <Utils/filesystem.hpp>
 
 
@@ -125,20 +127,24 @@ PLUGIN_EXPORT void Initialize( void **data, void *rm ) {
 	std::string resPath = wstring_to_utf8( rain->var( L"@" ) );
 
 	// clang-format off
-	std::string luaPath =
-		vaultPath + "lua\\?.lua;" +
-		vaultPath + "lua\\?\\init.lua;" +
-		resPath   + "lua\\?.lua;" +
-		resPath   + "lua\\?\\init.lua;" +
-		currPath  + "lua\\?.lua;" +
-		currPath  + "lua\\?\\init.lua;" +
-		currPath  + "?.lua;" +
-		currPath  + "?\\init.lua;" ;
+	std::string luaPath = std::format(
+		"{}lua\\?.lua;{}lua\\?\\init.lua;{}lua\\?.lua;{}lua\\?\\init.lua;{}lua\\?.lua;{}lua\\?\\init.lua;{}?.lua;{}?\\init.lua;",
+		vaultPath,
+		vaultPath,
+		resPath,
+		resPath,
+		currPath,
+		currPath,
+		currPath,
+		currPath
+	);
 
-	std::string luaCPath =
-		vaultPath + "lua\\bin\\?.dll;" +
-		resPath   + "lua\\bin\\?.dll;" +
-		currPath  + "lua\\bin\\?.dll;" ;
+	std::string luaCPath = std::format(
+		"{}lua\\bin\\?.dll;{}lua\\bin\\?.dll;{}lua\\bin\\?.dll;",
+		vaultPath,
+		resPath,
+		currPath
+	);
 	// clang-format on
 
 	Lua::addPackage( rain, "path", luaPath.c_str() );
@@ -289,8 +295,12 @@ PLUGIN_EXPORT double Update( void *data ) {
 	// Protection against absurd values (e.g., frozen skin)
 	deltaTime = std::clamp( deltaTime, 0.0, 1.0 );
 
+	mshtml::ProcessMessages( rain );
+	//browser::Pump(rain);
+
 	// Execute rain:update( au, dt ) if it exists and after init is complete
 	rain->onUpdate( deltaTime );
+
 
 
 	// FPS
@@ -462,6 +472,8 @@ PLUGIN_EXPORT void Finalize( void *data ) {
 	fetch::CleanupContexts( rain );
 
 	hotkey::Cleanup( rain );
+	mshtml::Cleanup( rain );
+	//browser::Cleanup(rain);
 
 	if ( rain->L ) {
 		lua_close( rain->L );

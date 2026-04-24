@@ -31,7 +31,8 @@ Rain::Rain() :
 	hwnd( nullptr ),
 	ready( false ),
 	initCalled( false ),
-	timeInitialized( false ) {}
+	timeInitialized( false ) {
+}
 
 
 
@@ -80,7 +81,7 @@ void Rain::onUpdate( double deltaTime ) {
 
 		if ( lua_isfunction( L, -1 ) ) {
 			lua_pushvalue( L, -2 );
-			lua_pushinteger( L, static_cast<lua_Integer>( accumulatedUpdates ));
+			lua_pushinteger( L, static_cast<lua_Integer>( accumulatedUpdates ) );
 			lua_pushnumber( L, deltaTime );
 
 			if ( lua_pcall( L, 3, 0, 0 ) != LUA_OK ) {

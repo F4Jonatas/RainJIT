@@ -7,9 +7,8 @@ build
 
 src/Modules/interval
 src/Modules/github
+src/Modules/browser
 
-packages/Lua-cURLv3-master
-packages/luacurl-1.2.1
-packages/luasec
 packages/luasocket
 packages/luajit-
+packages/Microsoft.Web.WebView2.*

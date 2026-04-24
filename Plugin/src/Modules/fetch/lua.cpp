@@ -48,9 +48,9 @@ namespace lua {
 					if ( lua_pcall( ctx->rain->L, 1, 1, 0 ) != LUA_OK ) {
 						const char *err = lua_tostring( ctx->rain->L, -1 );
 						if ( err )
-							#ifdef __RAINMETERAPI_H__
-								RmLog( ctx->rain->rm, LOG_ERROR, utf8_to_wstring( err ).c_str() );
-							#endif
+#ifdef __RAINMETERAPI_H__
+							RmLog( ctx->rain->rm, LOG_ERROR, utf8_to_wstring( err ).c_str() );
+#endif
 
 						lua_pop( ctx->rain->L, 1 );
 					}
@@ -78,12 +78,12 @@ namespace lua {
 			wc.hInstance = GetModuleHandle( nullptr );
 			wc.lpszClassName = L"RainJIT_FetchNotifyWindow";
 
-			if ( ! RegisterClassEx( &wc )) {
+			if ( !RegisterClassEx( &wc ) ) {
 				DWORD err = GetLastError();
 				if ( err != ERROR_CLASS_ALREADY_EXISTS ) {
-					#ifdef __RAINMETERAPI_H__
-						RmLog(rain->rm, LOG_ERROR, L"Failed to register fetch notify window class");
-					#endif
+#ifdef __RAINMETERAPI_H__
+					RmLog( rain->rm, LOG_ERROR, L"Failed to register fetch notify window class" );
+#endif
 
 					return;
 				}
@@ -112,9 +112,9 @@ namespace lua {
 		}
 
 		else
-			#ifdef __RAINMETERAPI_H__
-				RmLog( rain->rm, LOG_ERROR, L"Failed to create fetch notify window" );
-			#endif
+#ifdef __RAINMETERAPI_H__
+			RmLog( rain->rm, LOG_ERROR, L"Failed to create fetch notify window" );
+#endif
 	}
 
 
@@ -165,11 +165,39 @@ namespace lua {
 
 
 
-	void PushResponseTable( lua_State *L, const core::FetchResponse &response ) {
+	// Função auxiliar (fora de PushResponseTable) para criar tabela case‑insensitive
+	// Função auxiliar para criar tabela case‑insensitive (mesma de antes)
+	static void createCaseInsensitiveTable( lua_State *L, const std::map<std::string, std::string> &map ) {
 		lua_newtable( L );
+		for ( const auto &pair : map ) {
+			std::string lower_key;
+			for ( char c : pair.first )
+				lower_key += tolower( c );
+			lua_pushstring( L, lower_key.c_str() );
+			lua_pushstring( L, pair.second.c_str() );
+			lua_rawset( L, -3 );
+		}
+		lua_newtable( L );
+		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+			const char *key = lua_tostring( L2, 2 );
+			if ( !key )
+				return 0;
+			std::string lower;
+			for ( const char *p = key; *p; ++p )
+				lower += tolower( *p );
+			lua_pushstring( L2, lower.c_str() );
+			lua_rawget( L2, 1 );
+			return 1;
+		} );
+		lua_setfield( L, -2, "__index" );
+		lua_setmetatable( L, -2 );
+	}
 
-		bool ok = ( response.status >= 200 && response.status < 300 );
-		lua_pushboolean( L, ok ? 1 : 0 );
+	void PushResponseTable( lua_State *L, const core::FetchResponse &response ) {
+		lua_newtable( L ); // tabela resposta
+
+		// campos simples
+		lua_pushboolean( L, ( response.status >= 200 && response.status < 300 ) );
 		lua_setfield( L, -2, "ok" );
 
 		lua_pushinteger( L, response.status );
@@ -187,31 +215,62 @@ namespace lua {
 		lua_pushstring( L, response.error.c_str() );
 		lua_setfield( L, -2, "error" );
 
-		// Headers table
-		lua_newtable( L );
-		for ( const auto &header : response.headers ) {
-			lua_pushstring( L, header.first.c_str() );
-			lua_pushstring( L, header.second.c_str() );
-			lua_settable( L, -3 );
-		}
-		lua_setfield( L, -2, "headers" );
+		// Guarda os dados originais (cópia) para uso nos métodos
+		auto *headers_copy = new std::map<std::string, std::string>( response.headers );
+		auto *cookies_copy = new std::map<std::string, std::string>( response.cookies );
+		lua_pushlightuserdata( L, headers_copy );
+		lua_setfield( L, -2, "__headers_ptr" );
+		lua_pushlightuserdata( L, cookies_copy );
+		lua_setfield( L, -2, "__cookies_ptr" );
 
-		// Cookies table
-		lua_newtable( L );
-		for ( const auto &cookie : response.cookies ) {
-			lua_pushstring( L, cookie.first.c_str() );
-			lua_pushstring( L, cookie.second.c_str() );
-			lua_settable( L, -3 );
-		}
-		lua_setfield( L, -2, "cookies" );
-
-		// Metatable with save method
+		// Metatable com métodos
 		lua_newtable( L );
 		lua_pushvalue( L, -1 );
 		lua_setfield( L, -2, "__index" );
 
+		// Método :headers()
+		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+			lua_getfield( L2, 1, "__headers_ptr" );
+			auto *map = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
+			if ( !map ) {
+				lua_pushnil( L2 );
+				return 1;
+			}
+			createCaseInsensitiveTable( L2, *map );
+			return 1;
+		} );
+		lua_setfield( L, -2, "headers" );
+
+		// Método :cookies()
+		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+			lua_getfield( L2, 1, "__cookies_ptr" );
+			auto *map = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
+			if ( !map ) {
+				lua_pushnil( L2 );
+				return 1;
+			}
+			createCaseInsensitiveTable( L2, *map );
+			return 1;
+		} );
+		lua_setfield( L, -2, "cookies" );
+
+		// Método :save()
 		lua_pushcfunction( L, response_save );
 		lua_setfield( L, -2, "save" );
+
+		// __gc para liberar os maps copiados
+		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+			lua_getfield( L2, 1, "__headers_ptr" );
+			auto *h = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
+			if ( h )
+				delete h;
+			lua_getfield( L2, 1, "__cookies_ptr" );
+			auto *c = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
+			if ( c )
+				delete c;
+			return 0;
+		} );
+		lua_setfield( L, -2, "__gc" );
 
 		lua_setmetatable( L, -2 );
 	}
@@ -416,10 +475,11 @@ namespace lua {
 					const char *err = lua_tostring( L, -1 );
 					if ( err && ctx->rain ) {
 						std::wstring werr = L"[RainJIT:Fetch] Callback error: " + utf8_to_wstring( err );
-
+						// clang-format off
 						#ifdef __RAINMETERAPI_H__
 							RmLog( ctx->rain->rm, LOG_WARNING, werr.c_str() );
 						#endif
+						// clang-format on
 					}
 					lua_pop( L, 1 );
 				}
@@ -528,6 +588,8 @@ namespace lua {
 		auto ctx = std::make_shared<core::FetchContext>( rain );
 		ctx->request.url = utf8_to_wstring( url );
 		ctx->request.method = L"GET";
+		ctx->hNotifyWindow = GetNotifyWindow( rain );
+		ctx->rainValid = true;
 
 
 		if ( lua_istable( L, 2 ) ) {

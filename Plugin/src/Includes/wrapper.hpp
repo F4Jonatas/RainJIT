@@ -15,28 +15,28 @@
 
 namespace luaWrapper {
 
-/**
- * @brief Console and basic utilities Lua script.
- *
- * Overrides global Lua `print` function to redirect output
- * to Rainmeter log using `!Log` bang.
- *
- * @details
- * The overridden print function:
- * - Converts all arguments to strings
- * - Joins them with tab characters
- * - Sends to Rainmeter log at Debug level
- *
- * @example
- * @code{.lua}
- * print("Hello", "RainJIT", 123, {x = 1})
- * -- Output in Rainmeter log (Debug level):
- * -- Hello RainJIT 123 table: 0x...
- * @endcode
- *
- * @note The original Lua print function is replaced.
- */
-static const char* main = R"lua(
+	/**
+	 * @brief Console and basic utilities Lua script.
+	 *
+	 * Overrides global Lua `print` function to redirect output
+	 * to Rainmeter log using `!Log` bang.
+	 *
+	 * @details
+	 * The overridden print function:
+	 * - Converts all arguments to strings
+	 * - Joins them with tab characters
+	 * - Sends to Rainmeter log at Debug level
+	 *
+	 * @example
+	 * @code{.lua}
+	 * print("Hello", "RainJIT", 123, {x = 1})
+	 * -- Output in Rainmeter log (Debug level):
+	 * -- Hello RainJIT 123 table: 0x...
+	 * @endcode
+	 *
+	 * @note The original Lua print function is replaced.
+	 */
+	static const char *main = R"lua(
 	-- Override global print() to log to Rainmeter
 	function print( ... )
 		local messages = {}

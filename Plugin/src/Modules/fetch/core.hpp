@@ -115,6 +115,9 @@ namespace core {
 		int refSelfLua = LUA_NOREF;
 		int refCallback = LUA_NOREF;
 
+		HWND hNotifyWindow = nullptr;
+		bool rainValid = true;
+
 		FetchContext( Rain *r );
 		~FetchContext();
 
@@ -127,8 +130,7 @@ namespace core {
 	 * @class ContextRegistry
 	 * @brief Global thread-safe registry for fetch contexts
 	 */
-	class ContextRegistry {
-	public:
+	struct ContextRegistry {
 		static ContextRegistry &instance();
 
 		// No copying

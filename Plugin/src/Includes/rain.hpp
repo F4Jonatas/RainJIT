@@ -43,12 +43,12 @@
 #define NOMINMAX
 #include <Windows.h>
 
+#include <atomic>
 #include <ctime>
 #include <string>
-#include <atomic>
 
-#include <lua.hpp>
 #include <RainmeterAPI.hpp>
+#include <lua.hpp>
 
 
 
@@ -63,13 +63,13 @@
  */
 struct Rain {
 	/// @brief Pointer to Rainmeter skin context (used for bangs execution).
-	void* skin;
+	void *skin;
 
 	/// @brief Pointer to Rainmeter API context.
-	void* rm;
+	void *rm;
 
 	/// @brief Lua state associated with this Measure.
-	lua_State* L;
+	lua_State *L;
 
 	/// @brief Handle to the skin window.
 	/// @details Valid only after the skin has been created.
@@ -89,14 +89,14 @@ struct Rain {
 
 	/// @brief Guards against scheduling init multiple times.
 	/// @details Used to ensure deferred initialization is only queued once.
-	std::atomic<bool> initScheduled{false};
+	std::atomic<bool> initScheduled{ false };
 
 	/// @brief Last high-resolution tick count.
 	/// @details Used for delta-time calculation.
-	LARGE_INTEGER lastTick{0};
+	LARGE_INTEGER lastTick{ 0 };
 
 	/// @brief Performance counter frequency.
-	LARGE_INTEGER freq{0};
+	LARGE_INTEGER freq{ 0 };
 
 	/// @brief Indicates whether time tracking has been initialized.
 	bool timeInitialized;
@@ -165,7 +165,7 @@ struct Rain {
 	 *
 	 * @note Errors are logged to the Rainmeter log.
 	 */
-	void onUpdate(double deltaTime);
+	void onUpdate( double deltaTime );
 
 
 
@@ -191,7 +191,7 @@ struct Rain {
 	 *
 	 * @param cmd Bang command to execute.
 	 */
-	void bang(const std::wstring& cmd);
+	void bang( const std::wstring &cmd );
 
 
 
@@ -206,7 +206,7 @@ struct Rain {
 	 * @param name Variable name (with or without # delimiters).
 	 * @return Resolved value or empty string on failure.
 	 */
-	std::wstring var(const std::wstring& name);
+	std::wstring var( const std::wstring &name );
 
 
 
@@ -219,7 +219,7 @@ struct Rain {
 	 * @param value Value to assign.
 	 * @param config Optional config file for persistence.
 	 */
-	void setVar(const std::wstring& name, const std::wstring& value, const std::wstring& config = L"");
+	void setVar( const std::wstring &name, const std::wstring &value, const std::wstring &config = L"" );
 
 
 

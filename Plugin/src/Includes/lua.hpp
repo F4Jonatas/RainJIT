@@ -9,13 +9,17 @@
 
 #pragma once
 
-#include <RainmeterAPI.hpp>
 #include <Includes/binding.hpp>
 #include <Includes/rain.hpp>
+#include <RainmeterAPI.hpp>
 
 #include "modules/depot/depot.hpp"
 #include "modules/fetch/fetch.hpp"
 #include "modules/hotkey/hotkey.hpp"
+#include "modules/mshtml/mshtml.hpp"
+#include "modules/html/html.hpp"
+#include "modules/xml/xml.hpp"
+//#include "modules/browser/browser.hpp"
 // #include "modules/interval/interval.hpp"
 
 
@@ -55,13 +59,12 @@ namespace Lua {
 	 * @see lua_pcall
 	 * @see luaL_traceback
 	 */
-	static inline int LuaTraceback(lua_State* L) {
-		const char* msg = lua_tostring(L, 1);
-		if (msg) {
-			luaL_traceback(L, L, msg, 1);
-		}
-		else {
-			lua_pushliteral(L, "Lua Error (no message)");
+	static inline int LuaTraceback( lua_State *L ) {
+		const char *msg = lua_tostring( L, 1 );
+		if ( msg ) {
+			luaL_traceback( L, L, msg, 1 );
+		} else {
+			lua_pushliteral( L, "Lua Error (no message)" );
 		}
 		return 1;
 	}
@@ -77,29 +80,29 @@ namespace Lua {
 	 * @param rain Rain context.
 	 * @param luaPath Optional Lua path entry (e.g. "C:\\MyPlugin\\lua\\?.lua")
 	 */
-	static inline void addPackage( Rain* rain, const char* property, const char* luaPath ) {
-		lua_getglobal(rain->L, "package");
-		if (!lua_istable(rain->L, -1)) {
-			lua_pop(rain->L, 1);
+	static inline void addPackage( Rain *rain, const char *property, const char *luaPath ) {
+		lua_getglobal( rain->L, "package" );
+		if ( !lua_istable( rain->L, -1 ) ) {
+			lua_pop( rain->L, 1 );
 			return;
 		}
 
-		if (luaPath && *luaPath) {
-			lua_getfield(rain->L, -1, property );
-			const char* current = lua_tostring(rain->L, -1);
+		if ( luaPath && *luaPath ) {
+			lua_getfield( rain->L, -1, property );
+			const char *current = lua_tostring( rain->L, -1 );
 
 			std::string newPath = current ? current : "";
-			if (!newPath.empty() && newPath.back() != ';')
+			if ( !newPath.empty() && newPath.back() != ';' )
 				newPath += ';';
 
 			newPath += luaPath;
 
-			lua_pop(rain->L, 1);
-			lua_pushlstring(rain->L, newPath.c_str(), newPath.length());
-			lua_setfield(rain->L, -2, property );
+			lua_pop( rain->L, 1 );
+			lua_pushlstring( rain->L, newPath.c_str(), newPath.length() );
+			lua_setfield( rain->L, -2, property );
 		}
 
-		lua_pop(rain->L, 1);
+		lua_pop( rain->L, 1 );
 	}
 
 
@@ -107,12 +110,16 @@ namespace Lua {
 	/**
 	 * Register embedded Lua modules (e.g., meter) and expose global `rain` object to Lua
 	 */
-	static inline void registerModules(Rain* rain) {
-		hotkey::RegisterModule(rain->L, rain);
-		RegisterDepotModule(rain->L, rain);
-		fetch::RegisterModule(rain->L, rain);
+	static inline void registerModules( Rain *rain ) {
+		hotkey::RegisterModule( rain->L, rain );
+		RegisterDepotModule( rain->L, rain );
+		fetch::RegisterModule( rain->L, rain );
+		mshtml::RegisterModule( rain->L, rain );
+		html::RegisterModule( rain->L );
+		xml::RegisterModule( rain->L, rain );
+		//browser::RegisterModule( rain->L, rain );
 		// interval::RegisterModule(rain->L, rain);
-		exposeRainToLua(rain->L, rain);
+		exposeRainToLua( rain->L, rain );
 	}
 
 
@@ -129,19 +136,18 @@ namespace Lua {
 	 *
 	 * @note Path is converted from UTF-16 to UTF-8 internally.
 	 */
-	static inline bool importFile(Rain* rain, const std::wstring& filePath) {
-		std::string utf8 = wstring_to_utf8(filePath);
+	static inline bool importFile( Rain *rain, const std::wstring &filePath ) {
+		std::string utf8 = wstring_to_utf8( filePath );
 
-		lua_pushcfunction(rain->L, LuaTraceback);
-		int errfunc = lua_gettop(rain->L);
+		lua_pushcfunction( rain->L, LuaTraceback );
+		int errfunc = lua_gettop( rain->L );
 
-		if (luaL_loadfile(rain->L, utf8.c_str()) != LUA_OK
-		|| lua_pcall(rain->L, 0, LUA_MULTRET, errfunc) != LUA_OK) {
-			lua_remove(rain->L, errfunc);
+		if ( luaL_loadfile( rain->L, utf8.c_str() ) != LUA_OK || lua_pcall( rain->L, 0, LUA_MULTRET, errfunc ) != LUA_OK ) {
+			lua_remove( rain->L, errfunc );
 			return false;
 		}
 
-		lua_remove(rain->L, errfunc);
+		lua_remove( rain->L, errfunc );
 		return true;
 	}
 
@@ -160,25 +166,25 @@ namespace Lua {
 	 *
 	 * @post On error, error message remains on Lua stack top.
 	 */
-	static inline bool importScript(Rain* rain, const char* script, const char* embedName ) {
+	static inline bool importScript( Rain *rain, const char *script, const char *embedName ) {
 		// Push error handler
-		lua_pushcfunction(rain->L, LuaTraceback);
-		int errfunc = lua_gettop(rain->L);
+		lua_pushcfunction( rain->L, LuaTraceback );
+		int errfunc = lua_gettop( rain->L );
 
 		// Load chunk
-		if (luaL_loadbuffer(rain->L, script, strlen(script), embedName) != LUA_OK) {
-			lua_remove(rain->L, errfunc);  // remove error handler
+		if ( luaL_loadbuffer( rain->L, script, strlen( script ), embedName ) != LUA_OK ) {
+			lua_remove( rain->L, errfunc ); // remove error handler
 			return false;
 		}
 
 		// Call chunk using error handler
-		if (lua_pcall(rain->L, 0, LUA_MULTRET, errfunc) != LUA_OK) {
-			lua_remove(rain->L, errfunc);  // remove error handler
+		if ( lua_pcall( rain->L, 0, LUA_MULTRET, errfunc ) != LUA_OK ) {
+			lua_remove( rain->L, errfunc ); // remove error handler
 			return false;
 		}
 
 		// Remove error handler after success
-		lua_remove(rain->L, errfunc);
+		lua_remove( rain->L, errfunc );
 		return true;
 	}
 
@@ -195,19 +201,19 @@ namespace Lua {
 	 *
 	 * @post Error message is popped from Lua stack.
 	 */
-	static inline void log(Rain* rain, const wchar_t* prefix, int level = LOG_ERROR) {
-		const char* err = lua_tostring(rain->L, -1);
+	static inline void log( Rain *rain, const wchar_t *prefix, int level = LOG_ERROR ) {
+		const char *err = lua_tostring( rain->L, -1 );
 		std::wstring msg = prefix ? prefix : L"";
 
-		if (err && *err) {
-			std::wstring werr = utf8_to_wstring(err);
-			if (!werr.empty()) {
+		if ( err && *err ) {
+			std::wstring werr = utf8_to_wstring( err );
+			if ( !werr.empty() ) {
 				msg += werr;
 			}
 		}
 
-		RmLog(rain->rm, level, msg.c_str());
-		lua_pop(rain->L, 1);
+		RmLog( rain->rm, level, msg.c_str() );
+		lua_pop( rain->L, 1 );
 	}
 
 
@@ -232,24 +238,25 @@ namespace Lua {
 	 * 	script.lua:15: in function 'foo'
 	 * 	script.lua:10: in main chunk
 	 */
-	static inline void trace(Rain* rain, const wchar_t* prefix, int level = LOG_ERROR, bool includeTrace = true) {
+	static inline void trace( Rain *rain, const wchar_t *prefix, int level = LOG_ERROR, bool includeTrace = true ) {
 		std::wstring msg;
 
-		if (prefix && *prefix) {
+		if ( prefix && *prefix ) {
 			msg += prefix;
-			if (msg.back() != L' ') msg += L" ";
+			if ( msg.back() != L' ' )
+				msg += L" ";
 		}
 
-		const char* err = lua_tostring(rain->L, -1);
-		if (err && *err)
-			msg += utf8_to_wstring(err);
+		const char *err = lua_tostring( rain->L, -1 );
+		if ( err && *err )
+			msg += utf8_to_wstring( err );
 
 		else
 			msg += L"Lua Error: (no message)";
 
 
-		RmLog(rain->rm, level, msg.c_str());
-		lua_pop(rain->L, 1);
+		RmLog( rain->rm, level, msg.c_str() );
+		lua_pop( rain->L, 1 );
 	}
 
 
@@ -325,37 +332,41 @@ namespace Lua {
 	 *
 	 * @see importScript, importFile, Lua::log
 	 */
-	static inline LPCWSTR eval( Rain* rain, const WCHAR* script ) {
+	static inline LPCWSTR eval( Rain *rain, const WCHAR *script ) {
 		std::string luaCodeUTF8;
 		try {
 			luaCodeUTF8 = DetectAndConvertToUTF8( script );
-		} catch (...) {
+		} catch ( ... ) {
 			Lua::log( rain, L"eval: Failed to convert Lua code to UTF-8" );
 			return L"";
 		}
 
-		if (luaCodeUTF8.empty())
+		if ( luaCodeUTF8.empty() )
 			return L"";
 
 
 		// Store current stack size to restore later
-		int stackTop = lua_gettop(rain->L);
+		int stackTop = lua_gettop( rain->L );
 
 		// RAII helper para garantir limpeza da stack
 		struct StackGuard {
-			lua_State* L;
+			lua_State *L;
 			int originalTop;
-			StackGuard(lua_State* l, int top) : L(l), originalTop(top) {}
-			~StackGuard() {
-				if (L) lua_settop(L, originalTop);
+			StackGuard( lua_State *l, int top ) :
+				L( l ),
+				originalTop( top ) {
 			}
-		} guard(rain->L, stackTop);
+			~StackGuard() {
+				if ( L )
+					lua_settop( L, originalTop );
+			}
+		} guard( rain->L, stackTop );
 
 		// Prepare the Lua code - wrap in return statement if not present
 		std::string wrappedCode;
-		bool hasReturn = (luaCodeUTF8.find("return ") != std::string::npos);
+		bool hasReturn = ( luaCodeUTF8.find( "return " ) != std::string::npos );
 
-		if (hasReturn) {
+		if ( hasReturn ) {
 			wrappedCode = luaCodeUTF8;
 		} else {
 			// Wrap in return statement to capture the result
@@ -363,15 +374,15 @@ namespace Lua {
 		}
 
 		// Load and execute the Lua code
-		int loadResult = luaL_loadbuffer(rain->L, wrappedCode.c_str(), wrappedCode.length(), "eval");
-		if (loadResult != LUA_OK) {
+		int loadResult = luaL_loadbuffer( rain->L, wrappedCode.c_str(), wrappedCode.length(), "eval" );
+		if ( loadResult != LUA_OK ) {
 			// Log Lua compilation error
-			const char* err = lua_tostring(rain->L, -1);
-			if (err && *err) {
+			const char *err = lua_tostring( rain->L, -1 );
+			if ( err && *err ) {
 				std::wstring werr;
 				try {
-					werr = L"eval: Lua compile error: " + utf8_to_wstring(err);
-				} catch (...) {
+					werr = L"eval: Lua compile error: " + utf8_to_wstring( err );
+				} catch ( ... ) {
 					werr = L"eval: Lua compile error (failed to convert error message)";
 				}
 				Lua::log( rain, werr.c_str() );
@@ -380,102 +391,104 @@ namespace Lua {
 		}
 
 		// Execute the loaded chunk
-		int callResult = lua_pcall(rain->L, 0, LUA_MULTRET, 0);
-		if (callResult != LUA_OK) {
+		int callResult = lua_pcall( rain->L, 0, LUA_MULTRET, 0 );
+		if ( callResult != LUA_OK ) {
 			// Log Lua runtime error
-			const char* err = lua_tostring(rain->L, -1);
-			if (err && *err) {
+			const char *err = lua_tostring( rain->L, -1 );
+			if ( err && *err ) {
 				std::wstring werr;
 				try {
-					werr = L"eval: Lua runtime error: " + utf8_to_wstring(err);
-				} catch (...) {
+					werr = L"eval: Lua runtime error: " + utf8_to_wstring( err );
+				} catch ( ... ) {
 					werr = L"eval: Lua runtime error (failed to convert error message)";
 				}
-				Lua::log(rain, werr.c_str() );
+				Lua::log( rain, werr.c_str() );
 			}
 			return L"";
 		}
 
 		// Get the number of returned values
-		int numReturns = lua_gettop(rain->L) - stackTop;
+		int numReturns = lua_gettop( rain->L ) - stackTop;
 
 		// Convert first return value to string
 		std::wstring result;
 
-		if (numReturns > 0) {
+		if ( numReturns > 0 ) {
 			try {
 				// Get value at top of stack (last return value)
-				int valueIndex = lua_gettop(rain->L);
+				int valueIndex = lua_gettop( rain->L );
 
 				// Get type and convert safely
-				int type = lua_type(rain->L, valueIndex);
+				int type = lua_type( rain->L, valueIndex );
 
-				switch (type) {
-					case LUA_TSTRING: {
-						size_t len;
-						const char* str = lua_tolstring(rain->L, valueIndex, &len);
-						if (str && len > 0) {
-							// Limit size to prevent huge strings
-							const size_t MAX_RESULT_SIZE = 4095;
-							if (len > MAX_RESULT_SIZE) {
-								result = L"[string too long]";
-							} else {
-								result = utf8_to_wstring(std::string(str, len));
-							}
-						}
-						break;
-					}
-					case LUA_TBOOLEAN:
-						result = lua_toboolean(rain->L, valueIndex) ? L"true" : L"false";
-						break;
-					case LUA_TNUMBER: {
-						lua_Number num = lua_tonumber(rain->L, valueIndex);
-						// Check for NaN/Inf
-						if (std::isnan(num)) {
-							result = L"nan";
-						} else if (std::isinf(num)) {
-							result = (num > 0) ? L"inf" : L"-inf";
+				switch ( type ) {
+				case LUA_TSTRING: {
+					size_t len;
+					const char *str = lua_tolstring( rain->L, valueIndex, &len );
+					if ( str && len > 0 ) {
+						// Limit size to prevent huge strings
+						const size_t MAX_RESULT_SIZE = 4095;
+						if ( len > MAX_RESULT_SIZE ) {
+							result = L"[string too long]";
 						} else {
-							result = std::to_wstring(num);
-							// Remove trailing zeros for integers
-							if (result.find(L'.') != std::wstring::npos) {
-								while (result.back() == L'0') result.pop_back();
-								if (result.back() == L'.') result.pop_back();
-							}
+							result = utf8_to_wstring( std::string( str, len ) );
 						}
-						break;
 					}
-					case LUA_TNIL:
-						result = L"nil";
-						break;
-					case LUA_TTABLE:
-						result = L"[table]";
-						break;
-					case LUA_TFUNCTION:
-						result = L"[function]";
-						break;
-					case LUA_TUSERDATA:
-						result = L"[userdata]";
-						break;
-					case LUA_TTHREAD:
-						result = L"[thread]";
-						break;
-					case LUA_TLIGHTUSERDATA:
-						result = L"[lightuserdata]";
-						break;
-					default:
-						result = L"[unknown]";
-						break;
+					break;
 				}
-			} catch (const std::exception& e) {
+				case LUA_TBOOLEAN:
+					result = lua_toboolean( rain->L, valueIndex ) ? L"true" : L"false";
+					break;
+				case LUA_TNUMBER: {
+					lua_Number num = lua_tonumber( rain->L, valueIndex );
+					// Check for NaN/Inf
+					if ( std::isnan( num ) ) {
+						result = L"nan";
+					} else if ( std::isinf( num ) ) {
+						result = ( num > 0 ) ? L"inf" : L"-inf";
+					} else {
+						result = std::to_wstring( num );
+						// Remove trailing zeros for integers
+						if ( result.find( L'.' ) != std::wstring::npos ) {
+							while ( result.back() == L'0' )
+								result.pop_back();
+							if ( result.back() == L'.' )
+								result.pop_back();
+						}
+					}
+					break;
+				}
+				case LUA_TNIL:
+					result = L"nil";
+					break;
+				case LUA_TTABLE:
+					result = L"[table]";
+					break;
+				case LUA_TFUNCTION:
+					result = L"[function]";
+					break;
+				case LUA_TUSERDATA:
+					result = L"[userdata]";
+					break;
+				case LUA_TTHREAD:
+					result = L"[thread]";
+					break;
+				case LUA_TLIGHTUSERDATA:
+					result = L"[lightuserdata]";
+					break;
+				default:
+					result = L"[unknown]";
+					break;
+				}
+			} catch ( const std::exception &e ) {
 				try {
-					std::wstring werr = L"eval: Conversion error: " + utf8_to_wstring(e.what());
-					Lua::log(rain, werr.c_str() );
-				} catch (...) {
+					std::wstring werr = L"eval: Conversion error: " + utf8_to_wstring( e.what() );
+					Lua::log( rain, werr.c_str() );
+				} catch ( ... ) {
 					Lua::log( rain, L"eval: Conversion error (unknown)" );
 				}
 				result = L"";
-			} catch (...) {
+			} catch ( ... ) {
 				Lua::log( rain, L"eval: Unexpected conversion error" );
 				result = L"";
 			}
@@ -488,11 +501,11 @@ namespace Lua {
 		g_returnBuffer = result;
 
 		// Verificar tamanho do buffer (segurança extra)
-		if (g_returnBuffer.length() > 4095) {
-			g_returnBuffer.resize(4095);
+		if ( g_returnBuffer.length() > 4095 ) {
+			g_returnBuffer.resize( 4095 );
 			g_returnBuffer.shrink_to_fit();
 		}
 
 		return g_returnBuffer.c_str();
 	}
-}
+} // namespace Lua
