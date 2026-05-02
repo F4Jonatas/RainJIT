@@ -16,7 +16,6 @@
     <ClCompile Include="src\Modules\fetch\lua.cpp">
       <Filter>Modules\fetch</Filter>
     </ClCompile>
-    <ClCompile Include="src\Modules\mshtml\mshtml.cpp" />
     <ClCompile Include="src\Modules\browser\browser.cpp" />
     <ClCompile Include="src\Modules\browser\browser_core.cpp" />
     <ClCompile Include="packages\gumbo\src\attribute.c">
@@ -76,6 +75,9 @@
     <ClCompile Include="packages\pugixml\src\pugixml.cpp">
       <Filter>Packages\pugixml</Filter>
     </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -114,7 +116,6 @@
     <ClInclude Include="src\Modules\fetch\lua.hpp">
       <Filter>Modules\fetch</Filter>
     </ClInclude>
-    <ClInclude Include="src\Modules\mshtml\mshtml.hpp" />
     <ClInclude Include="src\Modules\browser\browser.hpp" />
     <ClInclude Include="src\Includes\define.hpp">
       <Filter>Includes</Filter>
@@ -152,6 +153,10 @@
     <ClInclude Include="packages\pugixml\src\pugixml.hpp">
       <Filter>Packages\pugixml</Filter>
     </ClInclude>
+    <ClInclude Include="src\Modules\webview\trident.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\sanitize.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RainJIT.rc" />
@@ -196,6 +201,9 @@
     </Filter>
     <Filter Include="Packages\pugixml">
       <UniqueIdentifier>{689380ae-0ebf-4ea9-a16b-227df6d0256a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\webview">
+      <UniqueIdentifier>{983529f9-08a8-4f66-b4c3-2208659a5f61}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

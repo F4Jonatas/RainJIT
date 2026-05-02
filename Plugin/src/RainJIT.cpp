@@ -66,7 +66,7 @@
 #include <Includes/wrapper.hpp>
 #include <Modules/fetch/fetch.hpp>
 #include <Modules/hotkey/hotkey.hpp>
-#include <Modules/mshtml/mshtml.hpp>
+// #include <Modules/webview/trident.hpp>
 //#include <Modules/browser/browser.hpp>
 #include <Utils/filesystem.hpp>
 
@@ -168,9 +168,8 @@ PLUGIN_EXPORT void Initialize( void **data, void *rm ) {
 		if ( absolutePath && *absolutePath ) {
 			// If it's an existing file, load as external script
 			if ( fs::fileExists( absolutePath ) ) {
-				if ( !Lua::importFile( rain, absolutePath ) ) {
+				if ( !Lua::importFile( rain, absolutePath ) )
 					Lua::trace( rain, L"Error on importing file\n" );
-				}
 			}
 
 			// Otherwise, treat as inline Lua script
@@ -294,8 +293,6 @@ PLUGIN_EXPORT double Update( void *data ) {
 
 	// Protection against absurd values (e.g., frozen skin)
 	deltaTime = std::clamp( deltaTime, 0.0, 1.0 );
-
-	mshtml::ProcessMessages( rain );
 	//browser::Pump(rain);
 
 	// Execute rain:update( au, dt ) if it exists and after init is complete
@@ -349,9 +346,8 @@ PLUGIN_EXPORT void ExecuteBang( void *data, LPCWSTR script ) {
 
 	else {
 		// Execute Lua script
-		if ( !Lua::importScript( rain, script_utf8.c_str(), "embedded:commandMeasure.lua" ) ) {
+		if ( !Lua::importScript( rain, script_utf8.c_str(), "embedded:commandMeasure.lua" ) )
 			Lua::trace( rain, L"Error executing commandMeasure\n" );
-		}
 	}
 }
 

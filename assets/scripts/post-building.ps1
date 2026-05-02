@@ -25,13 +25,13 @@ param (
 
 
 # Resolve the absolute path to the scripts directory
-# $workdir = Resolve-Path "$PSScriptRoot/../../assets/scripts/"
+$workdir = Resolve-Path "$PSScriptRoot/../../.vscode/scripts"
 
 # Import helpers script
 . "$PSScriptRoot/dotenv.ps1"
 
 # Load environment variables from .env file
-[dotenv]::read("$PSScriptRoot/.env")
+[dotenv]::read("$workdir/.env")
 
 
 

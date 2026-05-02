@@ -98,7 +98,7 @@
     <ClCompile Include="src\Modules\html\html_node.cpp" />
     <ClCompile Include="src\Modules\html\html_nodelist.cpp" />
     <ClCompile Include="src\Modules\html\html_selector.cpp" />
-    <ClCompile Include="src\Modules\mshtml\mshtml.cpp" />
+    <ClCompile Include="src\Modules\webview\trident.cpp" />
     <ClCompile Include="src\Modules\xml\xml.cpp" />
     <ClCompile Include="src\RainJIT.cpp" />
     <ClCompile Include="src\rain.cpp" />
@@ -130,7 +130,8 @@
     <ClInclude Include="src\Modules\html\html_node.hpp" />
     <ClInclude Include="src\Modules\html\html_nodelist.hpp" />
     <ClInclude Include="src\Modules\html\html_selector.hpp" />
-    <ClInclude Include="src\Modules\mshtml\mshtml.hpp" />
+    <ClInclude Include="src\Modules\webview\sanitize.hpp" />
+    <ClInclude Include="src\Modules\webview\trident.hpp" />
     <ClInclude Include="src\Modules\xml\xml.hpp" />
     <ClInclude Include="src\utils\filesystem.hpp" />
     <ClInclude Include="src\utils\strings.hpp" />

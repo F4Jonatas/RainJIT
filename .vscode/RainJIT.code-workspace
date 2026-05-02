@@ -79,6 +79,18 @@
 			"**/.vs": true,
 			"*.aps": true,
 			"*.zip": true
+		},
+
+		"terminal.integrated.defaultProfile.windows": "MSVC Developer Command Prompt",
+		"terminal.integrated.profiles.windows": {
+			"msvc-automation": {
+				"path": "cmd.exe",
+				"args": [
+					"/k",
+					"C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools\\VsDevCmd.bat"
+				],
+				"icon": "terminal-cmd"
+			}
 		}
 	}
 }

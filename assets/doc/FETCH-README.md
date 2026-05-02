@@ -946,8 +946,6 @@ sequenceDiagram
     end
 
     Fetch->>Fetch: Removes context from registry
-
-    Note over Fetch,WinINet: 🌟 New Features:<br/>• HTTP version control (1.0/1.1)<br/>• Intelligent WinINet fallback<br/>• 8 new specific error codes<br/>• Enhanced error messages
 ```
 
 ---

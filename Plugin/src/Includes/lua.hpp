@@ -16,7 +16,7 @@
 #include "modules/depot/depot.hpp"
 #include "modules/fetch/fetch.hpp"
 #include "modules/hotkey/hotkey.hpp"
-#include "modules/mshtml/mshtml.hpp"
+#include "modules/webview/trident.hpp"
 #include "modules/html/html.hpp"
 #include "modules/xml/xml.hpp"
 //#include "modules/browser/browser.hpp"

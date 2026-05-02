@@ -11,4 +11,3 @@ src/Modules/browser
 
 packages/luasocket
 packages/luajit-
-packages/Microsoft.Web.WebView2.*

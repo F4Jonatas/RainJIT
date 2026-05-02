@@ -15,3 +15,5 @@ AlignTrailingComments: false
 IndentPPDirectives: BeforeHash
 PPIndentWidth: 2
 AllowShortEnumsOnASingleLine: false
+SortIncludes: false
+IncludeBlocks: Preserve

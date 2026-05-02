@@ -6,7 +6,7 @@
 			"type": "shell",
 			"command": "mshta",
 			"args": [
-				"${workspaceFolder}\\assets\\scripts\\Config.hta"
+				"${workspaceFolder}/.vscode/scripts/config.hta"
 			],
 			"group": {
 				"kind": "test",
@@ -15,6 +15,78 @@
 			"icon": {
 				"id": "server-process",
 				"color": "terminal.ansiMagenta"
+			}
+		},
+		// "C:\Program Files\Rainmeter\SkinInstaller.exe" /Pack "dist\MeuSkin" "dist\MeuSkin.rmskin" /S /V
+		{
+			"label": "Build MSVC",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/.vscode/scripts/build.ps1",
+				"-SolutionPath",
+				"${workspaceFolder}/Plugin/RainJIT.sln",
+				"-Configuration",
+				"${input:config}",
+				"-Platform",
+				"${input:platform}",
+				"-Target",
+				"${input:buildMode}"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Run Code Analysis",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/.vscode/scripts/build.ps1",
+				"-SolutionPath",
+				"${workspaceFolder}/Plugin/RainJIT.sln",
+				"-Configuration",
+				"${input:config}",
+				"-Platform",
+				"${input:platform}",
+				"-Target",
+				"Analysis"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "test"
+			}
+		},
+		{
+			"label": "Copy RainJIT Modules → Rainmeter @Vault",
+			"type": "shell",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/.vscode/scripts/copy-folder.ps1",
+				"-Type",
+				"Rain2Modules"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"icon": {
+				"id": "file-symlink-directory",
+				"color": "terminal.ansiBlue"
 			},
 			"problemMatcher": [
 				{
@@ -31,6 +103,38 @@
 					"severity": "error"
 				}
 			]
+		}
+	],
+	"inputs": [
+		{
+			"id": "config",
+			"type": "pickString",
+			"description": "Configuração:",
+			"options": [
+				"Debug",
+				"Release"
+			],
+			"default": "Debug"
+		},
+		{
+			"id": "platform",
+			"type": "pickString",
+			"description": "Plataforma:",
+			"options": [
+				"x64",
+				"x86"
+			],
+			"default": "x64"
+		},
+		{
+			"id": "buildMode",
+			"type": "pickString",
+			"description": "Modo de build:",
+			"options": [
+				"Build",
+				"Rebuild"
+			],
+			"default": "Build"
 		}
 	]
 }
