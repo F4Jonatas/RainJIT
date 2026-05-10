@@ -106,6 +106,8 @@
     <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Modules\webview\comProxy.hpp" />
+    <ClInclude Include="src\Modules\webview\luaVariant.hpp" />
     <ClInclude Include="packages\gumbo\src\strings.h" />
     <ClInclude Include="packages\pugixml\src\pugiconfig.hpp" />
     <ClInclude Include="packages\pugixml\src\pugixml.hpp" />

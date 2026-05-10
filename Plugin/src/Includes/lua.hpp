@@ -19,7 +19,6 @@
 #include "modules/webview/trident.hpp"
 #include "modules/html/html.hpp"
 #include "modules/xml/xml.hpp"
-//#include "modules/browser/browser.hpp"
 // #include "modules/interval/interval.hpp"
 
 
@@ -27,6 +26,66 @@
 
 
 namespace Lua {
+	/**
+	* @brief Ensure the error message at the top of the Lua stack is valid UTF‑8.
+	*
+	* This helper addresses a subtle but frequent issue in Lua‑to‑C error reporting:
+	* many C modules (including standard Windows libraries) generate error messages
+	* in the system's ANSI code page (CP_ACP), not in UTF‑8. When such a message is
+	* later passed to UTF‑8‑expecting converters (e.g. @ref utf8_to_wstring), non‑ASCII
+	* characters become corrupted (displayed as `�`).
+	*
+	* The function inspects the string currently at the top of the Lua stack:
+	* - If it is **already valid UTF‑8**, it is left untouched.
+	* - Otherwise, it is interpreted as being encoded in the system's active ANSI
+	*   code page (CP_ACP) and **replaced** by its correct UTF‑8 equivalent.
+	*
+	* This ensures that error messages originating from modules like `require`, the
+	* Windows registry, or the filesystem are always safe to convert to wide strings
+	* for logging or display.
+	*
+	* @param L The Lua state.
+	*
+	* @post The top of the Lua stack contains a valid UTF‑8 error string.
+	* @post The original string (if invalid) is removed.
+	*
+	* @throws Never throws a C++ exception.
+	*
+	* @note This function is meant to be called **immediately after a failing
+	* `lua_pcall` or `luaL_loadbuffer`**, before the error handler consumes the
+	* string. It is used internally by @ref Lua::trace, guaranteeing that all
+	* error logs are correctly encoded without changing any other call site.
+	*
+	* @warning The function modifies the Lua stack. If the original (possibly
+	* ANSI) error string is needed for other purposes, capture it before calling
+	* this function.
+	*
+	* @see char_to_string, utf8_to_wstring, Lua::trace
+	*
+	* @code{.cpp}
+	* if (lua_pcall(L, 0, 1, errfunc) != LUA_OK) {
+	*     ensureUtf8Error(L);        // fix ANSI → UTF‑8
+	*     Lua::trace(rain, L"Script failed", LOG_ERROR);
+	* }
+	* @endcode
+	*/
+	static inline void ensureUtf8Error(lua_State *L) {
+		size_t len;
+		const char *err = lua_tolstring(L, -1, &len);
+		if (!err || len == 0) return;
+
+		// Tenta interpretar como UTF‑8 válido
+		int wideLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, err, (int)len, nullptr, 0);
+		if (wideLen > 0) return; // Já é UTF‑8
+
+		// Não é UTF‑8 → assume CP_ACP e converte
+		std::string fixed = char_to_string(err);
+		lua_pop(L, 1);
+		lua_pushlstring(L, fixed.c_str(), fixed.length());
+	}
+
+
+
 
 	/**
 	 * @brief Lua error handler that generates a complete stack traceback.
@@ -61,11 +120,11 @@ namespace Lua {
 	 */
 	static inline int LuaTraceback( lua_State *L ) {
 		const char *msg = lua_tostring( L, 1 );
-		if ( msg ) {
+		if ( msg )
 			luaL_traceback( L, L, msg, 1 );
-		} else {
+		else
 			lua_pushliteral( L, "Lua Error (no message)" );
-		}
+
 		return 1;
 	}
 
@@ -114,10 +173,9 @@ namespace Lua {
 		hotkey::RegisterModule( rain->L, rain );
 		RegisterDepotModule( rain->L, rain );
 		fetch::RegisterModule( rain->L, rain );
-		mshtml::RegisterModule( rain->L, rain );
+		trident::RegisterModule( rain->L, rain );
 		html::RegisterModule( rain->L );
 		xml::RegisterModule( rain->L, rain );
-		//browser::RegisterModule( rain->L, rain );
 		// interval::RegisterModule(rain->L, rain);
 		exposeRainToLua( rain->L, rain );
 	}
@@ -239,6 +297,7 @@ namespace Lua {
 	 * 	script.lua:10: in main chunk
 	 */
 	static inline void trace( Rain *rain, const wchar_t *prefix, int level = LOG_ERROR, bool includeTrace = true ) {
+		ensureUtf8Error( rain->L );
 		std::wstring msg;
 
 		if ( prefix && *prefix ) {

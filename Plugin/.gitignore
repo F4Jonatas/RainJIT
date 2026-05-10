@@ -7,7 +7,6 @@ build
 
 src/Modules/interval
 src/Modules/github
-src/Modules/browser
 
 packages/luasocket
 packages/luajit-

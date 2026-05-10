@@ -33,7 +33,7 @@
  *     padding = {5, 5, 10, 10}, -- left, top, width, height
  *     cornerRadius = 12,
  *     silent = true,
- *     callback = function(event)
+ *     callback = function(browser, event)
  *         if event.type == "documentcomplete" then
  *             browser:write([[
  *                 <html><body style="background:transparent;color:white">
@@ -55,15 +55,27 @@
 #include <lua.hpp>
 #include <mshtml.h>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
+#include "luaVariant.hpp"
+#include "comProxy.hpp"
+
+
+#ifndef DOCHOSTUIFLAG_SILENT
+	#define DOCHOSTUIFLAG_SILENT 0x00040000
+#endif
+
+
+
 struct Rain;
 
-namespace mshtml {
+
+namespace trident {
 
 	/**
 	 * @brief Bitmask controlling which sanitization passes are active per control.
@@ -106,7 +118,7 @@ namespace mshtml {
 		EVENT_DOCUMENT_COMPLETE, ///< Document loading finished.
 		EVENT_NAVIGATE_COMPLETE, ///< Navigation to a URL completed.
 		EVENT_TITLE_CHANGE, ///< Document title changed.
-		EVENT_EXTERNAL, ///< JS called window.external.notify(name, data).
+		EVENT_EXTERNAL, ///< JS called window.external.call(name, data).
 	};
 
 	/**
@@ -157,13 +169,21 @@ namespace mshtml {
 
 		// Visibility
 		bool hidden; ///< If true, window is created but kept hidden. Use show()/hide() to toggle.
+
+		// ponteiro para o objeto ExternalDispatch (IDispatchEx)
+		void *externalDispatch;
+
+		// Back-reference to the ControlHandle owned by the Lua sentinel.
+		// Cleanup() nulls handle->ctrl via this pointer so that any pending
+		// l_gc call after the context is destroyed is a safe no-op.
+		void *handle; ///< ControlHandle*; nullptr until l_create sets it.
 	};
 
 	/**
-	 * @brief Global context for mshtml module, one per Rain instance.
+	 * @brief Global context for trident module, one per Rain instance.
 	 */
 	struct Context {
-		std::unordered_map<int, Control> controls; ///< Active controls mapped by configId.
+		std::unordered_map<int, std::unique_ptr<Control>> controls; ///< Active controls mapped by configId. unique_ptr keeps Control addresses stable across rehash.
 		Rain *rain; ///< Owning Rainmeter instance.
 		int nextId; ///< Next available configId.
 		HWND hiddenWindow; ///< Hidden message-only window for COM STA.
@@ -202,4 +222,4 @@ namespace mshtml {
 	 */
 	void Cleanup( Rain *rain );
 
-} // namespace mshtml
+} // namespace trident

@@ -60,6 +60,75 @@ inline std::wstring utf8_to_wstring( const std::string &str ) {
 
 
 
+
+/**
+ * @brief Converts a narrow string (ANSI, system code page) to UTF-8.
+ *
+ * Performs a two‑step conversion using only Windows APIs:
+ * -# CP_ACP → UTF‑16 via MultiByteToWideChar
+ * -# UTF‑16 → UTF‑8 via WideCharToMultiByte
+ *
+ * This function is the counterpart of utf8_to_wstring and wstring_to_utf8,
+ * bridging legacy ANSI strings (e.g., from older Rainmeter APIs or the
+ * filesystem) with the UTF‑8 encoding required by Lua and modern C++ code.
+ *
+ * @param str Pointer to a null‑terminated narrow string (const char*)
+ *            encoded in the system's ANSI code page (CP_ACP).
+ * @return A std::string containing the UTF‑8 representation of the input.
+ *         Returns an empty string if @p str is nullptr, points to an
+ *         empty string, or the conversion fails.
+ *
+ * @throws Never throws exceptions.
+ *
+ * @note For strings that are already UTF‑8, no conversion is needed;
+ *       use them directly.
+ *
+ * @example
+ * @code{.cpp}
+ * const char* ansiText = "Olá, mundo!";  // assumes CP_ACP = Windows‑1252
+ * std::string utf8 = char_to_string(ansiText);
+ * // utf8 contains "Olá, mundo!" in valid UTF‑8.
+ * @endcode
+ */
+inline std::string char_to_string(const char* str) {
+	if (!str || *str == '\0') {
+			return {};
+	}
+
+	// Step 1: ANSI (CP_ACP) → UTF‑16
+	int wideLen = MultiByteToWideChar(CP_ACP, 0, str, -1, nullptr, 0);
+	if (wideLen <= 0) {
+			return {};
+	}
+
+	std::wstring wideStr(wideLen, L'\0');
+	MultiByteToWideChar(CP_ACP, 0, str, -1, &wideStr[0], wideLen);
+	// Remove the null terminator added by the API when using length -1
+	if (!wideStr.empty() && wideStr.back() == L'\0') {
+			wideStr.pop_back();
+	}
+
+	// Step 2: UTF‑16 → UTF‑8
+	int utf8Len = WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str(), -1,
+																		nullptr, 0, nullptr, nullptr);
+	if (utf8Len <= 0) {
+			return {};
+	}
+
+	std::string utf8Str(utf8Len, '\0');
+	WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str(), -1,
+											&utf8Str[0], utf8Len, nullptr, nullptr);
+	// Remove the null terminator added by the API
+	if (!utf8Str.empty() && utf8Str.back() == '\0') {
+			utf8Str.pop_back();
+	}
+
+	return utf8Str;
+}
+
+
+
+
 /**
  * @brief Convert UTF-16 string to UTF-8 (std::string).
  *

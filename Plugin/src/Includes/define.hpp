@@ -6,11 +6,6 @@
 #include <string>
 
 
-#ifndef DOCHOSTUIFLAG_SILENT
-	#define DOCHOSTUIFLAG_SILENT 0x00040000
-#endif
-
-
 
 // Níveis de log compatíveis com Rainmeter
 #ifndef LOG_DEBUG

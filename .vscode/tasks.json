@@ -17,6 +17,15 @@
 				"color": "terminal.ansiMagenta"
 			}
 		},
+		{
+			"label": "Open Claude",
+			"type": "shell",
+			"command": ".\\start.bat",
+			"options": {
+					"cwd": "D:\\Program Files\\Open Claude"
+			},
+			"problemMatcher": []
+		},
 		// "C:\Program Files\Rainmeter\SkinInstaller.exe" /Pack "dist\MeuSkin" "dist\MeuSkin.rmskin" /S /V
 		{
 			"label": "Build MSVC",

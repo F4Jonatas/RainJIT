@@ -41,9 +41,18 @@
 <br>
 
 
+<br>
+<br>
+
+
 ## Overview
 
-**Trident** is a native plugin module for **RainJIT**, the Lua scripting layer for **Rainmeter**. It exposes a simple Lua API around the legacy Windows WebBrowser ActiveX control, allowing a theme to render real-time HTML/CSS/JavaScript within a regular Rainmeter window—no external process, no Edge WebView2 runtime, no Chromium overhead.
+Trident is a lightweight embedded browser module for RainJIT built around the legacy Windows WebBrowser control. It allows Rainmeter skins to render real-time HTML, CSS, and JavaScript directly inside the Rainmeter process without external runtimes such as Chromium or WebView2.
+
+The module is designed for simple desktop UI workloads where low memory usage, fast startup, and minimal system overhead matter more than modern web compatibility. All browser communication and event dispatching run on Rainmeter’s existing STA thread without external processes or background worker threads.
+
+Trident also includes optional HTML sanitization, JavaScript-to-Lua communication, navigation interception, and transparent layered window support, making it suitable for lightweight widgets, overlays, and interactive desktop components.
+
 
 <br>
 <br>
@@ -68,7 +77,7 @@
 ```lua
 local trident = require("webview.trident")
 
-local browser = trident.create{
+local browser = trident.create({
     url          = "about:blank",
     width        = 400,
     height       = 300,
@@ -93,36 +102,11 @@ local browser = trident.create{
             ]])
         end
     end
-}
+})
 ```
 
 ---
 
-<br>
-<br>
-
-
-## Philosophy
-
-The module was designed around two constraints: do the bare minimum with the fewest resources possible, and sanitize the content to save you from problems.
-
-Rainmeter skins are decorative, always-on-top overlays. They share the desktop
-with dozens of other processes. A browser control in that context should behave
-like a widget, not a web application:
-
-- **No background process** - Everything runs inside the Rainmeter process via COM in-process activation. The WebBrowser control is an in-proc server (Shell.Explorer ActiveX), so there is no extra process in Task Manager.
-
-- **No layout engine of our own** - HTML/CSS layout is delegated entirely to Trident. The module only moves the popup window; it never parses markup.
-
-- **No polling** - Events (`DocumentComplete`, `NavigateComplete`, `TitleChange`) are queued by an IDispatch sink running on the same STA thread and drained during Rainmeter's normal Update cycle. Zero background threads.
-
-- **No dependencies beyond what Windows ships** - ATL, OLE, and MSHTML are part of every Windows installation since Windows 98. There is no third-party SDK to distribute or update.
-
-- **Minimal Lua surface** - The Lua API exposes only the operations a skin actually needs: navigate, write HTML, run a script snippet, resize, toggle transparency, and quit. Anything more belongs in JavaScript on the page.
-
-The trade-off is intentional: you get a fast, zero-cost idle footprint at the cost of a legacy rendering engine. This module targets simple use-cases: local HTML dashboards, transparent overlays, iframe-style embedded content rendered from Lua-generated markup.
-
----
 
 <br>
 <br>

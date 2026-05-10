@@ -56,18 +56,15 @@
 #include <ctime>
 #include <mutex>
 #include <string>
-
 #include <lua.hpp>
-
 #include <RainmeterAPI.hpp>
-
 #include <Includes/lua.hpp>
 #include <Includes/rain.hpp>
 #include <Includes/wrapper.hpp>
 #include <Modules/fetch/fetch.hpp>
 #include <Modules/hotkey/hotkey.hpp>
-// #include <Modules/webview/trident.hpp>
-//#include <Modules/browser/browser.hpp>
+#include <Modules/webview/trident.hpp>
+// #include <Modules/browser/browser.hpp>
 #include <Utils/filesystem.hpp>
 
 
@@ -128,7 +125,7 @@ PLUGIN_EXPORT void Initialize( void **data, void *rm ) {
 
 	// clang-format off
 	std::string luaPath = std::format(
-		"{}lua\\?.lua;{}lua\\?\\init.lua;{}lua\\?.lua;{}lua\\?\\init.lua;{}lua\\?.lua;{}lua\\?\\init.lua;{}?.lua;{}?\\init.lua;",
+		R"({}lua\?.lua;{}lua\?\init.lua;{}lua\?.lua;{}lua\?\init.lua;{}lua\?.lua;{}lua\?\init.lua;{}?.lua;{}?\init.lua;)",
 		vaultPath,
 		vaultPath,
 		resPath,
@@ -140,7 +137,7 @@ PLUGIN_EXPORT void Initialize( void **data, void *rm ) {
 	);
 
 	std::string luaCPath = std::format(
-		"{}lua\\bin\\?.dll;{}lua\\bin\\?.dll;{}lua\\bin\\?.dll;",
+		R"({}lua\bin\?.dll;{}lua\bin\?.dll;{}lua\bin\?.dll;)",
 		vaultPath,
 		resPath,
 		currPath
@@ -161,27 +158,30 @@ PLUGIN_EXPORT void Initialize( void **data, void *rm ) {
 
 	// Execute script configured via [Script] option
 	std::wstring scriptParam = RmReadString( rm, L"Script", L"" );
-	if ( !scriptParam.empty() ) {
-		// Convert to absolute path
-		const wchar_t *absolutePath = RmPathToAbsolute( rm, scriptParam.c_str() );
+	if ( scriptParam.empty())
+		return;
 
-		if ( absolutePath && *absolutePath ) {
-			// If it's an existing file, load as external script
-			if ( fs::fileExists( absolutePath ) ) {
-				if ( !Lua::importFile( rain, absolutePath ) )
-					Lua::trace( rain, L"Error on importing file\n" );
-			}
 
-			// Otherwise, treat as inline Lua script
-			else {
-				std::string script_utf8 = DetectAndConvertToUTF8( scriptParam );
+	// Convert to absolute path
+	const wchar_t *absolutePath = RmPathToAbsolute( rm, scriptParam.c_str() );
 
-				if ( !Lua::importScript( rain, script_utf8.c_str(), "embedded:script.lua" ) )
-					Lua::trace( rain, L"Error on importing embedded:script.lua\n" );
-			}
+	if ( absolutePath && *absolutePath ) {
+		// If it's an existing file, load as external script
+		if ( fs::fileExists( absolutePath ) ) {
+			if ( ! Lua::importFile( rain, absolutePath ) )
+				Lua::trace( rain, L"Error on importing file\n" );
+		}
+
+		// Otherwise, treat as inline Lua script
+		else {
+			std::string script_utf8 = DetectAndConvertToUTF8( scriptParam );
+
+			if ( !Lua::importScript( rain, script_utf8.c_str(), "embedded:script.lua" ) )
+				Lua::trace( rain, L"Error on importing embedded:script.lua\n" );
 		}
 	}
 }
+
 
 
 
@@ -252,6 +252,7 @@ PLUGIN_EXPORT void Reload( void *data, void *rm, double *maxValue ) {
 
 
 
+
 /**
  * @brief Periodic Measure update callback.
  *
@@ -293,17 +294,16 @@ PLUGIN_EXPORT double Update( void *data ) {
 
 	// Protection against absurd values (e.g., frozen skin)
 	deltaTime = std::clamp( deltaTime, 0.0, 1.0 );
-	//browser::Pump(rain);
 
 	// Execute rain:update( au, dt ) if it exists and after init is complete
 	rain->onUpdate( deltaTime );
-
 
 
 	// FPS
 	// return 1 / deltaTime;
 	return static_cast<double>( rain->accumulatedUpdates );
 }
+
 
 
 
@@ -353,6 +353,7 @@ PLUGIN_EXPORT void ExecuteBang( void *data, LPCWSTR script ) {
 
 
 
+
 /**
  * @brief Evaluate a Lua expression and return its result.
  *
@@ -378,7 +379,6 @@ PLUGIN_EXPORT void ExecuteBang( void *data, LPCWSTR script ) {
  * This function runs on Rainmeter's main thread.
  * Long-running Lua code should be avoided.
  */
-
 PLUGIN_EXPORT LPCWSTR eval( void *data, const int argc, const WCHAR *argv[] ) {
 	auto *rain = static_cast<Rain *>( data );
 
@@ -393,6 +393,7 @@ PLUGIN_EXPORT LPCWSTR eval( void *data, const int argc, const WCHAR *argv[] ) {
 
 	return Lua::eval( rain, argv[0] );
 }
+
 
 
 
@@ -428,7 +429,6 @@ PLUGIN_EXPORT LPCWSTR dispatch( void *data, int argc, const WCHAR *argv[] ) {
 		return L"";
 
 	std::wstring cmd = argv[0];
-
 	if ( cmd == L"init" )
 		rain->onInit();
 
@@ -468,8 +468,7 @@ PLUGIN_EXPORT void Finalize( void *data ) {
 	fetch::CleanupContexts( rain );
 
 	hotkey::Cleanup( rain );
-	mshtml::Cleanup( rain );
-	//browser::Cleanup(rain);
+	trident::Cleanup( rain );
 
 	if ( rain->L ) {
 		lua_close( rain->L );

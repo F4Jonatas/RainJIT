@@ -154,6 +154,12 @@
       <Filter>Modules\webview</Filter>
     </ClInclude>
     <ClInclude Include="src\Modules\webview\sanitize.hpp" />
+    <ClInclude Include="src\Modules\webview\comProxy.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\luaVariant.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RainJIT.rc" />

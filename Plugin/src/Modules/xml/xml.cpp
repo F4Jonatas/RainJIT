@@ -18,17 +18,11 @@
 
 using namespace xml;
 
-// ---------------------------------------------------------------------------
-// Metatable name constants
-// ---------------------------------------------------------------------------
 
 static constexpr const char *MT_DOCUMENT = "xml.document";
 static constexpr const char *MT_NODE = "xml.node";
 static constexpr const char *MT_NODESET = "xml.nodeSet";
 
-// ---------------------------------------------------------------------------
-// FixVoidTags
-// ---------------------------------------------------------------------------
 
 /**
  * @brief Fix HTML5 void elements so they are valid self-closing XHTML tags.

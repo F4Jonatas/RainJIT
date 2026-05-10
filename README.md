@@ -111,14 +111,10 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 ## :package: Installation
 
-1. Install the package [`RainJIT.rmskin`](./build/RainJIT.rmskin)
+1. Install the package [`RainJIT.rmskin`](./dist/RainJIT.rmskin)
 2. Download (or update, if already present) the Lua modules from [`./Lua`](./Lua) into the Rainmeter [@Vault folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)
    > These modules are compatible with **LuaJIT** and **Rainmeter**.
 
-<br>
-
-> [!WARNING]
-> Previous versions required a Lua 5.1 runtime (`lua51.dll`) to be placed in the [**Rainmeter installation directory**](https://docs.rainmeter.net/manual/installing-rainmeter/). This is no longer required. You must remove this file to avoid runtime conflicts.
 
 <br>
 <br>

@@ -27,6 +27,7 @@
 #include <mshtmdid.h>
 #include <mshtml.h>
 #include <mshtmhst.h>
+#include <dispex.h>
 
 
 #pragma comment( lib, "comctl32.lib" )
@@ -38,54 +39,18 @@
 
 
 
-/**
- * @brief Helper to invoke a method on the document's IDispatch.
- *
- * @param docDisp  IDispatch pointer to the document.
- * @param dispid   DISPID of the method to call.
- * @param text     UTF-8 string to pass as the first argument.
- * @return true on success.
- */
-static bool InvokeDocumentWrite( IDispatch *docDisp, DISPID dispid, const char *text ) {
-	if ( !docDisp || !text )
-		return false;
-
-	std::wstring wtext = utf8_to_wstring( text );
-	CComBSTR bstrText( wtext.c_str() );
-	DISPPARAMS params = {};
-	VARIANTARG varg;
-	VariantInit( &varg );
-	varg.vt = VT_BSTR;
-	varg.bstrVal = bstrText;
-	params.rgvarg = &varg;
-	params.cArgs = 1;
-
-	// clang-format off
-	HRESULT hr = docDisp->Invoke(
-		dispid,
-		IID_NULL,
-		LOCALE_USER_DEFAULT,
-		DISPATCH_METHOD,
-		&params,
-		nullptr,
-		nullptr,
-		nullptr
-	);
-	// clang-format on
-
-	VariantClear( &varg );
-	return SUCCEEDED( hr );
-}
 
 
 
 
-namespace mshtml {
+
+
+namespace trident {
 
 	/// Parent window subclass data
 	struct ParentSubclassData {
-		Control *ctrl; // Owning control.
-		HWND hWndParent; // Handle to the parent window.
+		Control *ctrl;       ///< Owning control.
+		HWND hWndParent;     ///< Handle to the parent window.
 	};
 
 
@@ -97,11 +62,6 @@ namespace mshtml {
 
 	/**
 	 * @brief HELPER - Applies a rounded rectangle region to the specified window.
-	 *
-	 * @param hWnd   Window handle.
-	 * @param width  Width of the window.
-	 * @param height Height of the window.
-	 * @param radius Corner radius; if <= 0, does nothing.
 	 */
 	static void ApplyRoundedCorners( HWND hWnd, int width, int height, int radius ) {
 		if ( radius <= 0 || width <= 0 || height <= 0 )
@@ -109,66 +69,42 @@ namespace mshtml {
 
 		HRGN hRgn = CreateRoundRectRgn( 0, 0, width, height, radius, radius );
 		SetWindowRgn( hWnd, hRgn, TRUE );
-		// The system owns the region after SetWindowRgn.
 	}
 
 
 
 	/**
 	 * @brief HELPER - Calculates the final screen rectangle for the browser popup.
-	 *
-	 * Starts with the desired position (parent.left + ctrl->left, parent.top + ctrl->top)
-	 * and the desired size (ctrl->width, ctrl->height). If insideSkin is true, the rectangle
-	 * is clipped to the parent window's bounds. Then the padding values are applied.
-	 *
-	 * @param ctrl        Pointer to the control.
-	 * @param parentRect  Parent window rectangle in screen coordinates.
-	 * @param outX        Output screen X coordinate.
-	 * @param outY        Output screen Y coordinate.
-	 * @param outW        Output width.
-	 * @param outH        Output height.
 	 */
 	static void GetConstrainedScreenRect( Control *ctrl, const RECT &parentRect, int &outX, int &outY, int &outW, int &outH ) {
-		// Desired rectangle before constraint/padding
 		int desiredX = parentRect.left + ctrl->left;
 		int desiredY = parentRect.top + ctrl->top;
 		int desiredW = ctrl->width;
 		int desiredH = ctrl->height;
 
-		// 1. Constrain inside parent skin if requested
 		if ( ctrl->insideSkin ) {
-			int skinLeft = parentRect.left;
-			int skinTop = parentRect.top;
-			int skinRight = parentRect.right;
+			int skinLeft   = parentRect.left;
+			int skinTop    = parentRect.top;
+			int skinRight  = parentRect.right;
 			int skinBottom = parentRect.bottom;
 
-			if ( desiredX < skinLeft )
-				desiredX = skinLeft;
+			if ( desiredX < skinLeft ) desiredX = skinLeft;
+			if ( desiredY < skinTop  ) desiredY = skinTop;
 
-			if ( desiredY < skinTop )
-				desiredY = skinTop;
-
-			int maxW = skinRight - desiredX;
+			int maxW = skinRight  - desiredX;
 			int maxH = skinBottom - desiredY;
 
-			if ( desiredW > maxW )
-				desiredW = ( maxW > 0 ) ? maxW : 1;
-
-			if ( desiredH > maxH )
-				desiredH = ( maxH > 0 ) ? maxH : 1;
+			if ( desiredW > maxW ) desiredW = ( maxW > 0 ) ? maxW : 1;
+			if ( desiredH > maxH ) desiredH = ( maxH > 0 ) ? maxH : 1;
 		}
 
-		// 2. Apply padding (reduces position and size)
 		int paddedX = desiredX + ctrl->padLeft;
 		int paddedY = desiredY + ctrl->padTop;
 		int paddedW = desiredW - ctrl->padWidth;
 		int paddedH = desiredH - ctrl->padHeight;
 
-		if ( paddedW < 1 )
-			paddedW = 1;
-
-		if ( paddedH < 1 )
-			paddedH = 1;
+		if ( paddedW < 1 ) paddedW = 1;
+		if ( paddedH < 1 ) paddedH = 1;
 
 		outX = paddedX;
 		outY = paddedY;
@@ -180,10 +116,6 @@ namespace mshtml {
 
 	/**
 	 * @brief Moves and resizes the popup window based on current parent position.
-	 *
-	 * Called when the parent window moves or is resized.
-	 *
-	 * @param ctrl Pointer to the control.
 	 */
 	static void UpdateControlPosition( Control *ctrl ) {
 		if ( !ctrl || !ctrl->hwndControl || !IsWindow( ctrl->hwndControl ) )
@@ -208,17 +140,13 @@ namespace mshtml {
 
 	/// Globals
 	static std::unordered_map<Rain *, Context *> g_contexts;
-	static std::recursive_mutex g_contextsMutex;
-	static bool g_comInitialized = false;
-	static bool g_comNeedsUninitialize = false;
+	static std::mutex g_contextsMutex;
+	static bool g_comInitialized        = false;
+	static bool g_comNeedsUninitialize  = false;
 
 
 	/**
 	 * @brief Generates a unique Lua registry key for a control's callback.
-	 *
-	 * @param rain     Rain instance.
-	 * @param configId Control identifier.
-	 * @return String key suitable for LUA_REGISTRYINDEX.
 	 */
 	static std::string GetCallbackKey( Rain *rain, int configId ) {
 		if ( !rain )
@@ -227,31 +155,22 @@ namespace mshtml {
 		std::wstring skinName = RmReplaceVariables( rain->rm, L"#CURRENTCONFIG#" );
 		std::string name = wstring_to_utf8( skinName );
 		std::replace( name.begin(), name.end(), '\\', '_' );
-		std::replace( name.begin(), name.end(), '/', '_' );
-		std::replace( name.begin(), name.end(), '.', '_' );
-		return "mshtml_callback_" + name + "_" + std::to_string( configId );
+		std::replace( name.begin(), name.end(), '/',  '_' );
+		std::replace( name.begin(), name.end(), '.',  '_' );
+		return "trident_callback_" + name + "_" + std::to_string( configId );
 	}
 
 
 
 	// -------------------------------------------------------------------------
-	// Event drain — shared between WM_TRIDENT_EVENT handler and ProcessMessages
+	// Event drain
 	// -------------------------------------------------------------------------
 
 	/**
 	 * @brief Drains the event queue for a context and invokes Lua callbacks.
 	 *
-	 * Called both from the hidden window's WndProc (immediate, triggered by
-	 * PostMessage from EventSink) and from ProcessMessages (fallback, triggered
-	 * by Rainmeter's Update tick).
-	 *
-	 * The callback already has `self` injected into its environment via setfenv
-	 * in l_create, so this function simply fires the callback with the event
-	 * table — no environment manipulation needed here.
-	 *
-	 * @param ctx  Context whose queue should be drained.
-	 * @param rain Owning Rain instance (carries the Lua state).
-	 * @return Number of events processed.
+	 * Called both from the hidden window's WndProc (immediate) and from
+	 * ProcessMessages (fallback). The lock must NOT be held by the caller.
 	 */
 	static int DrainEventQueue( Context *ctx, Rain *rain ) {
 		if ( !ctx || !ctx->hasPendingEvents || !rain )
@@ -269,8 +188,8 @@ namespace mshtml {
 			const MshtmlEvent &ev = events.front();
 			auto ctrlIt = ctx->controls.find( ev.configId );
 
-			if ( ctrlIt != ctx->controls.end() && ctrlIt->second.enabled && rain->L ) {
-				const Control &ctrl = ctrlIt->second;
+			if ( ctrlIt != ctx->controls.end() && ctrlIt->second->enabled && rain->L ) {
+				const Control &ctrl = *ctrlIt->second;
 
 				if ( !ctrl.callbackKey.empty() ) {
 					lua_State *L = rain->L;
@@ -278,35 +197,24 @@ namespace mshtml {
 					lua_getfield( L, LUA_REGISTRYINDEX, ctrl.callbackKey.c_str() );
 					if ( lua_isfunction( L, -1 ) ) {
 
-						// Push browser table as first argument: callback(browser, event)
 						if ( !ctrl.browserKey.empty() )
 							lua_getfield( L, LUA_REGISTRYINDEX, ctrl.browserKey.c_str() );
 						else
 							lua_pushnil( L );
 
-						// Build event table
 						lua_newtable( L );
 
 						const char *typeStr = "unknown";
 						std::string externalName;
 						switch ( ev.type ) {
-						case EVENT_DOCUMENT_COMPLETE:
-							typeStr = "documentcomplete";
-							break;
-						case EVENT_NAVIGATE_COMPLETE:
-							typeStr = "navigatecomplete";
-							break;
-						case EVENT_TITLE_CHANGE:
-							typeStr = "titlechange";
-							break;
+						case EVENT_DOCUMENT_COMPLETE:  typeStr = "documentcomplete"; break;
+						case EVENT_NAVIGATE_COMPLETE:  typeStr = "navigatecomplete"; break;
+						case EVENT_TITLE_CHANGE:       typeStr = "titlechange";      break;
 						case EVENT_EXTERNAL:
-							// Use the event name supplied by JS as the type:
-							// window.external.notify("meuEvento", data) → event.type == "meuEvento"
 							externalName = wstring_to_utf8( ev.name );
 							typeStr = externalName.empty() ? "external" : externalName.c_str();
 							break;
-						default:
-							break;
+						default: break;
 						}
 
 						lua_pushstring( L, typeStr );
@@ -349,15 +257,9 @@ namespace mshtml {
 	}
 
 	// -------------------------------------------------------------------------
-	// Hidden window — WndProc, class registration, creation
+	// Hidden window
 	// -------------------------------------------------------------------------
 
-	/**
-	 * @brief WndProc for the per-skin hidden message-only window.
-	 *
-	 * Handles WM_TRIDENT_EVENT posted by EventSink::Invoke. The Context*
-	 * is stored in GWLP_USERDATA at window creation time.
-	 */
 	static LRESULT CALLBACK TridentWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam ) {
 		if ( uMsg == WM_TRIDENT_EVENT ) {
 			Context *ctx = (Context *)GetWindowLongPtrW( hWnd, GWLP_USERDATA );
@@ -367,7 +269,6 @@ namespace mshtml {
 		}
 
 		if ( uMsg == WM_CREATE ) {
-			// Store the Context* passed as lpCreateParams
 			CREATESTRUCTW *cs = (CREATESTRUCTW *)lParam;
 			if ( cs )
 				SetWindowLongPtrW( hWnd, GWLP_USERDATA, (LONG_PTR)cs->lpCreateParams );
@@ -378,20 +279,14 @@ namespace mshtml {
 	}
 
 	static bool RegisterHiddenWindowClass() {
-		WNDCLASSEXW wc = {};
-		wc.cbSize = sizeof( WNDCLASSEXW );
-		wc.lpfnWndProc = TridentWndProc;
-		wc.hInstance = GetModuleHandleW( nullptr );
+		WNDCLASSEXW wc  = {};
+		wc.cbSize       = sizeof( WNDCLASSEXW );
+		wc.lpfnWndProc  = TridentWndProc;
+		wc.hInstance    = GetModuleHandleW( nullptr );
 		wc.lpszClassName = L"RainJIT_Trident_Hidden";
 		return RegisterClassExW( &wc ) != 0;
 	}
 
-	/**
-	 * @brief Creates a hidden message-only window for the given context.
-	 *
-	 * Passes ctx as lpCreateParams so TridentWndProc can store it in
-	 * GWLP_USERDATA and access it on every WM_TRIDENT_EVENT.
-	 */
 	static HWND CreateHiddenWindow( Context *ctx ) {
 		static bool registered = RegisterHiddenWindowClass();
 		// clang-format off
@@ -404,153 +299,250 @@ namespace mshtml {
 			HWND_MESSAGE,
 			nullptr,
 			GetModuleHandleW( nullptr ),
-			ctx  // passed as lpCreateParams → stored in GWLP_USERDATA by WM_CREATE
+			ctx
 		);
 		// clang-format on
 	}
 
 
-
-	static void ApplyParentTransparency( HWND parentWnd, bool enable, COLORREF colorKey ) {
-		if ( !parentWnd )
-			return;
-
-		LONG_PTR exStyle = GetWindowLongPtrW( parentWnd, GWL_EXSTYLE );
-		if ( enable ) {
-			SetWindowLongPtrW( parentWnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED );
-			SetLayeredWindowAttributes( parentWnd, colorKey, 0, LWA_COLORKEY );
-		} else
-			SetWindowLongPtrW( parentWnd, GWL_EXSTYLE, exStyle & ~WS_EX_LAYERED );
-	}
-
-
+	// -------------------------------------------------------------------------
+	// ExternalDispatch — window.external for JavaScript
+	// -------------------------------------------------------------------------
 
 	/**
 	 * @brief IDispatch exposed to JavaScript as `window.external`.
 	 *
 	 * Allows JavaScript to send named events with data back to Lua via:
-	 *   window.external.notify("eventName", "data")
-	 *
-	 * The call is dispatched as EVENT_EXTERNAL through the normal event queue,
-	 * delivering { type="external", name="eventName", data="data" } to the callback.
+	 *   window.external.call("eventName", "data")
 	 */
-	struct ExternalDispatch : IDispatch {
-		LONG m_refCount;
-		Context *m_ctx;
-		int m_configId;
+	struct ExternalDispatch : IDispatchEx {
+		LONG      m_refCount;
+		Context  *m_ctx;
+		int       m_configId;
+		bool      m_cleanedUp;
 
-		static const DISPID DISPID_NOTIFY = 1;
+		std::unordered_map<DISPID, std::string> m_boundFuncs;
+		std::unordered_map<std::string, DISPID>  m_nameToDispId;
+		DISPID m_nextDispId;
 
-		ExternalDispatch( Context *ctx, int configId ) :
-			m_refCount( 1 ),
-			m_ctx( ctx ),
-			m_configId( configId ) {
+		ExternalDispatch( Context *ctx, int configId )
+			: m_refCount( 1 ), m_ctx( ctx ), m_configId( configId ),
+			  m_nextDispId( 1000 ), m_cleanedUp( false ) {}
+
+		~ExternalDispatch() {
+			if ( !m_cleanedUp ) CleanupBoundFunctions();
 		}
 
-		STDMETHODIMP QueryInterface( REFIID riid, void **ppv ) {
-			if ( riid == IID_IUnknown || riid == IID_IDispatch ) {
-				*ppv = this;
+		Control *GetControl() {
+			auto it = m_ctx->controls.find( m_configId );
+			if ( it != m_ctx->controls.end() ) return it->second.get();
+			return nullptr;
+		}
+
+		lua_State *GetLuaState() {
+			Control *ctrl = GetControl();
+			if ( ctrl && ctrl->rain ) return ctrl->rain->L;
+			return nullptr;
+		}
+
+		// IUnknown
+		STDMETHODIMP QueryInterface( REFIID riid, void **ppv ) override {
+			if ( ppv == nullptr ) return E_POINTER;
+			if ( riid == IID_IUnknown || riid == IID_IDispatch || riid == IID_IDispatchEx ) {
+				*ppv = static_cast<IDispatchEx *>( this );
 				AddRef();
 				return S_OK;
 			}
 			*ppv = nullptr;
 			return E_NOINTERFACE;
 		}
-		STDMETHODIMP_( ULONG ) AddRef() {
-			return InterlockedIncrement( &m_refCount );
-		}
-		STDMETHODIMP_( ULONG ) Release() {
+		STDMETHODIMP_( ULONG ) AddRef() override { return InterlockedIncrement( &m_refCount ); }
+		STDMETHODIMP_( ULONG ) Release() override {
 			LONG ref = InterlockedDecrement( &m_refCount );
-			if ( ref == 0 )
+			if ( ref == 0 ) {
+				CleanupBoundFunctions();
 				delete this;
+			}
 			return ref;
 		}
 
-		STDMETHODIMP GetTypeInfoCount( UINT *pCount ) {
-			*pCount = 0;
-			return S_OK;
-		}
-		STDMETHODIMP GetTypeInfo( UINT, LCID, ITypeInfo ** ) {
-			return E_NOTIMPL;
-		}
-
-		STDMETHODIMP GetIDsOfNames( REFIID, LPOLESTR *rgNames, UINT cNames, LCID, DISPID *rgDispId ) {
+		// IDispatch
+		STDMETHODIMP GetTypeInfoCount( UINT * ) override { return E_NOTIMPL; }
+		STDMETHODIMP GetTypeInfo( UINT, LCID, ITypeInfo ** ) override { return E_NOTIMPL; }
+		STDMETHODIMP GetIDsOfNames( REFIID, LPOLESTR *rgszNames, UINT cNames, LCID, DISPID *rgDispId ) override {
 			for ( UINT i = 0; i < cNames; ++i ) {
-				if ( rgNames[i] && _wcsicmp( rgNames[i], L"notify" ) == 0 )
-					rgDispId[i] = DISPID_NOTIFY;
-				else
-					rgDispId[i] = DISPID_UNKNOWN;
+				if ( _wcsicmp( rgszNames[i], L"call" ) == 0 ) {
+					rgDispId[i] = 1;
+				} else {
+					std::string name = wstring_to_utf8( rgszNames[i] );
+					auto it = m_nameToDispId.find( name );
+					if ( it != m_nameToDispId.end() )
+						rgDispId[i] = it->second;
+					else
+						rgDispId[i] = DISPID_UNKNOWN;
+				}
 			}
 			return S_OK;
 		}
+		STDMETHODIMP Invoke( DISPID dispIdMember, REFIID, LCID, WORD wFlags, DISPPARAMS *pDispParams,
+		                     VARIANT *pVarResult, EXCEPINFO *, UINT * ) override {
+			return InvokeEx( dispIdMember, LOCALE_USER_DEFAULT, wFlags, pDispParams, pVarResult, nullptr, nullptr );
+		}
 
-		STDMETHODIMP Invoke( DISPID dispId, REFIID, LCID, WORD, DISPPARAMS *pParams, VARIANT *, EXCEPINFO *, UINT * ) {
-			if ( dispId != DISPID_NOTIFY )
+		// IDispatchEx
+		STDMETHODIMP GetDispID( BSTR bstrName, DWORD grfdex, DISPID *pid ) override {
+			if ( !bstrName || !pid ) return E_POINTER;
+			std::string name = wstring_to_utf8( bstrName );
+			if ( name == "call" ) { *pid = 1; return S_OK; }
+			auto it = m_nameToDispId.find( name );
+			if ( it != m_nameToDispId.end() ) {
+				*pid = it->second;
+				return S_OK;
+			}
+			if ( grfdex & fdexNameEnsure ) {
+				*pid = m_nextDispId++;
+				m_nameToDispId[name] = *pid;
+				return S_OK;
+			}
+			return DISP_E_UNKNOWNNAME;
+		}
+
+		STDMETHODIMP InvokeEx( DISPID id, LCID, WORD wFlags, DISPPARAMS *pdp,
+		                       VARIANT *pvarRes, EXCEPINFO *, IServiceProvider * ) override {
+			if ( id == 1 ) {
+				if ( !pdp || pdp->cArgs < 1 ) return DISP_E_BADPARAMCOUNT;
+				std::wstring name, data;
+				if ( pdp->cArgs >= 2 ) name = luaVariant::ToWString( pdp->rgvarg[1] );
+				if ( pdp->cArgs >= 1 ) data = luaVariant::ToWString( pdp->rgvarg[0] );
+
+				MshtmlEvent ev;
+				ev.type      = EVENT_EXTERNAL;
+				ev.name      = name;
+				ev.data      = data;
+				ev.configId  = m_configId;
+				ev.timestamp = GetTickCount64();
+				{
+					std::lock_guard<std::mutex> lock( m_ctx->eventMutex );
+					m_ctx->eventBuffer.push( ev );
+					m_ctx->hasPendingEvents = true;
+				}
+				if ( m_ctx->hiddenWindow )
+					PostMessage( m_ctx->hiddenWindow, WM_TRIDENT_EVENT, 0, 0 );
+				return S_OK;
+			}
+
+			auto it = m_boundFuncs.find( id );
+			if ( it == m_boundFuncs.end() )
 				return DISP_E_MEMBERNOTFOUND;
-			if ( !pParams || pParams->cArgs < 1 )
-				return DISP_E_BADPARAMCOUNT;
 
-			// Helper: coerce any VARIANT to wstring (numbers, bools, strings all work)
-			auto varToWStr = []( VARIANT &v ) -> std::wstring {
-				CComVariant coerced;
-				if ( SUCCEEDED( VariantChangeType( &coerced, &v, 0, VT_BSTR ) ) && coerced.bstrVal )
-					return coerced.bstrVal;
-				return {};
-			};
+			lua_State *L = GetLuaState();
+			if ( !L ) return DISP_E_EXCEPTION;
 
-			// COM passes arguments in reverse order:
-			//   notify("name", "data")  →  rgvarg[0]="data", rgvarg[1]="name"
-			std::wstring name, data;
-			if ( pParams->cArgs >= 2 )
-				name = varToWStr( pParams->rgvarg[1] );
-			if ( pParams->cArgs >= 1 )
-				data = varToWStr( pParams->rgvarg[0] );
-
-			MshtmlEvent ev;
-			ev.type = EVENT_EXTERNAL;
-			ev.name = std::move( name );
-			ev.data = std::move( data );
-			ev.configId = m_configId;
-			ev.timestamp = GetTickCount64();
-			{
-				std::lock_guard<std::mutex> lock( m_ctx->eventMutex );
-				m_ctx->eventBuffer.push( ev );
-				m_ctx->hasPendingEvents = true;
+			lua_getfield( L, LUA_REGISTRYINDEX, it->second.c_str() );
+			if ( !lua_isfunction( L, -1 ) ) {
+				lua_pop( L, 1 );
+				return DISP_E_MEMBERNOTFOUND;
 			}
-			if ( m_ctx->hiddenWindow )
-				PostMessage( m_ctx->hiddenWindow, WM_TRIDENT_EVENT, 0, 0 );
+
+			int argCount = pdp->cArgs;
+			for ( int i = argCount - 1; i >= 0; --i )
+				luaVariant::Push( L, pdp->rgvarg[i] );
+
+			int status = lua_pcall( L, argCount, 1, 0 );
+			if ( status != LUA_OK ) {
+				const char *err = lua_tostring( L, -1 );
+				// FIX #2: use m_ctx->rain directly — ctrl may be null if already removed from map
+				Rain *logRain = m_ctx ? m_ctx->rain : nullptr;
+				if ( logRain )
+					RN_LOG( logRain, LOG_ERROR, ( L"Trident bound function error: " + utf8_to_wstring( err ) ).c_str() );
+				lua_pop( L, 1 );
+				return DISP_E_EXCEPTION;
+			}
+
+			if ( pvarRes ) {
+				luaVariant::From( L, -1, pvarRes );
+				lua_pop( L, 1 );
+			}
+
 			return S_OK;
 		}
+
+		STDMETHODIMP GetMemberName( DISPID, BSTR * ) override           { return E_NOTIMPL; }
+		STDMETHODIMP GetMemberProperties( DISPID, DWORD, DWORD * ) override { return E_NOTIMPL; }
+		STDMETHODIMP GetNextDispID( DWORD, DISPID, DISPID * ) override  { return E_NOTIMPL; }
+		STDMETHODIMP GetNameSpaceParent( IUnknown ** ) override         { return E_NOTIMPL; }
+		STDMETHODIMP DeleteMemberByName( BSTR, DWORD ) override         { return E_NOTIMPL; }
+		STDMETHODIMP DeleteMemberByDispID( DISPID ) override            { return E_NOTIMPL; }
+
+		HRESULT Bind( const std::string &name, lua_State *L, int funcIndex ) {
+			DISPID id;
+			CComBSTR bstrName( utf8_to_wstring( name ).c_str() );
+			HRESULT hr = GetDispID( bstrName, fdexNameEnsure, &id );
+			if ( FAILED( hr ) ) return hr;
+
+			auto oldIt = m_boundFuncs.find( id );
+			if ( oldIt != m_boundFuncs.end() ) {
+				lua_pushnil( L );
+				lua_setfield( L, LUA_REGISTRYINDEX, oldIt->second.c_str() );
+			}
+
+			lua_pushvalue( L, funcIndex );
+			std::string key = "trident_bound_" + std::to_string( reinterpret_cast<uintptr_t>( this ) ) + "_" + name;
+			lua_setfield( L, LUA_REGISTRYINDEX, key.c_str() );
+			m_boundFuncs[id] = key;
+			return S_OK;
+		}
+
+		void CleanupBoundFunctions() {
+			if ( m_cleanedUp ) return;
+			m_cleanedUp = true;
+
+			lua_State *L = GetLuaState();
+			if ( L ) {
+				for ( auto &pair : m_boundFuncs ) {
+					lua_pushnil( L );
+					lua_setfield( L, LUA_REGISTRYINDEX, pair.second.c_str() );
+				}
+			}
+			m_boundFuncs.clear();
+			m_nameToDispId.clear();
+		}
+
 	};
 
 
+
+	// -------------------------------------------------------------------------
+	// WebBrowserSite — IOleClientSite + IDocHostUIHandler
+	// FIX #1: added m_ctx member and updated constructor signature
+	// -------------------------------------------------------------------------
 
 	/**
 	 * @brief Implements IOleClientSite and IDocHostUIHandler for the browser.
 	 *
 	 * Suppresses context menus, 3D borders, scrollbars, and optionally script errors.
+	 * Exposes window.external via GetExternal().
 	 */
 	struct WebBrowserSite : IOleClientSite, IDocHostUIHandler {
-		LONG m_refCount;
-		Control *m_control;
+		LONG      m_refCount;
+		Control  *m_control;
+		Context  *m_ctx;     ///< Needed by GetExternal to create ExternalDispatch.
 		IUnknown *m_outer;
 
-		WebBrowserSite( Control *ctrl, IUnknown *outer ) :
+		WebBrowserSite( Control *ctrl, Context *ctx, IUnknown *outer ) :
 			m_refCount( 1 ),
 			m_control( ctrl ),
+			m_ctx( ctx ),
 			m_outer( outer ) {
 		}
 
 		STDMETHODIMP QueryInterface( REFIID riid, void **ppv ) {
-			if ( ppv == nullptr )
-				return E_POINTER;
+			if ( ppv == nullptr ) return E_POINTER;
 
 			if ( riid == IID_IUnknown || riid == IID_IOleClientSite )
 				*ppv = static_cast<IOleClientSite *>( this );
-
 			else if ( riid == IID_IDocHostUIHandler )
 				*ppv = static_cast<IDocHostUIHandler *>( this );
-
 			else if ( m_outer )
 				return m_outer->QueryInterface( riid, ppv );
 			else
@@ -560,137 +552,74 @@ namespace mshtml {
 			return S_OK;
 		}
 
-
-		STDMETHODIMP_( ULONG ) AddRef() {
-			return InterlockedIncrement( &m_refCount );
-		}
-
-
+		STDMETHODIMP_( ULONG ) AddRef()  { return InterlockedIncrement( &m_refCount ); }
 		STDMETHODIMP_( ULONG ) Release() {
 			LONG ref = InterlockedDecrement( &m_refCount );
-			if ( ref == 0 )
-				delete this;
+			if ( ref == 0 ) delete this;
 			return ref;
 		}
 
-		STDMETHODIMP SaveObject() {
-			return E_NOTIMPL;
-		}
-
-
-		STDMETHODIMP GetMoniker( DWORD, DWORD, IMoniker ** ) {
-			return E_NOTIMPL;
-		}
-
-
-		STDMETHODIMP GetContainer( IOleContainer **ppContainer ) {
-			*ppContainer = nullptr;
-			return E_NOINTERFACE;
-		}
-
-
-		STDMETHODIMP ShowObject() {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP OnShowWindow( BOOL ) {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP RequestNewObjectLayout() {
-			return E_NOTIMPL;
-		}
+		STDMETHODIMP SaveObject()                             { return E_NOTIMPL; }
+		STDMETHODIMP GetMoniker( DWORD, DWORD, IMoniker ** )  { return E_NOTIMPL; }
+		STDMETHODIMP GetContainer( IOleContainer **pp )       { *pp = nullptr; return E_NOINTERFACE; }
+		STDMETHODIMP ShowObject()                             { return S_OK; }
+		STDMETHODIMP OnShowWindow( BOOL )                     { return S_OK; }
+		STDMETHODIMP RequestNewObjectLayout()                 { return E_NOTIMPL; }
 
 		STDMETHODIMP ShowContextMenu( DWORD, POINT *, IUnknown *, IDispatch * ) {
-			return S_FALSE; // S_FALSE = let MSHTML show the default context menu
+			return S_FALSE;
 		}
 
-
 		STDMETHODIMP GetHostInfo( DOCHOSTUIINFO *pInfo ) {
-			pInfo->cbSize = sizeof( DOCHOSTUIINFO );
-			pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;
-
+			pInfo->cbSize       = sizeof( DOCHOSTUIINFO );
+			pInfo->dwFlags      = DOCHOSTUIFLAG_NO3DBORDER;
 			if ( m_control && m_control->silent )
 				pInfo->dwFlags |= DOCHOSTUIFLAG_SILENT;
-
 			pInfo->dwDoubleClick = DOCHOSTUIDBLCLK_DEFAULT;
 			return S_OK;
 		}
 
-
-		STDMETHODIMP ShowUI( DWORD, IOleInPlaceActiveObject *, IOleCommandTarget *, IOleInPlaceFrame *, IOleInPlaceUIWindow * ) {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP HideUI() {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP UpdateUI() {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP EnableModeless( BOOL ) {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP OnDocWindowActivate( BOOL ) {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP OnFrameWindowActivate( BOOL ) {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP ResizeBorder( LPCRECT, IOleInPlaceUIWindow *, BOOL ) {
-			return S_OK;
-		}
-
-
-		STDMETHODIMP TranslateAccelerator( LPMSG, const GUID *, DWORD ) {
-			return S_FALSE;
-		}
-
+		STDMETHODIMP ShowUI( DWORD, IOleInPlaceActiveObject *, IOleCommandTarget *, IOleInPlaceFrame *, IOleInPlaceUIWindow * ) { return S_OK; }
+		STDMETHODIMP HideUI()                                 { return S_OK; }
+		STDMETHODIMP UpdateUI()                               { return S_OK; }
+		STDMETHODIMP EnableModeless( BOOL )                   { return S_OK; }
+		STDMETHODIMP OnDocWindowActivate( BOOL )              { return S_OK; }
+		STDMETHODIMP OnFrameWindowActivate( BOOL )            { return S_OK; }
+		STDMETHODIMP ResizeBorder( LPCRECT, IOleInPlaceUIWindow *, BOOL ) { return S_OK; }
+		STDMETHODIMP TranslateAccelerator( LPMSG, const GUID *, DWORD )  { return S_FALSE; }
 
 		STDMETHODIMP GetOptionKeyPath( LPOLESTR *pchKey, DWORD ) {
 			*pchKey = nullptr;
 			return S_FALSE;
 		}
 
-
 		STDMETHODIMP GetDropTarget( IDropTarget *, IDropTarget **ppDropTarget ) {
 			*ppDropTarget = nullptr;
 			return E_NOTIMPL;
 		}
 
-
-		STDMETHODIMP GetExternal( IDispatch **ppDispatch ) {
-			if ( !ppDispatch )
-				return E_POINTER;
-			// Find context via global map — called on the main thread, no lock needed
-			auto it = g_contexts.find( m_control->rain );
-			if ( it != g_contexts.end() ) {
-				*ppDispatch = new ExternalDispatch( it->second, m_control->configId );
-				return S_OK;
+		/**
+		 * FIX #1: uses m_ctx directly — no g_contexts lookup needed.
+		 * FIX (mutex): g_contextsMutex protects only externalDispatch creation,
+		 * not a g_contexts traversal, so std::mutex is safe here with no risk of
+		 * deadlock (lock is never held by the caller at this point).
+		 */
+		STDMETHODIMP GetExternal( IDispatch **ppDispatch ) override {
+			if ( !ppDispatch ) return E_POINTER;
+			std::lock_guard<std::mutex> lock( g_contextsMutex );
+			if ( !m_control->externalDispatch ) {
+				m_control->externalDispatch =
+					new ExternalDispatch( m_ctx, m_control->configId );
 			}
-			*ppDispatch = nullptr;
-			return S_FALSE;
+			*ppDispatch = static_cast<IDispatchEx *>( m_control->externalDispatch );
+			( *ppDispatch )->AddRef();
+			return S_OK;
 		}
-
 
 		STDMETHODIMP TranslateUrl( DWORD, OLECHAR *, OLECHAR **ppchURLOut ) {
 			*ppchURLOut = nullptr;
 			return E_NOTIMPL;
 		}
-
 
 		STDMETHODIMP FilterDataObject( IDataObject *, IDataObject **ppDORet ) {
 			*ppDORet = nullptr;
@@ -700,6 +629,10 @@ namespace mshtml {
 
 
 
+	// -------------------------------------------------------------------------
+	// EventSink — DWebBrowserEvents2
+	// -------------------------------------------------------------------------
+
 	/**
 	 * @brief Implements IDispatch to receive DWebBrowserEvents2.
 	 *
@@ -707,15 +640,12 @@ namespace mshtml {
 	 * `background-color:transparent` into the document when transparency is enabled.
 	 */
 	struct EventSink : IDispatch {
-		LONG m_refCount;
-		Context *m_ctx;
-		int m_configId;
+		LONG      m_refCount;
+		Context  *m_ctx;
+		int       m_configId;
 
 		EventSink( Context *ctx, int configId ) :
-			m_refCount( 1 ),
-			m_ctx( ctx ),
-			m_configId( configId ) {
-		}
+			m_refCount( 1 ), m_ctx( ctx ), m_configId( configId ) {}
 
 		STDMETHODIMP QueryInterface( REFIID riid, void **ppv ) {
 			if ( riid == IID_IUnknown || riid == IID_IDispatch ) {
@@ -723,80 +653,57 @@ namespace mshtml {
 				AddRef();
 				return S_OK;
 			}
-
 			*ppv = nullptr;
 			return E_NOINTERFACE;
 		}
 
-
-		STDMETHODIMP_( ULONG ) AddRef() {
-			return InterlockedIncrement( &m_refCount );
-		}
-
-
+		STDMETHODIMP_( ULONG ) AddRef()  { return InterlockedIncrement( &m_refCount ); }
 		STDMETHODIMP_( ULONG ) Release() {
 			LONG ref = InterlockedDecrement( &m_refCount );
-			if ( ref == 0 )
-				delete this;
+			if ( ref == 0 ) delete this;
 			return ref;
 		}
 
-
-		STDMETHODIMP GetTypeInfoCount( UINT * ) {
-			return E_NOTIMPL;
-		}
-
-
-		STDMETHODIMP GetTypeInfo( UINT, LCID, ITypeInfo ** ) {
-			return E_NOTIMPL;
-		}
-
-
-		STDMETHODIMP GetIDsOfNames( REFIID, LPOLESTR *, UINT, LCID, DISPID * ) {
-			return E_NOTIMPL;
-		}
+		STDMETHODIMP GetTypeInfoCount( UINT * )                        { return E_NOTIMPL; }
+		STDMETHODIMP GetTypeInfo( UINT, LCID, ITypeInfo ** )           { return E_NOTIMPL; }
+		STDMETHODIMP GetIDsOfNames( REFIID, LPOLESTR *, UINT, LCID, DISPID * ) { return E_NOTIMPL; }
 
 		STDMETHODIMP Invoke( DISPID dispIdMember, REFIID, LCID, WORD, DISPPARAMS *pDispParams, VARIANT *, EXCEPINFO *, UINT * ) {
 			auto pushEvent = [&]( EventType type, std::wstring title = {} ) {
 				MshtmlEvent ev;
-				ev.type = type;
-				ev.configId = m_configId;
+				ev.type      = type;
+				ev.configId  = m_configId;
 				ev.timestamp = GetTickCount64();
-				ev.title = std::move( title );
+				ev.title     = std::move( title );
 				{
 					std::lock_guard<std::mutex> lock( m_ctx->eventMutex );
 					m_ctx->eventBuffer.push( ev );
 					m_ctx->hasPendingEvents = true;
 				}
-				// Notify the hidden window immediately so callbacks fire without
-				// waiting for Rainmeter's Update tick. PostMessage is thread-safe
-				// and non-blocking — safe to call from the COM STA thread.
 				if ( m_ctx->hiddenWindow )
 					PostMessage( m_ctx->hiddenWindow, WM_TRIDENT_EVENT, 0, 0 );
 			};
 
 			if ( dispIdMember == DISPID_DOCUMENTCOMPLETE ) {
 				pushEvent( EVENT_DOCUMENT_COMPLETE );
-				RN_LOG( m_ctx->rain, LOG_NOTICE, L"MSHTML: DocumentComplete" );
+				if ( m_ctx && m_ctx->rain )
+					RN_LOG( m_ctx->rain, LOG_NOTICE, L"Trident: DocumentComplete" );
 
 				auto it = m_ctx->controls.find( m_configId );
 				if ( it != m_ctx->controls.end() ) {
-					Control &ctrl = it->second;
+					Control &ctrl = *it->second;
 					if ( ctrl.webBrowser ) {
 						CComPtr<IDispatch> docDisp;
 						if ( SUCCEEDED( ctrl.webBrowser->get_Document( &docDisp ) ) && docDisp ) {
 
-							// Register WebBrowserSite via ICustomDoc::SetUIHandler so that
-							// MSHTML calls GetExternal() and window.external becomes available
-							// to JavaScript. This does NOT replace ATL's OLE client site.
+							// FIX #1: pass m_ctx so GetExternal can use it directly
 							CComQIPtr<ICustomDoc> customDoc( docDisp );
 							if ( customDoc ) {
-								WebBrowserSite *site = new WebBrowserSite( &ctrl, nullptr );
+								WebBrowserSite *site = new WebBrowserSite( &ctrl, m_ctx, nullptr );
 								customDoc->SetUIHandler( site );
 								site->Release();
 							}
 
-							// Inject transparency into the document body if enabled
 							if ( ctrl.transparent ) {
 								CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
 								if ( htmlDoc ) {
@@ -823,18 +730,6 @@ namespace mshtml {
 				pushEvent( EVENT_TITLE_CHANGE, pDispParams->rgvarg[0].bstrVal );
 
 			else if ( dispIdMember == DISPID_BEFORENAVIGATE2 && pDispParams && pDispParams->cArgs >= 7 ) {
-				// BeforeNavigate2 args in reverse order (COM convention, 7 total):
-				// rgvarg[6]=pDisp  [5]=URL  [4]=Flags  [3]=TargetFrame
-				// rgvarg[2]=PostData  [1]=Headers  [0]=Cancel (VT_BYREF|VT_BOOL)
-				//
-				// The callback is called synchronously here (not via the event queue)
-				// so we can read its return value before MSHTML reads the Cancel flag.
-				//
-				// Callback signature: function(browser, event) ... return false end
-				//   return false  → Cancel = true  → browser does NOT navigate
-				//   return true / nil / nothing → Cancel = false → browser navigates normally
-				//
-				// URL may be wrapped in VT_BYREF|VT_VARIANT — dereference if needed.
 				VARIANT *pUrl = &pDispParams->rgvarg[5];
 				if ( pUrl->vt == ( VT_BYREF | VT_VARIANT ) && pUrl->pvarVal )
 					pUrl = pUrl->pvarVal;
@@ -844,31 +739,28 @@ namespace mshtml {
 						bool cancel = false;
 						auto ctrlIt = m_ctx->controls.find( m_configId );
 						if ( ctrlIt != m_ctx->controls.end() ) {
-							const Control &ctrl = ctrlIt->second;
+							const Control &ctrl = *ctrlIt->second;
 							if ( ctrl.enabled && !ctrl.callbackKey.empty() && m_ctx->rain->L ) {
 								lua_State *L = m_ctx->rain->L;
 								lua_getfield( L, LUA_REGISTRYINDEX, ctrl.callbackKey.c_str() );
 								if ( lua_isfunction( L, -1 ) ) {
-									// arg1: browser table
 									if ( !ctrl.browserKey.empty() )
 										lua_getfield( L, LUA_REGISTRYINDEX, ctrl.browserKey.c_str() );
 									else
 										lua_pushnil( L );
-									// arg2: event table
 									lua_newtable( L );
 									lua_pushstring( L, "navigate" );
 									lua_setfield( L, -2, "type" );
 									std::string urlUtf8 = wstring_to_utf8( url );
 									lua_pushlstring( L, urlUtf8.c_str(), urlUtf8.size() );
 									lua_setfield( L, -2, "data" );
-									// call callback(browser, event) — 2 args, 1 return value
 									if ( lua_pcall( L, 2, 1, 0 ) == LUA_OK ) {
-										// cancel only if Lua explicitly returned false
 										cancel = ( lua_isboolean( L, -1 ) && !lua_toboolean( L, -1 ) );
 										lua_pop( L, 1 );
 									} else {
 										const char *err = lua_tostring( L, -1 );
-										RN_LOG( m_ctx->rain, LOG_ERROR, ( L"Trident navigate callback error: " + utf8_to_wstring( err ) ).c_str() );
+										if ( m_ctx && m_ctx->rain )
+											RN_LOG( m_ctx->rain, LOG_ERROR, ( L"Trident navigate callback error: " + utf8_to_wstring( err ) ).c_str() );
 										lua_pop( L, 1 );
 									}
 								} else {
@@ -876,8 +768,6 @@ namespace mshtml {
 								}
 							}
 						}
-						// Set the Cancel flag based on Lua return value.
-						// Cancel is passed as VT_BYREF|VT_BOOL — must dereference pboolVal.
 						VARIANT &vCancel = pDispParams->rgvarg[0];
 						if ( ( vCancel.vt & VT_BYREF ) && vCancel.pboolVal )
 							*vCancel.pboolVal = cancel ? VARIANT_TRUE : VARIANT_FALSE;
@@ -893,7 +783,10 @@ namespace mshtml {
 
 
 
-	// Parent window subclass procedure
+	// -------------------------------------------------------------------------
+	// Parent window subclass
+	// -------------------------------------------------------------------------
+
 	static LRESULT CALLBACK ParentSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData ) {
 		ParentSubclassData *data = (ParentSubclassData *)dwRefData;
 		if ( !data || !data->ctrl )
@@ -911,10 +804,16 @@ namespace mshtml {
 
 		case WM_SHOWWINDOW:
 			if ( ctrl->hwndControl && IsWindow( ctrl->hwndControl ) ) {
-				if ( wParam )
-					UpdateControlPosition( ctrl );
-				else
+				if ( wParam ) {
+					if ( ctrl->hidden )
+						ShowWindow( ctrl->hwndControl, SW_HIDE );
+					else {
+						UpdateControlPosition( ctrl );
+						ShowWindow( ctrl->hwndControl, SW_SHOW );
+					}
+				} else {
 					ShowWindow( ctrl->hwndControl, SW_HIDE );
+				}
 			}
 			break;
 
@@ -936,10 +835,12 @@ namespace mshtml {
 
 
 
+	// -------------------------------------------------------------------------
 	// Event sink connection management
+	// -------------------------------------------------------------------------
+
 	static void ConnectEventSink( Control &ctrl, Context *ctx ) {
-		if ( !ctrl.webBrowser )
-			return;
+		if ( !ctrl.webBrowser ) return;
 
 		CComPtr<IConnectionPointContainer> cpc;
 		if ( FAILED( ctrl.webBrowser->QueryInterface( IID_IConnectionPointContainer, (void **)&cpc ) ) )
@@ -949,77 +850,65 @@ namespace mshtml {
 		if ( FAILED( cpc->FindConnectionPoint( DIID_DWebBrowserEvents2, &cp ) ) )
 			return;
 
-		EventSink *sink = new EventSink( ctx, ctrl.configId ); // refcount = 1
+		EventSink *sink = new EventSink( ctx, ctrl.configId );
 
 		DWORD cookie = 0;
 		if ( SUCCEEDED( cp->Advise( sink, &cookie ) ) ) {
 			ctrl.eventCookie = cookie;
-			ctrl.eventCP = cp.Detach();
-			ctrl.eventSink = sink; // nossa referência continua com refcount = 1; Advise adiciona a dele
+			ctrl.eventCP     = cp.Detach();
+			ctrl.eventSink   = sink;
 		} else {
-			sink->Release(); // refcount volta a 0 → deleta o objeto
+			sink->Release();
 		}
 	}
-
-
 
 	static void DisconnectEventSink( Control &ctrl ) {
 		if ( ctrl.eventCP && ctrl.eventSink ) {
 			ctrl.eventCP->Unadvise( ctrl.eventCookie );
 			ctrl.eventCP->Release();
-			ctrl.eventCP = nullptr;
+			ctrl.eventCP     = nullptr;
 			ctrl.eventSink->Release();
-			ctrl.eventSink = nullptr;
+			ctrl.eventSink   = nullptr;
 			ctrl.eventCookie = 0;
 		}
 	}
 
 
 
+	// -------------------------------------------------------------------------
+	// CreateWebBrowserControl
+	// -------------------------------------------------------------------------
+
 	/**
 	 * @brief Creates the popup window hosting the Shell.Explorer control.
-	 *
-	 * Initializes ATL, creates the window, obtains IWebBrowser2, sets up transparency
-	 * and rounded corners, and installs parent subclassing.
-	 *
-	 * @param ctrl      Control to populate with COM pointers and window handles.
-	 * @param rain      Owning Rain instance.
-	 * @param outError  Receives error description on failure.
-	 * @return true on success, false otherwise.
 	 */
 	static bool CreateWebBrowserControl( Control &ctrl, Rain *rain, std::string &outError ) {
 		if ( !IsWindow( ctrl.hwndParent ) ) {
 			outError = "Invalid parent window handle";
-			RN_LOG( rain, LOG_ERROR, L"MSHTML: Invalid hwndParent." );
+			RN_LOG( rain, LOG_ERROR, L"Trident: Invalid hwndParent." );
 			return false;
 		}
 
 		static bool atlInitTried = false;
 		if ( !atlInitTried ) {
 			HMODULE hAtl = LoadLibraryW( L"atl.dll" );
-
 			if ( hAtl ) {
-				typedef BOOL( WINAPI * AtlAxWinInitProc )();
+				typedef BOOL( WINAPI *AtlAxWinInitProc )();
 				auto pInit = (AtlAxWinInitProc)GetProcAddress( hAtl, "AtlAxWinInit" );
-				if ( pInit )
-					pInit();
+				if ( pInit ) pInit();
 			} else {
 				AtlAxWinInit();
 			}
-
 			atlInitTried = true;
 		}
 
-
-		// Calculate final position/size after constraint and padding
 		RECT parentRect;
 		GetWindowRect( ctrl.hwndParent, &parentRect );
 		int screenX, screenY, finalW, finalH;
 		GetConstrainedScreenRect( &ctrl, parentRect, screenX, screenY, finalW, finalH );
 
-		DWORD dwStyle = WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS;
+		DWORD dwStyle   = WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS;
 		DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE;
-
 
 		// clang-format off
 		HWND hwndPopup = CreateWindowExW(
@@ -1027,12 +916,8 @@ namespace mshtml {
 			L"AtlAxWin",
 			L"Shell.Explorer",
 			dwStyle,
-			screenX,
-			screenY,
-			finalW,
-			finalH,
-			nullptr,
-			nullptr,
+			screenX, screenY, finalW, finalH,
+			nullptr, nullptr,
 			GetModuleHandleW( nullptr ),
 			nullptr
 		);
@@ -1049,7 +934,6 @@ namespace mshtml {
 
 		ctrl.hwndControl = hwndPopup;
 
-		// Apply rounded corners if requested
 		if ( ctrl.cornerRadius > 0 )
 			ApplyRoundedCorners( hwndPopup, finalW, finalH, ctrl.cornerRadius );
 
@@ -1059,7 +943,7 @@ namespace mshtml {
 			DestroyWindow( hwndPopup );
 			ctrl.hwndControl = nullptr;
 			outError = "AtlAxGetControl failed";
-			RN_LOG( rain, LOG_ERROR, L"MSHTML: AtlAxGetControl failed." );
+			RN_LOG( rain, LOG_ERROR, L"Trident: AtlAxGetControl failed." );
 			return false;
 		}
 
@@ -1068,14 +952,10 @@ namespace mshtml {
 			DestroyWindow( hwndPopup );
 			ctrl.hwndControl = nullptr;
 			outError = "QueryInterface(IWebBrowser2) failed";
-			RN_LOG( rain, LOG_ERROR, L"MSHTML: QueryInterface(IWebBrowser2) failed." );
+			RN_LOG( rain, LOG_ERROR, L"Trident: QueryInterface(IWebBrowser2) failed." );
 			return false;
 		}
 
-		// Enable transparency via layered window and color key.
-		// Note: put_AllowTransparency is not available on IWebBrowser2;
-		// actual transparency is achieved by injecting background:transparent
-		// into the document on DocumentComplete.
 		if ( ctrl.transparent ) {
 			LONG_PTR exStyle = GetWindowLongPtr( hwndPopup, GWL_EXSTYLE );
 			SetWindowLongPtr( hwndPopup, GWL_EXSTYLE, exStyle | WS_EX_LAYERED );
@@ -1091,9 +971,8 @@ namespace mshtml {
 		ShowWindow( hwndPopup, ctrl.hidden ? SW_HIDE : SW_SHOW );
 		UpdateWindow( hwndPopup );
 
-		// Install parent subclassing
-		ParentSubclassData *subData = new ParentSubclassData{};
-		subData->ctrl = &ctrl;
+		ParentSubclassData *subData  = new ParentSubclassData{};
+		subData->ctrl       = &ctrl;
 		subData->hWndParent = ctrl.hwndParent;
 
 		UINT_PTR subclassId = (UINT_PTR)ctrl.configId;
@@ -1101,10 +980,10 @@ namespace mshtml {
 		if ( !SetWindowSubclass( ctrl.hwndParent, ParentSubclassProc, subclassId, (DWORD_PTR)subData ) ) {
 			delete subData;
 			ctrl.subclassData = nullptr;
-			RN_LOG( rain, LOG_WARNING, L"MSHTML: SetWindowSubclass failed." );
+			RN_LOG( rain, LOG_WARNING, L"Trident: SetWindowSubclass failed." );
 		} else {
 			ctrl.subclassData = subData;
-			RN_LOG( rain, LOG_NOTICE, L"MSHTML: Parent subclass installed." );
+			RN_LOG( rain, LOG_NOTICE, L"Trident: Parent subclass installed." );
 		}
 
 		{
@@ -1114,20 +993,13 @@ namespace mshtml {
 			wchar_t buf[256];
 			swprintf_s(
 				buf,
-				L"MSHTML: Popup created. Rect=(%d,%d,%d,%d) insideSkin=%s padding=(%d,%d,%d,%d) radius=%d",
-				rc.left,
-				rc.top,
-				rc.right,
-				rc.bottom,
+				L"Trident: Popup created. Rect=(%d,%d,%d,%d) insideSkin=%s padding=(%d,%d,%d,%d) radius=%d",
+				rc.left, rc.top, rc.right, rc.bottom,
 				ctrl.insideSkin ? L"YES" : L"NO",
-				ctrl.padLeft,
-				ctrl.padTop,
-				ctrl.padWidth,
-				ctrl.padHeight,
+				ctrl.padLeft, ctrl.padTop, ctrl.padWidth, ctrl.padHeight,
 				ctrl.cornerRadius
 			);
 			// clang-format on
-
 			RN_LOG( rain, LOG_NOTICE, buf );
 		}
 
@@ -1137,26 +1009,51 @@ namespace mshtml {
 	// -------------------------------------------------------------------------
 	// Public API
 	// -------------------------------------------------------------------------
+
+	/**
+	 * @brief Stable indirection between Lua closures and a live Control.
+	 *
+	 * All Lua closures hold a ControlHandle* instead of a raw Control*.
+	 * DoQuit nulls handle->ctrl BEFORE freeing the Control, so any closure
+	 * called after quit — including l_gc fired by the GC after Cleanup() —
+	 * sees a null ctrl and returns immediately.
+	 *
+	 * Lifetime: allocated in l_create, freed by l_gc after DoQuit has nulled ctrl.
+	 */
+	struct ControlHandle {
+		Control *ctrl; ///< Non-null while the control is alive; nullptr after DoQuit.
+	};
+
+	/**
+	 * FIX #4: g_contextsMutex is NOT held while ProcessMessages calls
+	 * DrainEventQueue. Callbacks fired during drain may call browser:quit()
+	 * which acquires the mutex in DoQuit — holding it here would deadlock.
+	 */
 	int ProcessMessages( Rain *rain ) {
-		std::lock_guard<std::recursive_mutex> lock( g_contextsMutex );
-		auto it = g_contexts.find( rain );
-		if ( it == g_contexts.end() )
-			return 0;
-		// Fallback path — WM_TRIDENT_EVENT from the hidden window already drains
-		// the queue immediately on each browser event. This is called from
-		// Rainmeter's Update cycle as a safety net in case a message is missed.
-		return DrainEventQueue( it->second, rain );
+		Context *ctx = nullptr;
+		{
+			std::lock_guard<std::mutex> lock( g_contextsMutex );
+			auto it = g_contexts.find( rain );
+			if ( it == g_contexts.end() ) return 0;
+			ctx = it->second;
+		}
+		return DrainEventQueue( ctx, rain );
 	}
 
 	void Cleanup( Rain *rain ) {
-		std::lock_guard<std::recursive_mutex> lock( g_contextsMutex );
+		std::lock_guard<std::mutex> lock( g_contextsMutex );
 		auto it = g_contexts.find( rain );
-		if ( it == g_contexts.end() )
-			return;
+		if ( it == g_contexts.end() ) return;
 		Context *ctx = it->second;
 
 		for ( auto &pair : ctx->controls ) {
-			Control &ctrl = pair.second;
+			Control &ctrl = *pair.second;
+
+			if ( ctrl.handle ) {
+				static_cast<ControlHandle *>( ctrl.handle )->ctrl = nullptr;
+				ctrl.handle = nullptr;
+			}
+
 			DisconnectEventSink( ctrl );
 
 			if ( ctrl.subclassData ) {
@@ -1184,7 +1081,14 @@ namespace mshtml {
 				lua_pushnil( rain->L );
 				lua_setfield( rain->L, LUA_REGISTRYINDEX, ctrl.browserKey.c_str() );
 			}
+			if ( ctrl.externalDispatch ) {
+				ExternalDispatch *ext = static_cast<ExternalDispatch *>( ctrl.externalDispatch );
+				ctrl.externalDispatch = nullptr;
+				ext->CleanupBoundFunctions();
+				ext->Release();
+			}
 		}
+
 		ctx->controls.clear();
 		if ( ctx->hiddenWindow )
 			DestroyWindow( ctx->hiddenWindow );
@@ -1193,342 +1097,46 @@ namespace mshtml {
 
 		if ( g_contexts.empty() && g_comInitialized && g_comNeedsUninitialize ) {
 			CoUninitialize();
-			g_comInitialized = false;
+			g_comInitialized       = false;
 			g_comNeedsUninitialize = false;
 		}
 	}
 
 	// -------------------------------------------------------------------------
-	// Lua bindings (methods attached to the browser object)
+	// Lua bindings
 	// -------------------------------------------------------------------------
 
 	/**
-	 * @brief Converts a control's SanitizeFlags bitmask into a sanitize::Options struct.
-	 *
-	 * This is the single point of translation between the trident flag model
-	 * (default=block-all, allow_* to loosen) and the sanitize.hpp Options struct
-	 * (each field independently controllable).
+	 * @brief Converts a control's SanitizeFlags bitmask into sanitize::Options.
 	 */
 	static sanitize::Options FlagsToOptions( uint32_t flags ) {
 		sanitize::Options opts;
-		opts.blockScripts = ( flags & BLOCK_SCRIPTS ) != 0;
-		opts.blockEvents = ( flags & BLOCK_EVENTS ) != 0;
-		opts.blockStyle = ( flags & BLOCK_STYLE ) != 0;
-		opts.filterCss = ( flags & FILTER_CSS ) != 0;
-		opts.validateUrls = ( flags & VALIDATE_URLS ) != 0;
-		opts.allowLocal = ( flags & ALLOW_LOCAL ) != 0;
+		opts.blockScripts  = ( flags & BLOCK_SCRIPTS  ) != 0;
+		opts.blockEvents   = ( flags & BLOCK_EVENTS   ) != 0;
+		opts.blockStyle    = ( flags & BLOCK_STYLE    ) != 0;
+		opts.filterCss     = ( flags & FILTER_CSS     ) != 0;
+		opts.validateUrls  = ( flags & VALIDATE_URLS  ) != 0;
+		opts.allowLocal    = ( flags & ALLOW_LOCAL    ) != 0;
 		return opts;
 	}
 
 	/**
-	 * @brief Navigates the browser to a URL.
+	 * @brief Core cleanup logic shared by l_quit and l_gc.
 	 *
-	 * Lua signature: browser:navigate(url)
+	 * Nulls h->ctrl first so reentrant or late calls are safe no-ops.
+	 * Saves browserKey locally before erasing from the map so the Lua registry
+	 * entry can be cleared even after the Control has been freed.
 	 */
-	static int l_navigate( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		const char *url = luaL_checkstring( L, 2 );
+	static void DoQuit( ControlHandle *h, lua_State *L ) {
+		if ( !h || !h->ctrl ) return;
 
-		if ( ctrl->sanitizeFlags & VALIDATE_URLS ) {
-			bool allowLocal = ( ctrl->sanitizeFlags & ALLOW_LOCAL ) != 0;
-			if ( !sanitize::IsUrlSafe( url, allowLocal ) ) {
-				RN_LOG( ctrl->rain, LOG_WARNING, ( L"Trident: [SECURITY] navigate() blocked unsafe URL: " + utf8_to_wstring( url ) ).c_str() );
-				return 0;
-			}
-		}
+		Control    *ctrl        = h->ctrl;
+		h->ctrl                 = nullptr; // disarm all closures
 
-		std::wstring wurl = utf8_to_wstring( url );
-		CComVariant vUrl( wurl.c_str() );
-		CComVariant vFlags( 0x04 );
-		ctrl->webBrowser->Navigate2( &vUrl, &vFlags, nullptr, nullptr, nullptr );
-		RN_LOG( ctrl->rain, LOG_NOTICE, ( L"Trident: navigate -> " + wurl ).c_str() );
-		return 0;
-	}
-
-	/**
-	 * @brief Navigates back in the history.
-	 *
-	 * Lua signature: browser:back()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_back( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		ctrl->webBrowser->GoBack();
-		return 0;
-	}
-
-	/**
-	 * @brief Navigates forward in the history.
-	 *
-	 * Lua signature: browser:forward()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_forward( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		ctrl->webBrowser->GoForward();
-		return 0;
-	}
-
-	/**
-	 * @brief Refreshes the current page.
-	 *
-	 * Lua signature: browser:refresh()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_refresh( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		ctrl->webBrowser->Refresh();
-		return 0;
-	}
-
-	/**
-	 * @brief Stops any ongoing navigation or download.
-	 *
-	 * Lua signature: browser:stop()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_stop( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		ctrl->webBrowser->Stop();
-		return 0;
-	}
-
-	/**
-	 * @brief Writes HTML content into the document.
-	 *
-	 * Note: The document must be open. It is recommended to call this from
-	 * the "documentcomplete" callback after navigating to "about:blank".
-	 *
-	 * Lua signature: browser:write(html)
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_write( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		const char *html = luaL_checkstring( L, 2 );
-
-		std::string content = html;
-
-		if ( ctrl->sanitizeFlags & ( BLOCK_SCRIPTS | BLOCK_EVENTS | FILTER_CSS | BLOCK_STYLE | VALIDATE_URLS ) ) {
-			sanitize::Options opts = FlagsToOptions( ctrl->sanitizeFlags );
-			content = sanitize::HtmlFragment( html, opts );
-			if ( content != html )
-				RN_LOG( ctrl->rain, LOG_WARNING,
-								L"Trident: [SECURITY] write() content was modified — "
-								L"dangerous tags, event attributes, or blocked CSS were removed." );
-		}
-
-		CComPtr<IDispatch> docDisp;
-		if ( SUCCEEDED( ctrl->webBrowser->get_Document( &docDisp ) ) && docDisp ) {
-			InvokeDocumentWrite( docDisp, DISPID_IHTMLDOCUMENT2_WRITE, content.c_str() );
-		}
-		return 0;
-	}
-
-	/**
-	 * @brief Writes a line of HTML content (appends a newline).
-	 *
-	 * Lua signature: browser:writeline(html)
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_writeline( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		const char *html = luaL_checkstring( L, 2 );
-
-		std::string content = html;
-
-		if ( ctrl->sanitizeFlags & ( BLOCK_SCRIPTS | BLOCK_EVENTS | FILTER_CSS | BLOCK_STYLE | VALIDATE_URLS ) ) {
-			sanitize::Options opts = FlagsToOptions( ctrl->sanitizeFlags );
-			content = sanitize::HtmlFragment( html, opts );
-			if ( content != html )
-				RN_LOG( ctrl->rain, LOG_WARNING,
-								L"Trident: [SECURITY] writeline() content was modified — "
-								L"dangerous tags, event attributes, or blocked CSS were removed." );
-		}
-
-		CComPtr<IDispatch> docDisp;
-		if ( SUCCEEDED( ctrl->webBrowser->get_Document( &docDisp ) ) && docDisp ) {
-			InvokeDocumentWrite( docDisp, DISPID_IHTMLDOCUMENT2_WRITELN, content.c_str() );
-		}
-		return 0;
-	}
-
-	/**
-	 * @brief Enables or disables color-key transparency.
-	 *
-	 * Lua signature: browser:setTransparent(enable [, colorKey])
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_setTransparent( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl )
-			return 0;
-		bool enable = lua_toboolean( L, 2 );
-		COLORREF color = ctrl->colorKey;
-		if ( lua_isnumber( L, 3 ) ) {
-			int rgb = (int)lua_tointeger( L, 3 );
-			color = RGB( ( rgb >> 16 ) & 0xFF, ( rgb >> 8 ) & 0xFF, rgb & 0xFF );
-		}
-		ctrl->transparent = enable;
-		ctrl->colorKey = color;
-		ApplyParentTransparency( ctrl->hwndParent, enable, color );
-		if ( ctrl->hwndControl && IsWindow( ctrl->hwndControl ) ) {
-			LONG_PTR exStyle = GetWindowLongPtr( ctrl->hwndControl, GWL_EXSTYLE );
-			if ( enable ) {
-				SetWindowLongPtr( ctrl->hwndControl, GWL_EXSTYLE, exStyle | WS_EX_LAYERED );
-				SetLayeredWindowAttributes( ctrl->hwndControl, color, 0, LWA_COLORKEY );
-			} else {
-				SetWindowLongPtr( ctrl->hwndControl, GWL_EXSTYLE, exStyle & ~WS_EX_LAYERED );
-			}
-		}
-		return 0;
-	}
-
-	/**
-	 * @brief Executes a JavaScript string in the context of the current document.
-	 *
-	 * Lua signature: browser:execScript(script)
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_execScript( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser )
-			return 0;
-		const char *script = luaL_checkstring( L, 2 );
-		CComPtr<IDispatch> docDisp;
-		if ( SUCCEEDED( ctrl->webBrowser->get_Document( &docDisp ) ) && docDisp ) {
-			CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
-			if ( htmlDoc ) {
-				CComPtr<IHTMLWindow2> window;
-				if ( SUCCEEDED( htmlDoc->get_parentWindow( &window ) ) && window ) {
-					// Wrap in a strict IIFE to isolate scope and avoid global leaks.
-					// The leading ';' prevents errors if prior code lacks a semicolon.
-					std::string wrapped = ";(function() { 'use strict';\n";
-					wrapped += script;
-					wrapped += "\n})();";
-					std::wstring wscript = utf8_to_wstring( wrapped );
-					CComBSTR bstrScript( wscript.c_str() );
-					CComVariant ret;
-					window->execScript( bstrScript, CComBSTR( L"JavaScript" ), &ret );
-				}
-			}
-		}
-		return 0;
-	}
-
-	/**
-	 * @brief Returns the current location URL.
-	 *
-	 * Lua signature: url = browser:getURL()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 1 (string or nil)
-	 */
-	static int l_getURL( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->webBrowser ) {
-			lua_pushnil( L );
-			return 1;
-		}
-		BSTR url = nullptr;
-		if ( SUCCEEDED( ctrl->webBrowser->get_LocationURL( &url ) ) && url ) {
-			std::string utf8 = wstring_to_utf8( url );
-			lua_pushlstring( L, utf8.c_str(), utf8.size() );
-			SysFreeString( url );
-		} else {
-			lua_pushnil( L );
-		}
-		return 1;
-	}
-
-	/**
-	 * @brief Forces the control to recalculate and apply its position/size.
-	 *
-	 * Useful after changing the skin's position or dimensions programmatically.
-	 *
-	 * Lua signature: browser:reposition()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_reposition( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->hwndControl || !ctrl->hwndParent )
-			return 0;
-		UpdateControlPosition( ctrl );
-		return 0;
-	}
-
-	/**
-	 * @brief Shows the browser window (reverses hide = true or browser:hide()).
-	 * Lua signature: browser:show()
-	 */
-	static int l_show( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->hwndControl )
-			return 0;
-		ctrl->hidden = false;
-		UpdateControlPosition( ctrl );
-		return 0;
-	}
-
-	/**
-	 * @brief Hides the browser window without destroying it.
-	 * Lua signature: browser:hide()
-	 */
-	static int l_hide( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl || !ctrl->hwndControl )
-			return 0;
-		ctrl->hidden = true;
-		ShowWindow( ctrl->hwndControl, SW_HIDE );
-		return 0;
-	}
-
-	/**
-	 * @brief Destroys the browser control and releases all resources.
-	 *
-	 * Lua signature: browser:quit()
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
-	static int l_quit( lua_State *L ) {
-		Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-		if ( !ctrl )
-			return 0;
-		Rain *rain = ctrl->rain;
+		Rain       *rain        = ctrl->rain;
 		std::string callbackKey = ctrl->callbackKey;
-		int configId = ctrl->configId;
+		std::string browserKey  = ctrl->browserKey;
+		int         configId    = ctrl->configId;
 
 		DisconnectEventSink( *ctrl );
 
@@ -1552,55 +1160,334 @@ namespace mshtml {
 			DestroyWindow( ctrl->hwndControl );
 			ctrl->hwndControl = nullptr;
 		}
+		if ( ctrl->externalDispatch ) {
+			ExternalDispatch *ext = static_cast<ExternalDispatch *>( ctrl->externalDispatch );
+			ctrl->externalDispatch = nullptr;
+			ext->CleanupBoundFunctions();
+			ext->Release();
+		}
 
 		{
-			std::lock_guard<std::recursive_mutex> lock( g_contextsMutex );
+			std::lock_guard<std::mutex> lock( g_contextsMutex );
 			auto it = g_contexts.find( rain );
 			if ( it != g_contexts.end() )
 				it->second->controls.erase( configId );
 		}
+
 		if ( rain && rain->L && !callbackKey.empty() ) {
 			lua_pushnil( rain->L );
 			lua_setfield( rain->L, LUA_REGISTRYINDEX, callbackKey.c_str() );
 		}
-		if ( rain && rain->L && !ctrl->browserKey.empty() ) {
+		if ( rain && rain->L && !browserKey.empty() ) {
 			lua_pushnil( rain->L );
-			lua_setfield( rain->L, LUA_REGISTRYINDEX, ctrl->browserKey.c_str() );
+			lua_setfield( rain->L, LUA_REGISTRYINDEX, browserKey.c_str() );
+		}
+	}
+
+	static int l_navigate( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+		const char *url = luaL_checkstring( L, 2 );
+		if ( ctrl->sanitizeFlags & VALIDATE_URLS ) {
+			bool allowLocal = ( ctrl->sanitizeFlags & ALLOW_LOCAL ) != 0;
+			if ( !sanitize::IsUrlSafe( url, allowLocal ) ) {
+				RN_LOG( ctrl->rain, LOG_WARNING, ( L"Trident: [SECURITY] navigate() blocked unsafe URL: " + utf8_to_wstring( url ) ).c_str() );
+				return 0;
+			}
+		}
+		std::wstring wurl = utf8_to_wstring( url );
+		CComVariant vUrl( wurl.c_str() );
+		CComVariant vFlags( 0x04 );
+		ctrl->webBrowser->Navigate2( &vUrl, &vFlags, nullptr, nullptr, nullptr );
+		RN_LOG( ctrl->rain, LOG_NOTICE, ( L"Trident: navigate -> " + wurl ).c_str() );
+		return 0;
+	}
+
+	static int l_back( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+		ctrl->webBrowser->GoBack();
+		return 0;
+	}
+
+	static int l_forward( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+		ctrl->webBrowser->GoForward();
+		return 0;
+	}
+
+	static int l_refresh( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+		ctrl->webBrowser->Refresh();
+		return 0;
+	}
+
+	static int l_stop( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+		ctrl->webBrowser->Stop();
+		return 0;
+	}
+
+	static int l_write( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+		const char *html    = luaL_checkstring( L, 2 );
+		std::string content = html;
+		if ( ctrl->sanitizeFlags & ( BLOCK_SCRIPTS | BLOCK_EVENTS | FILTER_CSS | BLOCK_STYLE | VALIDATE_URLS ) ) {
+			sanitize::Options opts = FlagsToOptions( ctrl->sanitizeFlags );
+			content = sanitize::HtmlFragment( html, opts );
+			if ( content != html )
+				RN_LOG( ctrl->rain, LOG_WARNING,
+				        L"Trident: [SECURITY] write() content was modified — "
+				        L"dangerous tags, event attributes, or blocked CSS were removed." );
+		}
+
+		CComPtr<IDispatch> docDisp;
+		if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp )
+			return 0;
+
+		CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
+		if ( !htmlDoc ) return 0;
+
+		// document.open() — resets the document, clears existing content.
+		// Invoked via IDispatch because IHTMLDocument2::open() requires
+		// several optional parameters that are inconvenient to supply via COM.
+		DISPID dispOpen = 0;
+		OLECHAR *openName = const_cast<OLECHAR *>( L"open" );
+		if ( SUCCEEDED( docDisp->GetIDsOfNames( IID_NULL, &openName, 1, LOCALE_USER_DEFAULT, &dispOpen ) ) ) {
+			DISPPARAMS noArgs = {};
+			docDisp->Invoke( dispOpen, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD,
+			                 &noArgs, nullptr, nullptr, nullptr );
+		}
+
+		// document.write(html) — inject content into the open stream.
+		std::wstring wtext = utf8_to_wstring( content );
+		CComBSTR bstrText( wtext.c_str() );
+		DISPPARAMS params  = {};
+		VARIANTARG varg;
+		VariantInit( &varg );
+		varg.vt      = VT_BSTR;
+		varg.bstrVal = bstrText;
+		params.rgvarg = &varg;
+		params.cArgs  = 1;
+		docDisp->Invoke( DISPID_IHTMLDOCUMENT2_WRITE, IID_NULL, LOCALE_USER_DEFAULT,
+		                 DISPATCH_METHOD, &params, nullptr, nullptr, nullptr );
+		VariantClear( &varg );
+
+		// document.close() — finalises the parse and fires documentcomplete.
+		htmlDoc->close();
+
+		return 0;
+	}
+
+	static int l_setTransparent( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl ) return 0;
+		bool enable      = lua_toboolean( L, 2 );
+		COLORREF color   = ctrl->colorKey;
+		if ( lua_isnumber( L, 3 ) ) {
+			int rgb = (int)lua_tointeger( L, 3 );
+			color = RGB( ( rgb >> 16 ) & 0xFF, ( rgb >> 8 ) & 0xFF, rgb & 0xFF );
+		}
+		ctrl->transparent = enable;
+		ctrl->colorKey    = color;
+		if ( ctrl->hwndControl && IsWindow( ctrl->hwndControl ) ) {
+			LONG_PTR exStyle = GetWindowLongPtr( ctrl->hwndControl, GWL_EXSTYLE );
+			if ( enable ) {
+				SetWindowLongPtr( ctrl->hwndControl, GWL_EXSTYLE, exStyle | WS_EX_LAYERED );
+				SetLayeredWindowAttributes( ctrl->hwndControl, color, 0, LWA_COLORKEY );
+			} else {
+				SetWindowLongPtr( ctrl->hwndControl, GWL_EXSTYLE, exStyle & ~WS_EX_LAYERED );
+			}
 		}
 		return 0;
 	}
 
-	/**
-	 * @brief Lua __gc metamethod for automatic cleanup.
-	 *
-	 * @param L Lua state (upvalue 1: Control*)
-	 * @return 0
-	 */
+	static int l_execScript( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) return 0;
+
+		const char *script = luaL_checkstring( L, 2 );
+
+		CComPtr<IDispatch> docDisp;
+		if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
+			lua_pushnil( L );
+			lua_pushstring( L, "No document" );
+			return 2;
+		}
+
+		CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
+		if ( !htmlDoc ) {
+			lua_pushnil( L );
+			lua_pushstring( L, "Invalid document" );
+			return 2;
+		}
+
+		CComPtr<IHTMLWindow2> window;
+		if ( FAILED( htmlDoc->get_parentWindow( &window ) ) || !window ) {
+			lua_pushnil( L );
+			lua_pushstring( L, "No window" );
+			return 2;
+		}
+
+		CComPtr<IHTMLElement> body;
+		if ( FAILED( htmlDoc->get_body( &body ) ) || !body ) {
+			lua_pushnil( L );
+			lua_pushstring( L, "No body" );
+			return 2;
+		}
+
+		std::string wrapped =
+			"(function(){\n"
+			"    'use strict';\n"
+			"    try {\n"
+			"        var r = (function(){\n";
+		wrapped += script;
+		wrapped +=
+			"\n})();\n"
+			"        document.body.setAttribute('data-trident-ret', String(r));\n"
+			"    } catch(e) {\n"
+			"        document.body.setAttribute('data-trident-ret', 'ERROR:' + e.message);\n"
+			"    }\n"
+			"})();";
+
+		std::wstring wscript = utf8_to_wstring( wrapped );
+		CComBSTR bstrScript( wscript.c_str() );
+		CComBSTR bstrLang( L"JavaScript" );
+
+		CComVariant resultDummy;
+		HRESULT hrExec = window->execScript( bstrScript, bstrLang, &resultDummy );
+		if ( FAILED( hrExec ) ) {
+			lua_pushnil( L );
+			lua_pushstring( L, "execScript failed" );
+			lua_pushinteger( L, hrExec );
+			return 3;
+		}
+
+		CComBSTR  attrName( L"data-trident-ret" );
+		CComVariant attrValue;
+		HRESULT hrGet = body->getAttribute( attrName, 2, &attrValue );
+
+		VARIANT_BOOL vbSuccess = VARIANT_FALSE;
+		body->removeAttribute( attrName, 2, &vbSuccess );
+
+		if ( FAILED( hrGet ) || attrValue.vt == VT_EMPTY || attrValue.vt == VT_NULL ) {
+			lua_pushnil( L );
+			return 1;
+		}
+
+		if ( attrValue.vt != VT_BSTR ) {
+			if ( FAILED( VariantChangeType( &attrValue, &attrValue, 0, VT_BSTR ) ) ) {
+				lua_pushnil( L );
+				lua_pushstring( L, "Variant conversion failed" );
+				return 2;
+			}
+		}
+
+		std::string resultStr = wstring_to_utf8( attrValue.bstrVal );
+
+		if ( resultStr.compare( 0, 6, "ERROR:" ) == 0 ) {
+			lua_pushnil( L );
+			lua_pushstring( L, resultStr.c_str() + 6 );
+			return 2;
+		}
+
+		char *endptr;
+		errno = 0;
+		long longVal = strtol( resultStr.c_str(), &endptr, 10 );
+		if ( *endptr == '\0' && errno == 0 ) { lua_pushinteger( L, longVal ); return 1; }
+
+		double dblVal = strtod( resultStr.c_str(), &endptr );
+		if ( *endptr == '\0' && errno == 0 ) { lua_pushnumber( L, dblVal ); return 1; }
+
+		lua_pushlstring( L, resultStr.c_str(), resultStr.size() );
+		return 1;
+	}
+
+	static int l_getURL( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->webBrowser ) { lua_pushnil( L ); return 1; }
+		BSTR url = nullptr;
+		if ( SUCCEEDED( ctrl->webBrowser->get_LocationURL( &url ) ) && url ) {
+			std::string utf8 = wstring_to_utf8( url );
+			lua_pushlstring( L, utf8.c_str(), utf8.size() );
+			SysFreeString( url );
+		} else {
+			lua_pushnil( L );
+		}
+		return 1;
+	}
+
+	static int l_reposition( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->hwndControl || !ctrl->hwndParent ) return 0;
+		UpdateControlPosition( ctrl );
+		return 0;
+	}
+
+	static int l_show( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->hwndControl ) return 0;
+		ctrl->hidden = false;
+		UpdateControlPosition( ctrl );
+		return 0;
+	}
+
+	static int l_hide( lua_State *L ) {
+		ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control       *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl || !ctrl->hwndControl ) return 0;
+		ctrl->hidden = true;
+		ShowWindow( ctrl->hwndControl, SW_HIDE );
+		return 0;
+	}
+
+	static int l_quit( lua_State *L ) {
+		ControlHandle *h = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		DoQuit( h, L );
+		return 0;
+	}
+
 	static int l_gc( lua_State *L ) {
-		return l_quit( L );
+		ControlHandle **pp = (ControlHandle **)lua_touserdata( L, 1 );
+		if ( !pp || !*pp ) return 0;
+		ControlHandle *h = *pp;
+		*pp = nullptr;
+		DoQuit( h, L );
+		delete h;
+		return 0;
 	}
 
 	// -------------------------------------------------------------------------
-	// l_create — constructs a browser control from a Lua table
+	// l_create
 	// -------------------------------------------------------------------------
+
 	/**
 	 * @brief Creates a new browser control.
 	 *
 	 * Lua signature: trident.create(table)
 	 *
-	 * Expected table fields:
-	 * - url (string): Initial URL (optional)
-	 * - width, height, left, top (numbers): Position and size
-	 * - transparent (boolean): Enable color-key transparency
-	 * - colorKey (number): RGB color for transparency key
-	 * - silent (boolean): Suppress script errors
-	 * - insideSkin (boolean): Constrain to parent bounds (default true)
-	 * - padding (table): {left, top, width, height} reductions
-	 * - cornerRadius (number): Radius for rounded corners
-	 * - callback (function): Event handler
+	 * Lock discipline — three distinct phases:
+	 *   PHASE 1 (locked)   — COM init, Context creation.
+	 *   PHASE 2 (unlocked) — Lua option parsing, CreateWebBrowserControl, Navigate2.
+	 *                         Trident may call GetExternal here; lock must NOT be held.
+	 *   PHASE 3 (locked)   — Insert Control into map, create ExternalDispatch/ControlHandle.
 	 *
-	 * @param L Lua state (upvalue 1: Rain*)
-	 * @return 1 (browser object) or nil, error
+	 * FIX #5: AtlAxWinInit() moved outside the mutex (idempotent, no shared state to protect).
 	 */
 	static int l_create( lua_State *L ) {
 		Rain *rain = (Rain *)lua_touserdata( L, lua_upvalueindex( 1 ) );
@@ -1610,75 +1497,89 @@ namespace mshtml {
 			return 2;
 		}
 
-		if ( !g_comInitialized ) {
-			HRESULT hr = CoInitializeEx( nullptr, COINIT_APARTMENTTHREADED );
-			if ( hr == S_OK || hr == S_FALSE ) {
-				g_comInitialized = true;
-				g_comNeedsUninitialize = true;
-			} else if ( hr == RPC_E_CHANGED_MODE ) {
-				g_comInitialized = true;
-				g_comNeedsUninitialize = false;
-				RN_LOG( rain, LOG_WARNING, L"MSHTML: COM already initialized with incompatible threading model. Stability not guaranteed." );
-			} else {
-				lua_pushnil( L );
-				lua_pushstring( L, "COM initialization failed" );
-				return 2;
-			}
-		}
-
+		// FIX #5: outside the lock — idempotent Win32 class registration.
 		AtlAxWinInit();
 
-		std::lock_guard<std::recursive_mutex> lock( g_contextsMutex );
-		Context *ctx = nullptr;
-		auto it = g_contexts.find( rain );
-		if ( it == g_contexts.end() ) {
-			ctx = new Context{};
-			ctx->rain = rain;
-			ctx->nextId = 1;
-			ctx->hasPendingEvents = false;
-			ctx->hiddenWindow = CreateHiddenWindow( ctx );
-			g_contexts[rain] = ctx;
-		} else {
-			ctx = it->second;
-		}
+		// -------------------------------------------------------------------
+		// PHASE 1 — shared state only, safe to hold the lock.
+		// -------------------------------------------------------------------
+		Context *ctx     = nullptr;
+		int      configId = 0;
+		{
+			std::lock_guard<std::mutex> lock( g_contextsMutex );
 
+			if ( !g_comInitialized ) {
+				HRESULT hr = CoInitializeEx( nullptr, COINIT_APARTMENTTHREADED );
+				if ( hr == S_OK || hr == S_FALSE ) {
+					g_comInitialized       = true;
+					g_comNeedsUninitialize = true;
+				} else if ( hr == RPC_E_CHANGED_MODE ) {
+					g_comInitialized       = true;
+					g_comNeedsUninitialize = false;
+					RN_LOG( rain, LOG_WARNING,
+					        L"Trident: COM already initialized with incompatible threading model. "
+					        L"Stability not guaranteed." );
+				} else {
+					lua_pushnil( L );
+					lua_pushstring( L, "COM initialization failed" );
+					return 2;
+				}
+			}
+
+			auto it = g_contexts.find( rain );
+			if ( it == g_contexts.end() ) {
+				ctx                   = new Context{};
+				ctx->rain             = rain;
+				ctx->nextId           = 1;
+				ctx->hasPendingEvents = false;
+				ctx->hiddenWindow     = CreateHiddenWindow( ctx );
+				g_contexts[rain]      = ctx;
+			} else {
+				ctx = it->second;
+			}
+
+			configId = ctx->nextId++;
+		}
+		// g_contextsMutex is now FREE — Trident can call GetExternal safely.
+
+		// -------------------------------------------------------------------
+		// PHASE 2 — Lua parsing + COM operations. No lock held.
+		// -------------------------------------------------------------------
 		luaL_checktype( L, 1, LUA_TTABLE );
-		Control ctrl = {};
-		ctrl.configId = ctx->nextId++;
-		ctrl.rain = rain;
-		ctrl.width = 800;
-		ctrl.height = 600;
-		ctrl.left = 0;
-		ctrl.top = 0;
-		ctrl.transparent = false;
-		ctrl.colorKey = RGB( 255, 0, 255 );
-		ctrl.enabled = true;
-		ctrl.silent = true;
-		ctrl.hwndParent = rain->hwnd;
-		ctrl.insideSkin = true;
+		Control ctrl       = {};
+		ctrl.configId      = configId;
+		ctrl.rain          = rain;
+		ctrl.width         = 800;
+		ctrl.height        = 600;
+		ctrl.left          = 0;
+		ctrl.top           = 0;
+		ctrl.transparent   = false;
+		ctrl.colorKey      = RGB( 255, 0, 255 );
+		ctrl.enabled       = true;
+		ctrl.silent        = true;
+		ctrl.hwndParent    = rain->hwnd;
+		ctrl.insideSkin    = true;
 		ctrl.padLeft = ctrl.padTop = ctrl.padWidth = ctrl.padHeight = 0;
-		ctrl.cornerRadius = 0;
-		ctrl.sanitizeFlags = SANITIZE_ALL; // default: sanitize everything
-		ctrl.hidden = false; // default: visible
+		ctrl.cornerRadius  = 0;
+		ctrl.sanitizeFlags = SANITIZE_ALL;
+		ctrl.hidden        = false;
 
 		auto getNum = [&]( const char *field, long &out ) {
 			lua_getfield( L, 1, field );
-			if ( lua_isnumber( L, -1 ) )
-				out = (long)lua_tonumber( L, -1 );
+			if ( lua_isnumber( L, -1 ) ) out = (long)lua_tonumber( L, -1 );
 			lua_pop( L, 1 );
 		};
-		getNum( "width", ctrl.width );
+		getNum( "width",  ctrl.width  );
 		getNum( "height", ctrl.height );
-		getNum( "left", ctrl.left );
-		getNum( "top", ctrl.top );
+		getNum( "left",   ctrl.left   );
+		getNum( "top",    ctrl.top    );
 
 		lua_getfield( L, 1, "transparent" );
 		ctrl.transparent = lua_toboolean( L, -1 );
 		lua_pop( L, 1 );
 
 		lua_getfield( L, 1, "colorKey" );
-		if ( lua_isnumber( L, -1 ) )
-			ctrl.colorKey = (COLORREF)lua_tointeger( L, -1 );
+		if ( lua_isnumber( L, -1 ) ) ctrl.colorKey = (COLORREF)lua_tointeger( L, -1 );
 		lua_pop( L, 1 );
 
 		lua_getfield( L, 1, "silent" );
@@ -1686,82 +1587,50 @@ namespace mshtml {
 		lua_pop( L, 1 );
 
 		lua_getfield( L, 1, "insideSkin" );
-		if ( !lua_isnil( L, -1 ) )
-			ctrl.insideSkin = lua_toboolean( L, -1 );
+		if ( !lua_isnil( L, -1 ) ) ctrl.insideSkin = lua_toboolean( L, -1 );
 		lua_pop( L, 1 );
 
 		lua_getfield( L, 1, "padding" );
 		if ( lua_istable( L, -1 ) ) {
-			lua_rawgeti( L, -1, 1 );
-			if ( lua_isnumber( L, -1 ) )
-				ctrl.padLeft = (int)lua_tointeger( L, -1 );
-			lua_pop( L, 1 );
-			lua_rawgeti( L, -1, 2 );
-			if ( lua_isnumber( L, -1 ) )
-				ctrl.padTop = (int)lua_tointeger( L, -1 );
-			lua_pop( L, 1 );
-			lua_rawgeti( L, -1, 3 );
-			if ( lua_isnumber( L, -1 ) )
-				ctrl.padWidth = (int)lua_tointeger( L, -1 );
-			lua_pop( L, 1 );
-			lua_rawgeti( L, -1, 4 );
-			if ( lua_isnumber( L, -1 ) )
-				ctrl.padHeight = (int)lua_tointeger( L, -1 );
-			lua_pop( L, 1 );
+			lua_rawgeti( L, -1, 1 ); if ( lua_isnumber( L, -1 ) ) ctrl.padLeft   = (int)lua_tointeger( L, -1 ); lua_pop( L, 1 );
+			lua_rawgeti( L, -1, 2 ); if ( lua_isnumber( L, -1 ) ) ctrl.padTop    = (int)lua_tointeger( L, -1 ); lua_pop( L, 1 );
+			lua_rawgeti( L, -1, 3 ); if ( lua_isnumber( L, -1 ) ) ctrl.padWidth  = (int)lua_tointeger( L, -1 ); lua_pop( L, 1 );
+			lua_rawgeti( L, -1, 4 ); if ( lua_isnumber( L, -1 ) ) ctrl.padHeight = (int)lua_tointeger( L, -1 ); lua_pop( L, 1 );
 		}
 		lua_pop( L, 1 );
 
 		lua_getfield( L, 1, "cornerRadius" );
-		if ( lua_isnumber( L, -1 ) )
-			ctrl.cornerRadius = (int)lua_tointeger( L, -1 );
+		if ( lua_isnumber( L, -1 ) ) ctrl.cornerRadius = (int)lua_tointeger( L, -1 );
 		lua_pop( L, 1 );
 
-		// --- Parse `hide` option ---
 		lua_getfield( L, 1, "hide" );
-		if ( !lua_isnil( L, -1 ) )
-			ctrl.hidden = lua_toboolean( L, -1 ) != 0;
+		if ( !lua_isnil( L, -1 ) ) ctrl.hidden = lua_toboolean( L, -1 ) != 0;
 		lua_pop( L, 1 );
 
-		// --- Parse `sanitize` option ---
-		// true (default) → SANITIZE_ALL  (block everything)
-		// false          → SANITIZE_NONE (block nothing)
-		// table          → start from SANITIZE_ALL, clear flags via allow_* tokens:
-		//   "allow_scripts" → clear BLOCK_SCRIPTS
-		//   "allow_events"  → clear BLOCK_EVENTS
-		//   "allow_style"   → clear FILTER_CSS + BLOCK_STYLE (pass style through untouched)
-		//   "allow_css"     → clear FILTER_CSS only (style present but unfiltered)
-		//   "allow_urls"    → clear VALIDATE_URLS
-		//   "allow_local"   → set   ALLOW_LOCAL  (file:// permitted)
 		lua_getfield( L, 1, "sanitize" );
 		if ( lua_isboolean( L, -1 ) ) {
 			ctrl.sanitizeFlags = lua_toboolean( L, -1 ) ? SANITIZE_ALL : SANITIZE_NONE;
 		} else if ( lua_istable( L, -1 ) ) {
-			ctrl.sanitizeFlags = SANITIZE_ALL; // start strict, loosen via allow_*
+			ctrl.sanitizeFlags = SANITIZE_ALL;
 			lua_pushnil( L );
 			while ( lua_next( L, -2 ) != 0 ) {
 				if ( lua_isstring( L, -1 ) ) {
 					std::string tok = lua_tostring( L, -1 );
-					if ( tok == "allow_scripts" )
-						ctrl.sanitizeFlags &= ~BLOCK_SCRIPTS;
-					else if ( tok == "allow_events" )
-						ctrl.sanitizeFlags &= ~BLOCK_EVENTS;
-					else if ( tok == "allow_style" )
-						ctrl.sanitizeFlags &= ~( FILTER_CSS | BLOCK_STYLE );
-					else if ( tok == "allow_css" )
-						ctrl.sanitizeFlags &= ~FILTER_CSS;
-					else if ( tok == "allow_urls" )
-						ctrl.sanitizeFlags &= ~VALIDATE_URLS;
-					else if ( tok == "allow_local" )
-						ctrl.sanitizeFlags |= ALLOW_LOCAL;
+					if      ( tok == "allow_scripts" ) ctrl.sanitizeFlags &= ~BLOCK_SCRIPTS;
+					else if ( tok == "allow_events"  ) ctrl.sanitizeFlags &= ~BLOCK_EVENTS;
+					else if ( tok == "allow_style"   ) ctrl.sanitizeFlags &= ~( FILTER_CSS | BLOCK_STYLE );
+					else if ( tok == "allow_css"     ) ctrl.sanitizeFlags &= ~FILTER_CSS;
+					else if ( tok == "allow_urls"    ) ctrl.sanitizeFlags &= ~VALIDATE_URLS;
+					else if ( tok == "allow_local"   ) ctrl.sanitizeFlags |=  ALLOW_LOCAL;
 				}
 				lua_pop( L, 1 );
 			}
 		}
-		// nil → keep default SANITIZE_ALL
 		lua_pop( L, 1 );
 
 		{
-			const wchar_t *lvl = ctrl.sanitizeFlags == SANITIZE_ALL ? L"ALL" : ctrl.sanitizeFlags == SANITIZE_NONE ? L"NONE" : L"CUSTOM";
+			const wchar_t *lvl = ctrl.sanitizeFlags == SANITIZE_ALL  ? L"ALL"  :
+			                     ctrl.sanitizeFlags == SANITIZE_NONE ? L"NONE" : L"CUSTOM";
 			wchar_t buf[128];
 			swprintf_s( buf, L"Trident: sanitize=%s (flags=0x%X)", lvl, ctrl.sanitizeFlags );
 			RN_LOG( rain, LOG_NOTICE, buf );
@@ -1769,15 +1638,31 @@ namespace mshtml {
 
 		lua_getfield( L, 1, "callback" );
 		if ( lua_isfunction( L, -1 ) ) {
-			// Callback fornecido: armazenar no registro
 			ctrl.callbackKey = GetCallbackKey( rain, ctrl.configId );
 			lua_pushvalue( L, -1 );
 			lua_setfield( L, LUA_REGISTRYINDEX, ctrl.callbackKey.c_str() );
 		} else {
-			// Nenhum callback: deixar callbackKey vazio
 			ctrl.callbackKey.clear();
 		}
-		lua_pop( L, 1 ); // remove o valor do campo "callback" da pilha
+		lua_pop( L, 1 );
+
+		std::wstring wurl = L"about:blank";
+		lua_getfield( L, 1, "url" );
+		if ( lua_isstring( L, -1 ) && lua_objlen( L, -1 ) > 0 ) {
+			std::string candidate = lua_tostring( L, -1 );
+			if ( ctrl.sanitizeFlags & VALIDATE_URLS ) {
+				bool allowLocal = ( ctrl.sanitizeFlags & ALLOW_LOCAL ) != 0;
+				if ( sanitize::IsUrlSafe( candidate, allowLocal ) )
+					wurl = utf8_to_wstring( candidate );
+				else
+					RN_LOG( rain, LOG_WARNING,
+					        ( L"Trident: [SECURITY] create() URL blocked — falling back to about:blank. Blocked: " +
+					          utf8_to_wstring( candidate ) ).c_str() );
+			} else {
+				wurl = utf8_to_wstring( candidate );
+			}
+		}
+		lua_pop( L, 1 );
 
 		std::string errorMsg;
 		if ( !CreateWebBrowserControl( ctrl, rain, errorMsg ) ) {
@@ -1787,217 +1672,136 @@ namespace mshtml {
 		}
 
 		ConnectEventSink( ctrl, ctx );
-		if ( ctrl.transparent )
-			ApplyParentTransparency( ctrl.hwndParent, true, ctrl.colorKey );
-
-
-		lua_getfield( L, 1, "url" );
-		// Default value
-		std::wstring wurl = L"about:blank";
-
-		if ( lua_isstring( L, -1 ) && lua_objlen( L, -1 ) > 0 ) {
-			std::string candidate = lua_tostring( L, -1 );
-			// Validate URL when VALIDATE_URLS is active.
-			// "about:blank<script>..." is caught here — IsUrlSafe rejects
-			// anything with a protocol other than the known safe ones.
-			if ( ctrl.sanitizeFlags & VALIDATE_URLS ) {
-				bool allowLocal = ( ctrl.sanitizeFlags & ALLOW_LOCAL ) != 0;
-				if ( sanitize::IsUrlSafe( candidate, allowLocal ) ) {
-					wurl = utf8_to_wstring( candidate );
-				} else {
-					RN_LOG( rain, LOG_WARNING,
-									( L"Trident: [SECURITY] create() URL blocked — falling back to about:blank. "
-										L"Blocked: " +
-										utf8_to_wstring( candidate ) )
-											.c_str() );
-				}
-			} else {
-				wurl = utf8_to_wstring( candidate );
-			}
-		}
 
 		CComVariant vUrl( wurl.c_str() );
 		CComVariant vFlags( 0x04 );
 		ctrl.webBrowser->Navigate2( &vUrl, &vFlags, nullptr, nullptr, nullptr );
-		lua_pop( L, 1 );
 
+		// -------------------------------------------------------------------
+		// PHASE 3 — insert into map, build Lua object. Lock re-acquired.
+		// -------------------------------------------------------------------
+		Control       *storedCtrl = nullptr;
+		ControlHandle *handle     = nullptr;
+		{
+			std::lock_guard<std::mutex> lock( g_contextsMutex );
 
-		ctx->controls[ctrl.configId] = ctrl;
-		Control *storedCtrl = &ctx->controls[ctrl.configId];
+			ctx->controls[ctrl.configId] = std::make_unique<Control>( ctrl );
+			storedCtrl = ctx->controls[ctrl.configId].get();
 
-		// Update subclass data pointer to the stored control
-		if ( storedCtrl->subclassData ) {
-			ParentSubclassData *sd = (ParentSubclassData *)storedCtrl->subclassData;
-			sd->ctrl = storedCtrl;
+			if ( storedCtrl->subclassData ) {
+				ParentSubclassData *sd = (ParentSubclassData *)storedCtrl->subclassData;
+				sd->ctrl = storedCtrl;
+			}
+
+			ExternalDispatch *extDisp = new ExternalDispatch( ctx, storedCtrl->configId );
+			storedCtrl->externalDispatch = extDisp;
+
+			handle             = new ControlHandle{ storedCtrl };
+			storedCtrl->handle = handle;
 		}
 
-		// Build Lua object with methods
+		// Build Lua browser table (no lock needed — unique_ptr keeps address stable).
 		lua_newtable( L );
 
 		auto pushMethod = [&]( const char *name, lua_CFunction fn ) {
-			lua_pushlightuserdata( L, storedCtrl );
+			lua_pushlightuserdata( L, handle );
 			lua_pushcclosure( L, fn, 1 );
 			lua_setfield( L, -2, name );
 		};
 
-		pushMethod( "navigate", l_navigate );
-		pushMethod( "back", l_back );
-		pushMethod( "forward", l_forward );
-		pushMethod( "refresh", l_refresh );
-		pushMethod( "stop", l_stop );
-		pushMethod( "write", l_write );
-		pushMethod( "writeline", l_writeline );
+		pushMethod( "navigate",       l_navigate       );
+		pushMethod( "back",           l_back           );
+		pushMethod( "forward",        l_forward        );
+		pushMethod( "refresh",        l_refresh        );
+		pushMethod( "stop",           l_stop           );
+		pushMethod( "write",          l_write          );
 		pushMethod( "setTransparent", l_setTransparent );
-		pushMethod( "execScript", l_execScript );
-		pushMethod( "getURL", l_getURL );
-		pushMethod( "quit", l_quit );
-		pushMethod( "reposition", l_reposition );
-		pushMethod( "show", l_show );
-		pushMethod( "hide", l_hide );
+		pushMethod( "execScript",     l_execScript     );
+		pushMethod( "getURL",         l_getURL         );
+		pushMethod( "quit",           l_quit           );
+		pushMethod( "reposition",     l_reposition     );
+		pushMethod( "show",           l_show           );
+		pushMethod( "hide",           l_hide           );
 
-		// browser.hwnd
+		// browser:bind(name, func)
+		lua_pushlightuserdata( L, handle );
+		lua_pushcclosure( L, []( lua_State *L ) -> int {
+			ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+			Control       *ctrl = h ? h->ctrl : nullptr;
+			if ( !ctrl || !ctrl->externalDispatch ) {
+				luaL_error( L, "Browser not ready or externalDispatch missing" );
+				return 0;
+			}
+			const char *name = luaL_checkstring( L, 2 );
+			luaL_checktype( L, 3, LUA_TFUNCTION );
+			ExternalDispatch *ext = (ExternalDispatch *)ctrl->externalDispatch;
+			if ( FAILED( ext->Bind( name, L, 3 ) ) )
+				luaL_error( L, "Failed to bind method '%s'", name );
+			return 0;
+		}, 1 );
+		lua_setfield( L, -2, "bind" );
+
 		lua_pushlightuserdata( L, (void *)storedCtrl->hwndControl );
 		lua_setfield( L, -2, "hwnd" );
 
-		// browser:document() — returns a fresh table with document-level shortcuts.
-		// Returns a new table every call so callers always get current COM state.
-		// Usage:
-		//   local doc = browser:document()
-		//   doc:write("<p>hello</p>")
-		//   print(doc:getTitle())
+		// browser:document() — returns a ComProxy wrapping the live IHTMLDocument2.
+		// All properties and methods are accessible directly via __index/__newindex.
 		pushMethod( "document", []( lua_State *L ) -> int {
-			Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-			if ( !ctrl ) {
+			ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+			Control       *ctrl = h ? h->ctrl : nullptr;
+			if ( !ctrl || !ctrl->webBrowser ) { lua_pushnil( L ); return 1; }
+
+			CComPtr<IDispatch> docDisp;
+			if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
 				lua_pushnil( L );
 				return 1;
 			}
 
-			lua_newtable( L );
-
-			auto pushDoc = [&]( const char *name, lua_CFunction fn ) {
-				lua_pushlightuserdata( L, ctrl );
-				lua_pushcclosure( L, fn, 1 );
-				lua_setfield( L, -2, name );
-			};
-
-			pushDoc( "write", l_write );
-			pushDoc( "writeln", l_writeline );
-
-			// document:getTitle()
-			lua_pushlightuserdata( L, ctrl );
-			lua_pushcclosure(
-					L,
-					[]( lua_State *L ) -> int {
-						Control *c = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-						if ( !c || !c->webBrowser ) {
-							lua_pushnil( L );
-							return 1;
-						}
-						CComPtr<IDispatch> docDisp;
-						if ( SUCCEEDED( c->webBrowser->get_Document( &docDisp ) ) && docDisp ) {
-							CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
-							if ( htmlDoc ) {
-								BSTR bTitle = nullptr;
-								if ( SUCCEEDED( htmlDoc->get_title( &bTitle ) ) && bTitle ) {
-									std::string title = wstring_to_utf8( bTitle );
-									SysFreeString( bTitle );
-									lua_pushlstring( L, title.c_str(), title.size() );
-									return 1;
-								}
-							}
-						}
-						lua_pushnil( L );
-						return 1;
-					},
-					1 );
-			lua_setfield( L, -2, "getTitle" );
-
+			ComProxy::Push( L, docDisp );
 			return 1;
 		} );
 
-		// browser:window() — returns a fresh table with window-level shortcuts.
-		// JS can call back to Lua via window.external.notify("name", value).
-		// Usage:
-		//   browser:window():eval("document.title = 'hello'")
+		// browser:window() — returns a ComProxy wrapping the live IHTMLWindow2.
 		pushMethod( "window", []( lua_State *L ) -> int {
-			Control *ctrl = (Control *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-			if ( !ctrl ) {
+			ControlHandle *h    = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+			Control       *ctrl = h ? h->ctrl : nullptr;
+			if ( !ctrl || !ctrl->webBrowser ) { lua_pushnil( L ); return 1; }
+
+			CComPtr<IDispatch> docDisp;
+			if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
 				lua_pushnil( L );
 				return 1;
 			}
 
-			lua_newtable( L );
+			CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
+			if ( !htmlDoc ) { lua_pushnil( L ); return 1; }
 
-			// window:eval(script) — execScript with strict IIFE
-			lua_pushlightuserdata( L, ctrl );
-			lua_pushcclosure( L, l_execScript, 1 );
-			lua_setfield( L, -2, "eval" );
+			CComPtr<IHTMLWindow2> window;
+			if ( FAILED( htmlDoc->get_parentWindow( &window ) ) || !window ) {
+				lua_pushnil( L );
+				return 1;
+			}
 
+			CComQIPtr<IDispatch> winDisp( window );
+			ComProxy::Push( L, winDisp );
 			return 1;
 		} );
 
-		// Store the browser table in the Lua registry to keep it alive (prevent GC)
-		// and so that l_create can read it back to inject `self` into the callback env.
-		// Stack: [..., browser_table]
 		storedCtrl->browserKey = "trident_browser_" + storedCtrl->callbackKey;
 		lua_pushvalue( L, -1 );
 		lua_setfield( L, LUA_REGISTRYINDEX, storedCtrl->browserKey.c_str() );
 
-		// -------------------------------------------------------------------------
-		// Inject `self` into the callback's environment — done exactly once here.
-		//
-		// Goal: the callback can reference `self` as if it were a global variable,
-		// without receiving it as an argument:
-		//   callback = function(event)
-		//       print(self, event)   -- `self` is the browser table returned by create()
-		//   end
-		//
-		// Strategy: replace the callback function's environment with a new table that
-		// has `self = browser_table` and falls back to the original env via __index,
-		// so all other globals (print, pairs, Rainmeter API, etc.) remain accessible.
-		//
-		// lua_setfenv modifies the function object in place (functions are reference
-		// types in Lua 5.1/LuaJIT), so the registry entry already points to the
-		// modified function — no need to re-store it.
-		// -------------------------------------------------------------------------
-		if ( !storedCtrl->callbackKey.empty() ) {
-			lua_getfield( L, LUA_REGISTRYINDEX, storedCtrl->callbackKey.c_str() );
-			// Stack: [..., browser_table, callback_fn]
+		// Callback API is explicitly (browser, event) — no environment injection needed.
+		// All call sites (DrainEventQueue, BeforeNavigate2) already pass browser as arg1.
 
-			if ( lua_isfunction( L, -1 ) ) {
-				lua_getfenv( L, -1 );
-				// Stack: [..., browser_table, callback_fn, original_env]
-
-				lua_newtable( L );
-				// Stack: [..., browser_table, callback_fn, original_env, new_env]
-
-				// new_env.self = browser_table
-				lua_pushvalue( L, -4 );
-				lua_setfield( L, -2, "self" );
-
-				// setmetatable(new_env, { __index = original_env })
-				lua_newtable( L );
-				lua_pushvalue( L, -3 ); // original_env
-				lua_setfield( L, -2, "__index" );
-				lua_setmetatable( L, -2 );
-
-				lua_remove( L, -2 ); // remove original_env
-				// Stack: [..., browser_table, callback_fn, new_env]
-
-				lua_setfenv( L, -2 ); // pops new_env, sets it on callback_fn
-				// Stack: [..., browser_table, callback_fn]
-			}
-
-			lua_pop( L, 1 ); // pop callback_fn (or non-function value)
-			// Stack: [..., browser_table]
-		}
-
-		// Set __gc metamethod
+		ControlHandle **sentinelData =
+			static_cast<ControlHandle **>( lua_newuserdata( L, sizeof( ControlHandle * ) ) );
+		*sentinelData = handle;
 		lua_newtable( L );
-		lua_pushlightuserdata( L, storedCtrl );
-		lua_pushcclosure( L, l_gc, 1 );
+		lua_pushcfunction( L, l_gc );
 		lua_setfield( L, -2, "__gc" );
 		lua_setmetatable( L, -2 );
+		lua_setfield( L, -2, "__sentinel" );
 
 		return 1;
 	}
@@ -2005,6 +1809,7 @@ namespace mshtml {
 	// -------------------------------------------------------------------------
 	// Module entry point
 	// -------------------------------------------------------------------------
+
 	extern "C" int luaopen_trident( lua_State *L ) {
 		Rain *rain = (Rain *)lua_touserdata( L, lua_upvalueindex( 1 ) );
 		lua_newtable( L );
@@ -2015,6 +1820,7 @@ namespace mshtml {
 	}
 
 	void RegisterModule( lua_State *L, Rain *rain ) {
+		ComProxy::Register( L );
 		lua_getglobal( L, "package" );
 		lua_getfield( L, -1, "preload" );
 		lua_pushlightuserdata( L, rain );
@@ -2023,4 +1829,4 @@ namespace mshtml {
 		lua_pop( L, 2 );
 	}
 
-} // namespace mshtml
+} // namespace trident

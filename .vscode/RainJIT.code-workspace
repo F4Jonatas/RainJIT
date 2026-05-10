@@ -27,10 +27,22 @@
 		},
 
 
+		"files.encoding": "utf8",
+		"editor.tabSize": 2,
+		"editor.insertSpaces": false,
+		"editor.detectIndentation": false,
+		"files.eol": "\n",
+		"files.insertFinalNewline": true,
+		"files.trimTrailingWhitespace": true,
+
+		"[markdown]": {
+			"editor.insertSpaces": true
+		},
+
+
 		"search.exclude": {
 			"**/.git": true,
-			"**src/API": true,
-			"include": true,
+			"src/packages": true,
 			"**/.qodo": true,
 		},
 

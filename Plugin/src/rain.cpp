@@ -31,8 +31,8 @@ Rain::Rain() :
 	hwnd( nullptr ),
 	ready( false ),
 	initCalled( false ),
-	timeInitialized( false ) {
-}
+	timeInitialized( false ) {}
+
 
 
 
@@ -50,6 +50,7 @@ Rain::~Rain() {
 
 
 
+
 /**
  * @brief Increment the update counter and apply safety wrap.
  * @return The new accumulated update count (raw unsigned long long).
@@ -62,6 +63,7 @@ unsigned long long Rain::incrementAndGetUpdates() {
 
 	return accumulatedUpdates;
 }
+
 
 
 
@@ -86,10 +88,12 @@ void Rain::onUpdate( double deltaTime ) {
 
 			if ( lua_pcall( L, 3, 0, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L, -1 );
+
 				if ( err && *err ) {
 					std::wstring werr = L"Error in rain:update(): " + utf8_to_wstring( err );
 					RmLog( rm, LOG_WARNING, werr.c_str() );
 				}
+
 				lua_pop( L, 1 );
 			}
 		}
@@ -100,6 +104,7 @@ void Rain::onUpdate( double deltaTime ) {
 
 	lua_pop( L, 1 );
 }
+
 
 
 
@@ -134,13 +139,14 @@ void Rain::onInit() {
 				}
 				lua_pop( L, 1 );
 			}
-		} else {
-			lua_pop( L, 1 );
 		}
+		else
+			lua_pop( L, 1 );
 	}
 
 	lua_pop( L, 1 );
 }
+
 
 
 
@@ -154,6 +160,7 @@ void Rain::bang( const std::wstring &cmd ) {
 
 
 
+
 /**
  * @brief Resolve a Rainmeter variable to its final value.
  */
@@ -163,7 +170,7 @@ std::wstring Rain::var( const std::wstring &name ) {
 
 	// clang-format off
 	std::wstring expr =
-		util::IsValidRainmeterVar(name)
+		util::IsValidRainmeterVar( name )
 			? L"#" + name + L"#"
 			: name;
 	// clang-format on
@@ -175,6 +182,7 @@ std::wstring Rain::var( const std::wstring &name ) {
 
 	return std::wstring( result );
 }
+
 
 
 
@@ -194,6 +202,7 @@ void Rain::setVar( const std::wstring &name, const std::wstring &value, const st
 
 	RmExecute( skin, cmd.c_str() );
 }
+
 
 
 
