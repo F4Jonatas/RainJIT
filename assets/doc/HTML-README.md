@@ -6,6 +6,10 @@
   ### HTML parsing for Lua<br>Created for efficient extraction of web data
 
   <br>
+  <br>
+
+
+  <img src="../images/html-logo.png" alt="LOGO" height="200">
 
 </div>
 
@@ -90,7 +94,7 @@ local doc = html.parse("<html>...</html>")
 |`list:text()`|Concatenated text of all nodes (recursive).|
 |`list:attr(name)`|Value of the first attribute `name` found in the list, or `nil`.|
 
-**Note:** Node lists are not iterable by default in Lua, but you can use `count()` and `eq()` in a loop.  
+**Note:** Node lists are not iterable by default in Lua, but you can use `count()` and `eq()` in a loop.
 _(Future versions may add `__len` and `__index` for `ipairs` support.)_
 
 ## Supported CSS Selectors
@@ -134,23 +138,23 @@ _(Future versions may add `__len` and `__index` for `ipairs` support.)_
 ## Limitations
 
 - **Read‑only** – No methods to modify the DOM. Use for scraping only.
-    
+
 - **No support for**:
-    
+
     - Pseudo‑classes: `:nth-child`, `:not`, `:has`, `:contains`, etc.
-        
+
     - Attribute operators: `~=`, `|=`.
-        
+
     - Combinators: `+` (adjacent sibling), `~` (general sibling).
-        
+
     - Selector specificity or `:is()` / `:where()`.
-        
+
 - **Whitespace sensitivity** – Selectors should not contain extra spaces inside attribute brackets or around combinators (e.g., `div > a` works, but `div> a` may fail). Use spaces consistently.
-    
+
 - **No XPath support**.
-    
+
 - **Memory** – The entire DOM is kept in memory until the `HtmlDocument` is garbage collected. For huge documents, consider streaming parsers.
-    
+
 
 ## Example: Web Scraping
 
@@ -188,18 +192,18 @@ print(direct_children:count())  -- 1
 ## Technical Notes
 
 - **Parsing** – Gumbo produces a read‑only tree. This module wraps it in lightweight userdata objects.
-    
-- **Selector matching** – Implements a recursive descent matcher.  
+
+- **Selector matching** – Implements a recursive descent matcher.
     Results are automatically **deduplicated** to avoid duplicates caused by multiple matching paths.
-    
+
 - **Performance** – For small to medium documents (up to a few MB) it is very fast. For huge pages, consider limiting selector complexity.
-    
+
 - **Garbage collection** – The underlying `GumboOutput` is freed when the `HtmlDocument` is collected. Node and node list objects hold only references to the document and raw pointers to tree nodes.
-    
+
 
 ## License
 
-This module is provided under the **MIT License**.  
+This module is provided under the **MIT License**.
 Gumbo is distributed under the Apache License 2.0.
 
 ---

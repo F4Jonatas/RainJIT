@@ -27,7 +27,7 @@
 
 
 // Defina um identificador único para a mensagem
-#define WM_FETCH_COMPLETE ( WM_APP + 1 )
+#define WM_FETCH_COMPLETE ( WM_APP + 3 )
 
 
 

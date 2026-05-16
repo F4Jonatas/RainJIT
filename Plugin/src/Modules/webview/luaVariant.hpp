@@ -54,16 +54,36 @@ namespace luaVariant {
 	 */
 	inline void Push( lua_State *L, const VARIANT &v ) {
 		switch ( v.vt ) {
-		case VT_I1:   lua_pushinteger( L, v.cVal );    break;
-		case VT_I2:   lua_pushinteger( L, v.iVal );    break;
-		case VT_I4:   lua_pushinteger( L, v.lVal );    break;
-		case VT_INT:  lua_pushinteger( L, v.intVal );  break;
-		case VT_UI1:  lua_pushinteger( L, v.bVal );    break;
-		case VT_UI2:  lua_pushinteger( L, v.uiVal );   break;
-		case VT_UI4:  lua_pushinteger( L, v.ulVal );   break;
-		case VT_UINT: lua_pushinteger( L, v.uintVal ); break;
-		case VT_R4:   lua_pushnumber( L, v.fltVal );   break;
-		case VT_R8:   lua_pushnumber( L, v.dblVal );   break;
+		case VT_I1:
+			lua_pushinteger( L, v.cVal );
+			break;
+		case VT_I2:
+			lua_pushinteger( L, v.iVal );
+			break;
+		case VT_I4:
+			lua_pushinteger( L, v.lVal );
+			break;
+		case VT_INT:
+			lua_pushinteger( L, v.intVal );
+			break;
+		case VT_UI1:
+			lua_pushinteger( L, v.bVal );
+			break;
+		case VT_UI2:
+			lua_pushinteger( L, v.uiVal );
+			break;
+		case VT_UI4:
+			lua_pushinteger( L, v.ulVal );
+			break;
+		case VT_UINT:
+			lua_pushinteger( L, v.uintVal );
+			break;
+		case VT_R4:
+			lua_pushnumber( L, v.fltVal );
+			break;
+		case VT_R8:
+			lua_pushnumber( L, v.dblVal );
+			break;
 		case VT_BSTR: {
 			if ( v.bstrVal ) {
 				std::string str = wstring_to_utf8( v.bstrVal );
@@ -120,20 +140,20 @@ namespace luaVariant {
 			lua_Number n = lua_tonumber( L, idx );
 			lua_Integer i = (lua_Integer)n;
 			if ( (lua_Number)i == n ) {
-				out->vt   = VT_I4;
+				out->vt = VT_I4;
 				out->lVal = (LONG)i;
 			} else {
-				out->vt     = VT_R8;
+				out->vt = VT_R8;
 				out->dblVal = (double)n;
 			}
 			break;
 		}
 		case LUA_TSTRING:
-			out->vt      = VT_BSTR;
+			out->vt = VT_BSTR;
 			out->bstrVal = SysAllocString( utf8_to_wstring( lua_tostring( L, idx ) ).c_str() );
 			break;
 		case LUA_TBOOLEAN:
-			out->vt      = VT_BOOL;
+			out->vt = VT_BOOL;
 			out->boolVal = lua_toboolean( L, idx ) ? VARIANT_TRUE : VARIANT_FALSE;
 			break;
 		default:

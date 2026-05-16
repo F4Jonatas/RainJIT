@@ -4,9 +4,12 @@
 **/.env
 
 assets/images/*.*
-!assets/images/logo-gpl-v2.png
 !assets/images/logo.png
+!assets/images/logo-gpl-v2.png
 !assets/images/trident-logo.png
+!assets/images/html-logo.png
+!assets/images/xml-logo.png
+!assets/images/hotkey-logo.png
 
 private.md
 .obsidian

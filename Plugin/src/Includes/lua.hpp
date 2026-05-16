@@ -201,6 +201,7 @@ namespace Lua {
 		int errfunc = lua_gettop( rain->L );
 
 		if ( luaL_loadfile( rain->L, utf8.c_str() ) != LUA_OK || lua_pcall( rain->L, 0, LUA_MULTRET, errfunc ) != LUA_OK ) {
+			lua_pop( rain->L, 1 );
 			lua_remove( rain->L, errfunc );
 			return false;
 		}
@@ -221,8 +222,6 @@ namespace Lua {
 	 * @param script Lua source code (UTF-8).
 	 * @param embedName Name for debug/error reporting.
 	 * @return true on success, false on Lua error.
-	 *
-	 * @post On error, error message remains on Lua stack top.
 	 */
 	static inline bool importScript( Rain *rain, const char *script, const char *embedName ) {
 		// Push error handler
@@ -231,12 +230,14 @@ namespace Lua {
 
 		// Load chunk
 		if ( luaL_loadbuffer( rain->L, script, strlen( script ), embedName ) != LUA_OK ) {
+			lua_pop( rain->L, 1 );
 			lua_remove( rain->L, errfunc ); // remove error handler
 			return false;
 		}
 
 		// Call chunk using error handler
 		if ( lua_pcall( rain->L, 0, LUA_MULTRET, errfunc ) != LUA_OK ) {
+			lua_pop( rain->L, 1 );
 			lua_remove( rain->L, errfunc ); // remove error handler
 			return false;
 		}

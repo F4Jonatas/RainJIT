@@ -1,8 +1,13 @@
+
 <div align="center">
 
-# Hotkey Module for RainJIT
+  # Hotkey Module for RainJIT
 
-<br>
+  <br>
+  <br>
+
+
+  <img src="../images/hotkey-logo.png" alt="LOGO" height="200">
 
 </div>
 

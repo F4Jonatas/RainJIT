@@ -83,6 +83,7 @@ LIBRARY_EXPORT LPCWSTR __stdcall RmReadString( void *rm, LPCWSTR option, LPCWSTR
 
 LIBRARY_EXPORT LPCWSTR __stdcall RmReadStringFromSection( void *rm, LPCWSTR section, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE );
 
+
 #else
 
 inline LPCWSTR RmReadStringFromSection( void *rm, LPCWSTR section, LPCWSTR option, LPCWSTR defValue, BOOL replaceMeasures = TRUE ) {
@@ -137,8 +138,12 @@ LIBRARY_EXPORT double __stdcall RmReadFormula( void *rm, LPCWSTR option, double 
  * @endcode
  */
 #ifdef LIBRARY_EXPORTS
+
 LIBRARY_EXPORT double __stdcall RmReadFormulaFromSection( void *rm, LPCWSTR section, LPCWSTR option, double defValue );
+
+
 #else
+
 inline double RmReadFormulaFromSection( void *rm, LPCWSTR section, LPCWSTR option, double defValue ) {
 	typedef double( __stdcall * RmReadFormulaFromSectionFunc )( void *, LPCWSTR, LPCWSTR, double );
 	static auto delayedFunc = (RmReadFormulaFromSectionFunc)GetProcAddress( GetModuleHandle( L"Rainmeter.dll" ), "RmReadFormulaFromSection" );
@@ -148,6 +153,8 @@ inline double RmReadFormulaFromSection( void *rm, LPCWSTR section, LPCWSTR optio
 
 	return defValue;
 }
+
+
 #endif
 
 
@@ -236,7 +243,6 @@ LIBRARY_EXPORT LPCWSTR __stdcall RmReplaceVariables( void *rm, LPCWSTR str );
  * }
  * @endcode
  */
-
 LIBRARY_EXPORT LPCWSTR __stdcall RmPathToAbsolute( void *rm, LPCWSTR relativePath );
 
 
@@ -326,7 +332,6 @@ LIBRARY_EXPORT BOOL __cdecl LSLog( int level, LPCWSTR unused, LPCWSTR message );
 
 
 
-/// Wrapper functions
 
 #ifndef LIBRARY_EXPORTS
 /**

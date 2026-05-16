@@ -161,6 +161,24 @@ void Rain::bang( const std::wstring &cmd ) {
 
 
 
+std::wstring Rain::absPath( const std::wstring &path ) {
+	if ( !rm || path.empty() )
+		return L"";
+
+	const wchar_t *expanded = RmReplaceVariables( rm, path.c_str() );
+	if ( !expanded || !*expanded )
+		return L"";
+
+	const wchar_t *raw = RmPathToAbsolute( rm, expanded );
+	if ( !raw || !*raw )
+		return L"";
+
+	return util::CanonicalizePath( raw );
+}
+
+
+
+
 /**
  * @brief Resolve a Rainmeter variable to its final value.
  */

@@ -119,6 +119,15 @@ namespace trident {
 		EVENT_NAVIGATE_COMPLETE, ///< Navigation to a URL completed.
 		EVENT_TITLE_CHANGE, ///< Document title changed.
 		EVENT_EXTERNAL, ///< JS called window.external.call(name, data).
+		EVENT_STATUS_TEXT_CHANGE, // status bar text changed
+		EVENT_PROGRESS_CHANGE, // download progress
+		EVENT_DOWNLOAD_BEGIN, // download started
+		EVENT_DOWNLOAD_COMPLETE, // download finished
+		EVENT_NAVIGATE_ERROR, // navigation failed
+		EVENT_NEW_WINDOW, // popup window requested (cancelável)
+		EVENT_WINDOW_CLOSING, // window.close() called (cancelável)
+		EVENT_FILE_DOWNLOAD, // file download requested (cancelável)
+		EVENT_COMMAND_STATE_CHANGE, // back/forward state changed
 	};
 
 	/**
@@ -131,6 +140,10 @@ namespace trident {
 		std::wstring data; ///< External event data  (EVENT_EXTERNAL only).
 		int configId; ///< ID of the control that generated the event.
 		ULONGLONG timestamp; ///< Milliseconds since system start.
+		long progress = 0; // EVENT_PROGRESS_CHANGE
+		long progressMax = 0; // EVENT_PROGRESS_CHANGE
+		long statusCode = 0; // EVENT_NAVIGATE_ERROR
+		bool cancel = false; // eventos canceláveis
 	};
 
 	/**

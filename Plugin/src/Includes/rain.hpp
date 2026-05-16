@@ -224,6 +224,15 @@ struct Rain {
 
 
 	/**
+	* @brief Resolve e canonicaliza um path relativo ou com variáveis Rainmeter.
+	*
+	* @param path Path em UTF-16 (pode conter variáveis como #CURRENTPATH#).
+	* @return Path absoluto canonicalizado, ou string vazia em caso de falha.
+	*/
+	std::wstring absPath( const std::wstring &path );
+
+
+	/**
 	 * @brief Schedule deferred execution of rain:init().
 	 *
 	 * Defers initialization by fadeDurationMs, allowing

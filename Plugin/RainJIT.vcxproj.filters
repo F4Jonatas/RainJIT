@@ -76,6 +76,12 @@
     <ClCompile Include="src\Modules\webview\trident.cpp">
       <Filter>Modules\webview</Filter>
     </ClCompile>
+    <ClCompile Include="src\Modules\hotkey\keyboard.cpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\hotkey\mouse.cpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -153,11 +159,19 @@
     <ClInclude Include="src\Modules\webview\trident.hpp">
       <Filter>Modules\webview</Filter>
     </ClInclude>
-    <ClInclude Include="src\Modules\webview\sanitize.hpp" />
     <ClInclude Include="src\Modules\webview\comProxy.hpp">
       <Filter>Modules\webview</Filter>
     </ClInclude>
     <ClInclude Include="src\Modules\webview\luaVariant.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\hotkey\keyboard.hpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\hotkey\mouse.hpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\sanitize.hpp">
       <Filter>Modules\webview</Filter>
     </ClInclude>
   </ItemGroup>

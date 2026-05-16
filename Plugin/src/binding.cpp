@@ -30,7 +30,6 @@
  * @endcode
  */
 
-#pragma once
 
 #include <charconv>
 #include <codecvt>
@@ -238,7 +237,6 @@ static int toString( lua_State *L ) {
  */
 static int absPath( lua_State *L ) {
 	auto *rain = static_cast<Rain *>( lua_touserdata( L, lua_upvalueindex( 1 ) ) );
-
 	if ( !rain || !rain->rm ) {
 		lua_pushnil( L );
 		return 1;
@@ -250,35 +248,14 @@ static int absPath( lua_State *L ) {
 		return 1;
 	}
 
-	// Convert UTF-8 → UTF-16
-	std::wstring wpath = utf8_to_wstring( path_utf8 );
-	if ( wpath.empty() ) {
+	std::wstring result = rain->absPath( utf8_to_wstring( path_utf8 ) );
+	if ( result.empty() ) {
 		lua_pushnil( L );
 		return 1;
 	}
 
-	// Call RmPathToAbsolute
-	const wchar_t *raw = RmPathToAbsolute( rain->rm, RmReplaceVariables( rain->rm, wpath.c_str() ) );
-	if ( !raw || !*raw ) {
-		lua_pushnil( L );
-		return 1;
-	}
-
-	// Canonicalize (remove .. and .)
-	std::wstring absolute_path = util::CanonicalizePath( raw );
-	if ( absolute_path.empty() ) {
-		lua_pushnil( L );
-		return 1;
-	}
-
-	// Convert UTF-16 → UTF-8 for Lua return
-	std::string result_utf8 = wstring_to_utf8( absolute_path );
-	if ( result_utf8.empty() ) {
-		lua_pushnil( L );
-		return 1;
-	}
-
-	lua_pushlstring( L, result_utf8.c_str(), result_utf8.length() );
+	std::string utf8 = wstring_to_utf8( result );
+	lua_pushlstring( L, utf8.c_str(), utf8.length() );
 	return 1;
 }
 
@@ -405,7 +382,7 @@ static int getX( lua_State *L ) {
 	auto *rain = static_cast<Rain *>( lua_touserdata( L, lua_upvalueindex( 1 ) ) );
 
 	lua_Integer v;
-	if ( !util::RmVarInt( rain, L"#CURRENTCONFIGX#", v ) )
+	if ( ! util::RmVarInt( rain, L"#CURRENTCONFIGX#", v ) )
 		lua_pushnil( L );
 	else
 		lua_pushinteger( L, v );
@@ -599,11 +576,12 @@ static int executeBang( lua_State *L ) {
 		const char *arg = luaL_checkstring( L, i );
 		std::wstring warg = utf8_to_wstring( arg );
 
-		if ( !cmd.empty() )
+		if ( ! cmd.empty() )
 			cmd += L" ";
 
 		// Quote only if needed
-		if ( ( warg.find( L' ' ) != std::wstring::npos && warg.front() != L'"' && warg.back() != L'"' ) || ( warg.empty() ) ) {
+		if (( warg.find( L' ' ) != std::wstring::npos && warg.front() != L'"' && warg.back() != L'"' )
+		|| ( warg.empty() )) {
 			cmd += L"\"";
 			cmd += warg;
 			cmd += L"\"";
@@ -765,7 +743,7 @@ static int variable( lua_State *L ) {
 
 		/* Integer */
 		long long intVal;
-		auto [ptr, ec] = std::from_chars( utf8.data(), utf8.data() + utf8.size(), intVal );
+		auto [ ptr, ec ] = std::from_chars( utf8.data(), utf8.data() + utf8.size(), intVal );
 
 		if ( ec == std::errc() && ptr == utf8.data() + utf8.size() ) {
 			lua_pushinteger( L, static_cast<lua_Integer>( intVal ) );
@@ -774,14 +752,14 @@ static int variable( lua_State *L ) {
 
 		/* Float */
 		double floatVal;
-		auto [ptrf, ecf] = std::from_chars( utf8.data(), utf8.data() + utf8.size(), floatVal );
+		auto [ ptrf, ecf ] = std::from_chars( utf8.data(), utf8.data() + utf8.size(), floatVal );
 
 		if ( ecf == std::errc() && ptrf == utf8.data() + utf8.size() ) {
 			lua_pushnumber( L, floatVal );
 			return 1;
 		}
 
-		/* Fallback string */
+		// Fallback string
 		lua_pushstring( L, utf8.c_str() );
 		return 1;
 	}
@@ -847,7 +825,7 @@ static int option( lua_State *L ) {
 		return 1;
 	}
 
-	/* section (required) */
+	// section (required)
 	const char *section_utf8 = luaL_checkstring( L, 2 );
 	std::wstring wsection = utf8_to_wstring( section_utf8 );
 	if ( wsection.empty() ) {
@@ -855,7 +833,7 @@ static int option( lua_State *L ) {
 		return 1;
 	}
 
-	/* option (required) */
+	// option (required)
 	const char *option_utf8 = luaL_checkstring( L, 3 );
 	std::wstring woption = utf8_to_wstring( option_utf8 );
 	if ( woption.empty() ) {
@@ -863,7 +841,7 @@ static int option( lua_State *L ) {
 		return 1;
 	}
 
-	/* default value (optional) */
+	// default value (optional)
 	std::wstring wdefault;
 	BOOL hasDefault = FALSE;
 
@@ -891,8 +869,17 @@ static int option( lua_State *L ) {
 		hasDefault = TRUE;
 	}
 
-	/* Read option from Rainmeter */
-	const wchar_t *raw = RmReadStringFromSection( rain->rm, wsection.c_str(), woption.c_str(), hasDefault ? wdefault.c_str() : L"", TRUE );
+	// Read option from Rainmeter
+	// clang-format off
+	const wchar_t *raw = RmReadStringFromSection(
+		rain->rm,
+		wsection.c_str(),
+		woption.c_str(),
+		hasDefault ? wdefault.c_str() : L"",
+		TRUE
+	);
+	// clang-format on
+
 
 	if ( !raw || !*raw ) {
 		if ( !hasDefault || wdefault.empty() ) {
@@ -904,10 +891,10 @@ static int option( lua_State *L ) {
 	}
 
 
-	/* UTF-16 → UTF-8 */
+	// UTF-16 → UTF-8
 	std::string value = wstring_to_utf8( raw );
 
-	/* Boolean */
+	// Boolean
 	if ( _stricmp( value.c_str(), "true" ) == 0 ) {
 		lua_pushboolean( L, 1 );
 		return 1;
@@ -917,7 +904,7 @@ static int option( lua_State *L ) {
 		return 1;
 	}
 
-	/* Integer */
+	// Integer
 	char *end = nullptr;
 	long long intVal = std::strtoll( value.c_str(), &end, 10 );
 	if ( end && *end == '\0' ) {
@@ -925,7 +912,7 @@ static int option( lua_State *L ) {
 		return 1;
 	}
 
-	/* Float */
+	// Float
 	char *endf = nullptr;
 	double floatVal = std::strtod( value.c_str(), &endf );
 	if ( endf && *endf == '\0' ) {
@@ -933,7 +920,7 @@ static int option( lua_State *L ) {
 		return 1;
 	}
 
-	/* Fallback: string */
+	// Fallback: string
 	lua_pushstring( L, value.c_str() );
 	return 1;
 }

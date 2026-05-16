@@ -41,9 +41,10 @@
 
 
 		"search.exclude": {
-			"**/.git": true,
-			"src/packages": true,
-			"**/.qodo": true,
+			"**/.git"        : true,
+			"**/.qodo"       : true,
+			"**/Plugin/build": true,
+			"**/Plugin/src/packages": true,
 		},
 
 		"files.associations": {
@@ -78,19 +79,16 @@
 		],
 
 		"files.exclude": {
-			"**/.git": true,
-			"**/.obsidian": true,
-			"Plugin/build": true,
-			"**/.svn": true,
-			"**/.hg": true,
-			"**/.DS_Store": true,
-			"**/Thumbs.db": true,
-			"x64": true,
-			"x86": true,
-			"**/.qodo": true,
-			"**/.vs": true,
-			"*.aps": true,
-			"*.zip": true
+			"**/.git"        : true,
+			"**/.obsidian"   : true,
+			"**/Plugin/build": true,
+			"**/x64"         : true,
+			"**/x86"         : true,
+			"**/.qodo"       : true,
+			"**/.vs"         : true,
+			"thumbs.db"      : true,
+			"*.aps"          : true,
+			"*.zip"          : true
 		},
 
 		"terminal.integrated.defaultProfile.windows": "MSVC Developer Command Prompt",

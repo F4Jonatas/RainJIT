@@ -66,8 +66,10 @@ namespace trident {
 	/// Returns the IDispatch* from a ComProxy userdata, or nullptr.
 	static inline IDispatch *CheckProxy( lua_State *L, int idx ) {
 		void *ud = lua_touserdata( L, idx );
-		if ( !ud ) return nullptr;
-		if ( !lua_getmetatable( L, idx ) ) return nullptr;
+		if ( !ud )
+			return nullptr;
+		if ( !lua_getmetatable( L, idx ) )
+			return nullptr;
 		lua_getfield( L, LUA_REGISTRYINDEX, COM_PROXY_MT );
 		bool ok = lua_rawequal( L, -1, -2 );
 		lua_pop( L, 2 );
@@ -76,8 +78,8 @@ namespace trident {
 
 	/// Resolves a named DISPID. Returns DISPID_UNKNOWN on failure.
 	static inline DISPID GetDispID( IDispatch *disp, const wchar_t *name ) {
-		DISPID   id = DISPID_UNKNOWN;
-		LPOLESTR n  = const_cast<LPOLESTR>( name );
+		DISPID id = DISPID_UNKNOWN;
+		LPOLESTR n = const_cast<LPOLESTR>( name );
 		disp->GetIDsOfNames( IID_NULL, &n, 1, LOCALE_USER_DEFAULT, &id );
 		return id;
 	}
@@ -189,9 +191,12 @@ namespace trident {
 	 */
 	static int proxy_index( lua_State *L ) {
 		IDispatch *disp = CheckProxy( L, 1 );
-		if ( !disp ) { lua_pushnil( L ); return 1; }
+		if ( !disp ) {
+			lua_pushnil( L );
+			return 1;
+		}
 
-		const char  *key  = luaL_checkstring( L, 2 );
+		const char *key = luaL_checkstring( L, 2 );
 		std::wstring wkey = utf8_to_wstring( key );
 
 		DISPID id = GetDispID( disp, wkey.c_str() );
@@ -207,10 +212,9 @@ namespace trident {
 		CComQIPtr<IDispatchEx> dispEx( disp );
 		if ( dispEx ) {
 			DWORD props = 0;
-			HRESULT hr  = dispEx->GetMemberProperties(
-				id, fdexPropCanGet | fdexPropCanCall, &props );
+			HRESULT hr = dispEx->GetMemberProperties( id, fdexPropCanGet | fdexPropCanCall, &props );
 			if ( SUCCEEDED( hr ) ) {
-				bool canGet  = ( props & fdexPropCanGet  ) != 0;
+				bool canGet = ( props & fdexPropCanGet ) != 0;
 				bool canCall = ( props & fdexPropCanCall ) != 0;
 				isConfirmedProperty = canGet && !canCall;
 			}
@@ -239,9 +243,7 @@ namespace trident {
 		if ( isConfirmedProperty ) {
 			DISPPARAMS noArgs = {};
 			CComVariant result;
-			HRESULT hr = disp->Invoke( id, IID_NULL, LOCALE_USER_DEFAULT,
-			                           DISPATCH_PROPERTYGET, &noArgs,
-			                           &result, nullptr, nullptr );
+			HRESULT hr = disp->Invoke( id, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYGET, &noArgs, &result, nullptr, nullptr );
 			if ( SUCCEEDED( hr ) ) {
 				PushVariantResult( L, result );
 				return 1;
@@ -255,46 +257,52 @@ namespace trident {
 		// When called with N args, goes directly to DISPATCH_METHOD.
 		ComProxy::Push( L, disp );
 		lua_pushinteger( L, id );
-		lua_pushcclosure( L, []( lua_State *L ) -> int {
-			IDispatch *d  = CheckProxy( L, lua_upvalueindex( 1 ) );
-			DISPID    did = (DISPID)lua_tointeger( L, lua_upvalueindex( 2 ) );
-			if ( !d ) { lua_pushnil( L ); return 1; }
+		lua_pushcclosure(
+				L,
+				[]( lua_State *L ) -> int {
+					IDispatch *d = CheckProxy( L, lua_upvalueindex( 1 ) );
+					DISPID did = (DISPID)lua_tointeger( L, lua_upvalueindex( 2 ) );
+					if ( !d ) {
+						lua_pushnil( L );
+						return 1;
+					}
 
-			int nargs = lua_gettop( L );
+					int nargs = lua_gettop( L );
 
-			// 0 args — try PROPERTYGET first (e.g. WMP .settings, .controls).
-			if ( nargs == 0 ) {
-				DISPPARAMS noArgs = {};
-				CComVariant result;
-				if ( SUCCEEDED( d->Invoke( did, IID_NULL, LOCALE_USER_DEFAULT,
-				                           DISPATCH_PROPERTYGET, &noArgs,
-				                           &result, nullptr, nullptr ) ) ) {
+					// 0 args — try PROPERTYGET first (e.g. WMP .settings, .controls).
+					if ( nargs == 0 ) {
+						DISPPARAMS noArgs = {};
+						CComVariant result;
+						if ( SUCCEEDED( d->Invoke( did, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYGET, &noArgs, &result, nullptr, nullptr ) ) ) {
+							PushVariantResult( L, result );
+							return 1;
+						}
+					}
+
+					// N args or PROPERTYGET failed — method call.
+					std::vector<VARIANT> vargs( nargs );
+					for ( int i = 0; i < nargs; ++i )
+						luaVariant::From( L, i + 1, &vargs[nargs - 1 - i] );
+
+					DISPPARAMS dp = {};
+					dp.rgvarg = vargs.empty() ? nullptr : vargs.data();
+					dp.cArgs = (UINT)nargs;
+
+					CComVariant result;
+					HRESULT hr = d->Invoke( did, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &dp, &result, nullptr, nullptr );
+
+					for ( auto &v : vargs )
+						VariantClear( &v );
+
+					if ( FAILED( hr ) ) {
+						lua_pushnil( L );
+						return 1;
+					}
+
 					PushVariantResult( L, result );
 					return 1;
-				}
-			}
-
-			// N args or PROPERTYGET failed — method call.
-			std::vector<VARIANT> vargs( nargs );
-			for ( int i = 0; i < nargs; ++i )
-				luaVariant::From( L, i + 1, &vargs[nargs - 1 - i] );
-
-			DISPPARAMS dp = {};
-			dp.rgvarg     = vargs.empty() ? nullptr : vargs.data();
-			dp.cArgs      = (UINT)nargs;
-
-			CComVariant result;
-			HRESULT hr = d->Invoke( did, IID_NULL, LOCALE_USER_DEFAULT,
-			                        DISPATCH_METHOD | DISPATCH_PROPERTYGET,
-			                        &dp, &result, nullptr, nullptr );
-
-			for ( auto &v : vargs ) VariantClear( &v );
-
-			if ( FAILED( hr ) ) { lua_pushnil( L ); return 1; }
-
-			PushVariantResult( L, result );
-			return 1;
-		}, 2 );
+				},
+				2 );
 
 		return 1;
 	}
@@ -304,26 +312,27 @@ namespace trident {
 	 */
 	static int proxy_newindex( lua_State *L ) {
 		IDispatch *disp = CheckProxy( L, 1 );
-		if ( !disp ) return 0;
+		if ( !disp )
+			return 0;
 
-		const char  *key  = luaL_checkstring( L, 2 );
+		const char *key = luaL_checkstring( L, 2 );
 		std::wstring wkey = utf8_to_wstring( key );
 
 		DISPID id = GetDispID( disp, wkey.c_str() );
-		if ( id == DISPID_UNKNOWN ) return 0;
+		if ( id == DISPID_UNKNOWN )
+			return 0;
 
 		VARIANT varg;
 		luaVariant::From( L, 3, &varg );
 
-		DISPID      namedArg = DISPID_PROPERTYPUT;
-		DISPPARAMS  dp       = {};
-		dp.rgvarg            = &varg;
-		dp.cArgs             = 1;
+		DISPID namedArg = DISPID_PROPERTYPUT;
+		DISPPARAMS dp = {};
+		dp.rgvarg = &varg;
+		dp.cArgs = 1;
 		dp.rgdispidNamedArgs = &namedArg;
-		dp.cNamedArgs        = 1;
+		dp.cNamedArgs = 1;
 
-		disp->Invoke( id, IID_NULL, LOCALE_USER_DEFAULT,
-		              DISPATCH_PROPERTYPUT, &dp, nullptr, nullptr, nullptr );
+		disp->Invoke( id, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYPUT, &dp, nullptr, nullptr, nullptr );
 
 		VariantClear( &varg );
 		return 0;
@@ -336,7 +345,10 @@ namespace trident {
 	 */
 	static int proxy_call( lua_State *L ) {
 		IDispatch *disp = CheckProxy( L, 1 );
-		if ( !disp ) { lua_pushnil( L ); return 1; }
+		if ( !disp ) {
+			lua_pushnil( L );
+			return 1;
+		}
 
 		int nargs = lua_gettop( L ) - 1; // skip self
 
@@ -345,17 +357,19 @@ namespace trident {
 			luaVariant::From( L, i + 2, &vargs[nargs - 1 - i] );
 
 		DISPPARAMS dp = {};
-		dp.rgvarg     = vargs.empty() ? nullptr : vargs.data();
-		dp.cArgs      = (UINT)nargs;
+		dp.rgvarg = vargs.empty() ? nullptr : vargs.data();
+		dp.cArgs = (UINT)nargs;
 
 		CComVariant result;
-		HRESULT hr = disp->Invoke( DISPID_VALUE, IID_NULL, LOCALE_USER_DEFAULT,
-		                           DISPATCH_METHOD | DISPATCH_PROPERTYGET,
-		                           &dp, &result, nullptr, nullptr );
+		HRESULT hr = disp->Invoke( DISPID_VALUE, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &dp, &result, nullptr, nullptr );
 
-		for ( auto &v : vargs ) VariantClear( &v );
+		for ( auto &v : vargs )
+			VariantClear( &v );
 
-		if ( FAILED( hr ) ) { lua_pushnil( L ); return 1; }
+		if ( FAILED( hr ) ) {
+			lua_pushnil( L );
+			return 1;
+		}
 
 		PushVariantResult( L, result );
 		return 1;
@@ -375,11 +389,16 @@ namespace trident {
 		 */
 		inline void Register( lua_State *L ) {
 			if ( luaL_newmetatable( L, COM_PROXY_MT ) ) {
-				lua_pushcfunction( L, proxy_gc );        lua_setfield( L, -2, "__gc" );
-				lua_pushcfunction( L, proxy_tostring );  lua_setfield( L, -2, "__tostring" );
-				lua_pushcfunction( L, proxy_index );     lua_setfield( L, -2, "__index" );
-				lua_pushcfunction( L, proxy_newindex );  lua_setfield( L, -2, "__newindex" );
-				lua_pushcfunction( L, proxy_call );      lua_setfield( L, -2, "__call" );
+				lua_pushcfunction( L, proxy_gc );
+				lua_setfield( L, -2, "__gc" );
+				lua_pushcfunction( L, proxy_tostring );
+				lua_setfield( L, -2, "__tostring" );
+				lua_pushcfunction( L, proxy_index );
+				lua_setfield( L, -2, "__index" );
+				lua_pushcfunction( L, proxy_newindex );
+				lua_setfield( L, -2, "__newindex" );
+				lua_pushcfunction( L, proxy_call );
+				lua_setfield( L, -2, "__call" );
 			}
 			lua_pop( L, 1 );
 		}
@@ -391,12 +410,14 @@ namespace trident {
 		 * Pushes nil if disp is nullptr.
 		 */
 		inline void Push( lua_State *L, IDispatch *disp ) {
-			if ( !disp ) { lua_pushnil( L ); return; }
+			if ( !disp ) {
+				lua_pushnil( L );
+				return;
+			}
 
 			disp->AddRef();
 
-			ComProxyData *d = static_cast<ComProxyData *>(
-				lua_newuserdata( L, sizeof( ComProxyData ) ) );
+			ComProxyData *d = static_cast<ComProxyData *>( lua_newuserdata( L, sizeof( ComProxyData ) ) );
 			d->disp = disp;
 
 			luaL_getmetatable( L, COM_PROXY_MT );

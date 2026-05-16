@@ -18,7 +18,7 @@
 #include <Utils/filesystem.hpp>
 
 
-#define WM_FETCH_COMPLETE ( WM_APP + 1 )
+#define WM_FETCH_COMPLETE ( WM_APP + 3 )
 
 // Mapa global para associar Rain* ao HWND da janela de notificação
 static std::unordered_map<Rain *, HWND> g_notifyWindows;

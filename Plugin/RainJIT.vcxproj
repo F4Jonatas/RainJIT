@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Modules\hotkey\keyboard.cpp" />
+    <ClCompile Include="src\Modules\hotkey\mouse.cpp" />
     <ClCompile Include="packages\gumbo\src\attribute.c">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
@@ -106,6 +108,8 @@
     <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Modules\hotkey\keyboard.hpp" />
+    <ClInclude Include="src\Modules\hotkey\mouse.hpp" />
     <ClInclude Include="src\Modules\webview\comProxy.hpp" />
     <ClInclude Include="src\Modules\webview\luaVariant.hpp" />
     <ClInclude Include="packages\gumbo\src\strings.h" />
