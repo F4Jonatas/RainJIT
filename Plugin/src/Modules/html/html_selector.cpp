@@ -219,7 +219,6 @@ namespace html {
 				p++;
 
 			if ( *p == '>' ) {
-
 				nextDirect = true;
 				p++;
 				continue;
@@ -228,11 +227,26 @@ namespace html {
 			if ( !*p )
 				break;
 
+			// Tokenize respecting attribute brackets and quoted strings.
+			// A space inside [attr="hello world"] must NOT split the token.
 			const char *start = p;
+			int         depth = 0;
+			char        inQuote = 0;
 
-			while ( *p && *p != ' ' && *p != '>' ) {
-
-				p++;
+			while ( *p ) {
+				if ( inQuote ) {
+					if ( *p == inQuote )
+						inQuote = 0;
+				} else if ( *p == '"' || *p == '\'' ) {
+					inQuote = *p;
+				} else if ( *p == '[' ) {
+					++depth;
+				} else if ( *p == ']' ) {
+					--depth;
+				} else if ( depth == 0 && ( *p == ' ' || *p == '>' ) ) {
+					break;
+				}
+				++p;
 			}
 
 			std::string part( start, p - start );
@@ -577,7 +591,17 @@ namespace html {
 		if ( !root || chain.steps.empty() )
 			return;
 
-		FindNodesChainInternal( root, chain, 0, out );
+		std::vector<GumboNode *> temp;
+		FindNodesChainInternal( root, chain, 0, temp );
+
+		// Deduplicate preserving document order.
+		// Duplicates arise when a node matches a step and also has descendants
+		// that match the same step (e.g. nested elements with selector "a a").
+		std::unordered_set<GumboNode *> seen;
+		for ( GumboNode *node : temp ) {
+			if ( seen.insert( node ).second )
+				out.push_back( node );
+		}
 	}
 
 

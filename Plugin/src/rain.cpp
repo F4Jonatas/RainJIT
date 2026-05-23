@@ -231,14 +231,23 @@ void Rain::setVar( const std::wstring &name, const std::wstring &value, const st
  * execution back to Rainmeter.
  */
 void Rain::scheduleInit() {
-	if ( initScheduled.exchange( true ) )
-		return;
+    if ( initScheduled.exchange( true ) )
+        return;
 
-	std::wstring bang = L"[&" + std::wstring( RmGetMeasureName( rm ) ) + L":dispatch(init)]";
+    std::wstring bang = L"[&" + std::wstring( RmGetMeasureName( rm ) ) + L":dispatch(init)]";
+    void *skinCopy = skin;
+    HWND hwndCopy = hwnd;
+    int fadeCopy = fadeDurationMs;
 
-	std::thread( [this, bang]() {
-		std::this_thread::sleep_for( std::chrono::milliseconds( fadeDurationMs ) );
+    std::thread( [skinCopy, hwndCopy, fadeCopy, bang]() {
+        // Wait until the skin window is visible before starting the fade countdown
+        for ( int i = 0; i < 100; i++ ) {
+            if ( IsWindow( hwndCopy ) && IsWindowVisible( hwndCopy ) )
+                break;
+            std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+        }
 
-		RmExecute( skin, bang.c_str() );
-	} ).detach();
+        std::this_thread::sleep_for( std::chrono::milliseconds( fadeCopy ) );
+        RmExecute( skinCopy, bang.c_str() );
+    } ).detach();
 }

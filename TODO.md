@@ -72,7 +72,7 @@
   - [ ] Display duration
 - [ ] Integration with Windows Notifications
 - [ ] Lua API:
-   - [ ] `show(message, duration, type)`
+   > `show(message, duration, type)`
 
 ---
 
@@ -115,11 +115,11 @@
 
 ## Module Hotkey
 
-- [ ] Implement hotkeys for cursor (mouse)
-- [ ] Mouse support
-  - [ ] `click`
-  - [ ] `movement`
-  - [ ] `scroll`
+- [x] Implement hotkeys for cursor (mouse)
+- [x] Mouse support
+  - [x] `click`
+  - [x] `movement`
+  - [x] `scroll`
 
 ---
 

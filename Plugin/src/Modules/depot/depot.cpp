@@ -3,20 +3,26 @@
  * @brief Lua bindings for Depot INI file accessor as a Lua module.
  * @license GPL v2.0 License
  *
- * Implements Lua module for the Depot class, allowing Lua scripts to
+ * Implements the Lua module for depot::Depot, allowing Lua scripts to
  * read/write INI files through the `require("depot")` interface.
  *
  * @details
- * Each Depot instance is bound to a Lua table with the following methods:
+ * Each Depot instance is bound to a Lua userdata with the following methods:
  * - set(key, value)
- * - get(key [, default, preserve_string ])
- * - hasKey(key)
- * - delKey(key)
- * - delSection()
+ * - get(key [, default [, raw]])
+ * - has(key)
+ * - remove(key)
+ * - clear()
+ * - keys()
+ * - values()
+ * - delete()
+ * - name()
+ * - filePath()
  *
  * @module depot
- * @usage local depot = require("depot")
- * local d = depot(["MySection", "config.ini"])
+ * @usage
+ * local depot = require("depot")
+ * local d = depot("MySection", "config.ini")
  */
 
 #include "depot.hpp"
@@ -25,6 +31,8 @@
 #include <lua.hpp>
 
 #include <memory>
+
+namespace depot {
 
 
 
@@ -44,7 +52,7 @@ static Depot *checkDepot( lua_State *L ) {
 static void push_typed( lua_State *L, const std::string &value ) {
 	const char *s = value.c_str();
 
-	// boolean detection
+	// Boolean detection
 	if ( _stricmp( s, "true" ) == 0 ) {
 		lua_pushboolean( L, 1 );
 		return;
@@ -55,34 +63,22 @@ static void push_typed( lua_State *L, const std::string &value ) {
 		return;
 	}
 
-	// detect if value looks like a float
-	bool maybeFloat = false;
-
-	for ( const char *p = s; *p; ++p ) {
-		if ( *p == '.' || *p == 'e' || *p == 'E' ) {
-			maybeFloat = true;
-			break;
-		}
-	}
-
-	if ( maybeFloat ) {
+	// Try integer first (strtoll consumes the entire string with no remainder)
+	{
 		char *end = nullptr;
-
-		double f = std::strtod( s, &end );
-
+		long long i = std::strtoll( s, &end, 10 );
 		if ( end && *end == '\0' ) {
-			lua_pushnumber( L, f );
+			lua_pushinteger( L, static_cast<lua_Integer>( i ) );
 			return;
 		}
 	}
 
-	else {
+	// Try float (strtod consumes the entire string with no remainder)
+	{
 		char *end = nullptr;
-
-		long long i = std::strtoll( s, &end, 10 );
-
+		double f = std::strtod( s, &end );
 		if ( end && *end == '\0' ) {
-			lua_pushinteger( L, (lua_Integer)i );
+			lua_pushnumber( L, f );
 			return;
 		}
 	}
@@ -371,7 +367,7 @@ static int constructor( lua_State *L ) {
 			try {
 				std::filesystem::create_directories( dir );
 			} catch ( ... ) {
-				RmLog( rain->rm, LOG_WARNING, L"Depot: failed creating directories" );
+				RmLog( rain->rm, LOG_WARNING, L"[RainJIT:Depot] constructor — failed creating directories" );
 			}
 		}
 	}
@@ -398,18 +394,25 @@ static int constructor( lua_State *L ) {
 static int depot_keys( lua_State *L ) {
 	Depot *D = checkDepot( L );
 
-	std::vector<wchar_t> buffer( 4096 );
+	std::vector<wchar_t> buffer( 512 );
 
-	// clang-format off
-	DWORD len = GetPrivateProfileStringW(
-		D->SectionW.c_str(),
-		nullptr,
-		nullptr,
-		buffer.data(),
-		static_cast<DWORD>( buffer.size() ),
-		D->getFilePathW().c_str()
-	);
-	// clang-format on
+	while ( true ) {
+		// clang-format off
+		DWORD read = GetPrivateProfileStringW(
+			D->SectionW.c_str(),
+			nullptr,
+			nullptr,
+			buffer.data(),
+			static_cast<DWORD>( buffer.size() ),
+			D->getFilePathW().c_str()
+		);
+		// clang-format on
+
+		if ( read < static_cast<DWORD>( buffer.size() ) - 2 )
+			break;
+
+		buffer.resize( buffer.size() * 2 );
+	}
 
 	lua_newtable( L );
 
@@ -417,11 +420,8 @@ static int depot_keys( lua_State *L ) {
 	int index = 1;
 
 	while ( *ptr ) {
-		std::string key = wstring_to_utf8( ptr );
-
-		lua_pushstring( L, key.c_str() );
+		lua_pushstring( L, wstring_to_utf8( ptr ).c_str() );
 		lua_rawseti( L, -2, index++ );
-
 		ptr += wcslen( ptr ) + 1;
 	}
 
@@ -439,18 +439,25 @@ static int depot_keys( lua_State *L ) {
 static int depot_values( lua_State *L ) {
 	Depot *D = checkDepot( L );
 
-	std::vector<wchar_t> buffer( 4096 );
+	std::vector<wchar_t> buffer( 512 );
 
-	// clang-format off
-	DWORD len = GetPrivateProfileStringW(
-		D->SectionW.c_str(),
-		nullptr,
-		nullptr,
-		buffer.data(),
-		static_cast<DWORD>( buffer.size() ),
-		D->getFilePathW().c_str()
-	);
-	// clang-format on
+	while ( true ) {
+		// clang-format off
+		DWORD read = GetPrivateProfileStringW(
+			D->SectionW.c_str(),
+			nullptr,
+			nullptr,
+			buffer.data(),
+			static_cast<DWORD>( buffer.size() ),
+			D->getFilePathW().c_str()
+		);
+		// clang-format on
+
+		if ( read < static_cast<DWORD>( buffer.size() ) - 2 )
+			break;
+
+		buffer.resize( buffer.size() * 2 );
+	}
 
 	lua_newtable( L );
 
@@ -458,7 +465,7 @@ static int depot_values( lua_State *L ) {
 	int index = 1;
 
 	while ( *ptr ) {
-		std::string key = wstring_to_utf8( ptr );
+		std::string key   = wstring_to_utf8( ptr );
 		std::string value = D->get( key );
 
 		push_typed( L, value );
@@ -479,8 +486,8 @@ static int depot_values( lua_State *L ) {
  * @return int Lua return count.
  */
 static int depot_delete( lua_State *L ) {
-	auto *rain = static_cast<Rain *>( lua_touserdata( L, lua_upvalueindex( 1 ) ) );
-	Depot *D = checkDepot( L );
+	Rain  *rain = static_cast<Rain *>( lua_touserdata( L, lua_upvalueindex( 1 ) ) );
+	Depot *D    = checkDepot( L );
 
 	const std::wstring &path = D->getFilePathW();
 
@@ -489,13 +496,13 @@ static int depot_delete( lua_State *L ) {
 	if ( !result ) {
 		DWORD err = GetLastError();
 
-		std::wstring msg = L"Depot: failed deleting file: " + path + L" (error " + std::to_wstring( err ) + L")";
+		std::wstring msg = L"[RainJIT:Depot] d:delete() failed — " + path +
+		                   L" (error " + std::to_wstring( err ) + L")";
 
 		RmLog( rain->rm, LOG_ERROR, msg.c_str() );
 
 		lua_pushboolean( L, 0 );
-		lua_pushinteger( L, (lua_Integer)err );
-
+		lua_pushinteger( L, static_cast<lua_Integer>( err ) );
 		return 2;
 	}
 
@@ -506,17 +513,16 @@ static int depot_delete( lua_State *L ) {
 
 // clang-format off
 static const luaL_Reg depot_methods[] = {
-	{ "set", depot_set },
-	{ "get", depot_get },
-	{ "has", depot_hasKey },
-	{ "remove", depot_remove },
-	{ "clear", depot_clear },
-	{ "keys", depot_keys },
-	{ "values", depot_values },
-	{ "delete", depot_delete },
-	{ "name", depot_name },
+	{ "set",      depot_set      },
+	{ "get",      depot_get      },
+	{ "has",      depot_hasKey   },
+	{ "remove",   depot_remove   },
+	{ "clear",    depot_clear    },
+	{ "keys",     depot_keys     },
+	{ "values",   depot_values   },
+	{ "name",     depot_name     },
 	{ "filePath", depot_filePath },
-	{ nullptr, nullptr }
+	{ nullptr,    nullptr        }
 };
 
 
@@ -530,15 +536,21 @@ static const luaL_Reg depot_meta[] = {
 
 
 
+} // namespace depot (internal helpers)
+
+
+
+
 /**
  * @brief Lua module entry point for Depot.
  *
  * Called when Lua executes `require("depot")`.
+ * Kept as `extern "C"` for semantic compatibility with Lua's module loader.
  *
  * @param L Lua state.
  * @return 1 (module table with __call metamethod).
  *
- * @post Module table returned with __call metamethod that creates Depot instances.
+ * @note Requires a Rain* pointer as upvalue 1.
  */
 extern "C" int luaopen_depot( lua_State *L ) {
 	auto *rain = static_cast<Rain *>( lua_touserdata( L, lua_upvalueindex( 1 ) ) );
@@ -546,12 +558,28 @@ extern "C" int luaopen_depot( lua_State *L ) {
 	luaL_newmetatable( L, DEPOT_META );
 
 	/* metamethods */
-	luaL_setfuncs( L, depot_meta, 0 );
+	luaL_setfuncs( L, depot::depot_meta, 0 );
 
-	/* methods */
-	luaL_setfuncs( L, depot_methods, 0 );
+	/* methods (no upvalue needed) */
+	luaL_setfuncs( L, depot::depot_methods, 0 );
 
-	/* enable method lookup: userdata -> metatable */
+	/* d:delete() needs Rain* upvalue — registered separately */
+	lua_pushlightuserdata( L, rain );
+	lua_pushcclosure( L, depot::depot_delete, 1 );
+	lua_setfield( L, -2, "delete" );
+
+	/* __tostring → "depot<SectionName>" */
+	lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+		auto **ud = static_cast<depot::Depot **>( lua_touserdata( L2, 1 ) );
+		if ( ud && *ud )
+			lua_pushfstring( L2, "depot<%s>", ( *ud )->Section.c_str() );
+		else
+			lua_pushstring( L2, "depot<invalid>" );
+		return 1;
+	} );
+	lua_setfield( L, -2, "__tostring" );
+
+	/* enable method lookup: userdata → metatable */
 	lua_pushvalue( L, -1 );
 	lua_setfield( L, -2, "__index" );
 
@@ -562,7 +590,7 @@ extern "C" int luaopen_depot( lua_State *L ) {
 
 	lua_newtable( L );
 	lua_pushlightuserdata( L, rain );
-	lua_pushcclosure( L, constructor, 1 );
+	lua_pushcclosure( L, depot::constructor, 1 );
 	lua_setfield( L, -2, "__call" );
 
 	lua_setmetatable( L, -2 );
@@ -572,16 +600,16 @@ extern "C" int luaopen_depot( lua_State *L ) {
 
 
 
+namespace depot {
 /**
- * @brief Register depot Lua module in package.preload.
+ * @brief Register the depot Lua module into package.preload.
  *
- * Allows embedded depot module to be loaded via `require()` in Lua,
- * without depending on external files.
+ * Consistent with xml::RegisterModule and html::RegisterModule.
  *
- * @param L Lua state.
- * @param rain Pointer to the Measure instance (passed as upvalue).
+ * @param L    Lua state.
+ * @param rain Rainmeter measure context (passed as upvalue to luaopen_depot).
  */
-void RegisterDepotModule( lua_State *L, Rain *rain ) {
+void RegisterModule( lua_State *L, Rain *rain ) {
 	lua_getglobal( L, "package" );
 	lua_getfield( L, -1, "preload" );
 
@@ -592,3 +620,5 @@ void RegisterDepotModule( lua_State *L, Rain *rain ) {
 
 	lua_pop( L, 2 );
 }
+
+} // namespace depot

@@ -13,13 +13,6 @@
 namespace http {
 
 	/**
-	 * @brief Check if internet connection is available
-	 * @return true if connected, false otherwise
-	 */
-	bool IsInternetConnected();
-
-
-	/**
 	 * @brief Worker thread function that executes HTTP request
 	 * @param ctx Shared pointer to FetchContext
 	 */

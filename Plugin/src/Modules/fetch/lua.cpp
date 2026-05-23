@@ -193,84 +193,295 @@ namespace lua {
 		lua_setmetatable( L, -2 );
 	}
 
-	void PushResponseTable( lua_State *L, const core::FetchResponse &response ) {
-		lua_newtable( L ); // tabela resposta
+	void PushResponseTable( lua_State *L, Rain *rain, const core::FetchResponse &response ) {
+		lua_newtable( L );
 
-		// campos simples
 		lua_pushboolean( L, ( response.status >= 200 && response.status < 300 ) );
 		lua_setfield( L, -2, "ok" );
 
 		lua_pushinteger( L, response.status );
 		lua_setfield( L, -2, "status" );
 
+		// Raw body stored as a Lua string in a private field.
+		// Exposed lazily via :text() and :bytes() — never duplicated.
 		if ( !response.body.empty() )
 			lua_pushlstring( L, reinterpret_cast<const char *>( response.body.data() ), response.body.size() );
 		else
 			lua_pushstring( L, "" );
-		lua_setfield( L, -2, "body" );
-
-		lua_pushstring( L, response.text.c_str() );
-		lua_setfield( L, -2, "text" );
+		lua_setfield( L, -2, "__body" );
 
 		lua_pushstring( L, response.error.c_str() );
 		lua_setfield( L, -2, "error" );
 
-		// Guarda os dados originais (cópia) para uso nos métodos
-		auto *headers_copy = new std::map<std::string, std::string>( response.headers );
-		auto *cookies_copy = new std::map<std::string, std::string>( response.cookies );
-		lua_pushlightuserdata( L, headers_copy );
-		lua_setfield( L, -2, "__headers_ptr" );
-		lua_pushlightuserdata( L, cookies_copy );
-		lua_setfield( L, -2, "__cookies_ptr" );
+		// Use full userdata (not lightuserdata) so __gc is called by the GC.
+		using MapType = std::map<std::string, std::string>;
+
+		auto pushMapUserdata = [&]( const MapType &src ) {
+			void *ud = lua_newuserdata( L, sizeof( MapType ) );
+			new ( ud ) MapType( src );
+			lua_newtable( L );
+			lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+				MapType *m = static_cast<MapType *>( lua_touserdata( L2, 1 ) );
+				if ( m ) m->~MapType();
+				return 0;
+			} );
+			lua_setfield( L, -2, "__gc" );
+			lua_setmetatable( L, -2 );
+		};
+
+		pushMapUserdata( response.headers );
+		lua_setfield( L, -2, "__headers_ud" );
+
+		pushMapUserdata( response.cookies );
+		lua_setfield( L, -2, "__cookies_ud" );
 
 		// Metatable com métodos
 		lua_newtable( L );
 		lua_pushvalue( L, -1 );
 		lua_setfield( L, -2, "__index" );
 
-		// Método :headers()
+		// :headers()
 		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
-			lua_getfield( L2, 1, "__headers_ptr" );
-			auto *map = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
-			if ( !map ) {
-				lua_pushnil( L2 );
-				return 1;
-			}
+			lua_getfield( L2, 1, "__headers_ud" );
+			auto *map = static_cast<MapType *>( lua_touserdata( L2, -1 ) );
+			lua_pop( L2, 1 );
+			if ( !map ) { lua_pushnil( L2 ); return 1; }
 			createCaseInsensitiveTable( L2, *map );
 			return 1;
 		} );
 		lua_setfield( L, -2, "headers" );
 
-		// Método :cookies()
+		// :cookies()
 		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
-			lua_getfield( L2, 1, "__cookies_ptr" );
-			auto *map = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
-			if ( !map ) {
-				lua_pushnil( L2 );
-				return 1;
-			}
+			lua_getfield( L2, 1, "__cookies_ud" );
+			auto *map = static_cast<MapType *>( lua_touserdata( L2, -1 ) );
+			lua_pop( L2, 1 );
+			if ( !map ) { lua_pushnil( L2 ); return 1; }
 			createCaseInsensitiveTable( L2, *map );
 			return 1;
 		} );
 		lua_setfield( L, -2, "cookies" );
 
-		// Método :save()
-		lua_pushcfunction( L, response_save );
-		lua_setfield( L, -2, "save" );
-
-		// __gc para liberar os maps copiados
+		// :bytes() — returns raw body as a binary Lua string, no conversion
 		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
-			lua_getfield( L2, 1, "__headers_ptr" );
-			auto *h = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
-			if ( h )
-				delete h;
-			lua_getfield( L2, 1, "__cookies_ptr" );
-			auto *c = (std::map<std::string, std::string> *)lua_touserdata( L2, -1 );
-			if ( c )
-				delete c;
-			return 0;
+			lua_getfield( L2, 1, "__body" );
+			return 1;
 		} );
-		lua_setfield( L, -2, "__gc" );
+		lua_setfield( L, -2, "bytes" );
+
+		// :text() — returns body interpreted as a UTF-8 string, no conversion needed
+		// (body is already stored as raw bytes; Lua strings are byte arrays)
+		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
+			lua_getfield( L2, 1, "__body" );
+			return 1;
+		} );
+		lua_setfield( L, -2, "text" );
+
+		// :xml() — parses the body as XML and returns doc, err (identical to xml.parse(body))
+		// Requires the xml module to be registered via xml::RegisterModule().
+		lua_pushlightuserdata( L, rain );
+		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
+			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+
+			// Step 1: require("xml")
+			lua_getglobal( L2, "require" );
+			lua_pushstring( L2, "xml" );
+			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+				const char *err = lua_tostring( L2, -1 );
+				if ( r && r->rm ) {
+					std::wstring msg = L"[RainJIT:Fetch] response:xml() — xml module unavailable: " +
+					                   utf8_to_wstring( err ? err : "unknown error" );
+					RmLog( r->rm, LOG_ERROR, msg.c_str() );
+				}
+				lua_pop( L2, 1 );
+				lua_pushnil( L2 );
+				lua_pushstring( L2, "xml module not available" );
+				return 2;
+			}
+			// Stack: [xml_module]
+
+			// Step 2: get xml.parse
+			lua_getfield( L2, -1, "parse" );
+			lua_remove( L2, -2 ); // remove xml_module — stack: [xml.parse]
+
+			// Step 3: push body as argument
+			lua_getfield( L2, 1, "__body" ); // stack: [xml.parse, body]
+
+			// Step 4: call xml.parse(body) → doc, err  (2 return values)
+			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
+				const char *err = lua_tostring( L2, -1 );
+				if ( r && r->rm ) {
+					std::wstring msg = L"[RainJIT:Fetch] response:xml() — parse failed: " +
+					                   utf8_to_wstring( err ? err : "unknown error" );
+					RmLog( r->rm, LOG_ERROR, msg.c_str() );
+				}
+				lua_pop( L2, 1 );
+				lua_pushnil( L2 );
+				lua_pushstring( L2, "xml.parse() call failed" );
+				return 2;
+			}
+
+			// Stack: [doc, err] — return both to preserve xml.parse() contract
+			return 2;
+		}, 1 );
+		lua_setfield( L, -2, "xml" );
+
+		// :html() — parses the body as HTML and returns doc, err (identical to html.parse(body))
+		// Requires the html module to be registered via html::RegisterModule().
+		lua_pushlightuserdata( L, rain );
+		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
+			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+
+			// Step 1: require("html")
+			lua_getglobal( L2, "require" );
+			lua_pushstring( L2, "html" );
+			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+				const char *err = lua_tostring( L2, -1 );
+				if ( r && r->rm ) {
+					std::wstring msg = L"[RainJIT:Fetch] response:html() — html module unavailable: " +
+					                   utf8_to_wstring( err ? err : "unknown error" );
+					RmLog( r->rm, LOG_ERROR, msg.c_str() );
+				}
+				lua_pop( L2, 1 );
+				lua_pushnil( L2 );
+				lua_pushstring( L2, "html module not available" );
+				return 2;
+			}
+			// Stack: [html_module]
+
+			// Step 2: get html.parse
+			lua_getfield( L2, -1, "parse" );
+			lua_remove( L2, -2 ); // remove html_module — stack: [html.parse]
+
+			// Step 3: push body as argument
+			lua_getfield( L2, 1, "__body" ); // stack: [html.parse, body]
+
+			// Step 4: call html.parse(body) → doc [, err]  (2 slots)
+			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
+				const char *err = lua_tostring( L2, -1 );
+				if ( r && r->rm ) {
+					std::wstring msg = L"[RainJIT:Fetch] response:html() — parse failed: " +
+					                   utf8_to_wstring( err ? err : "unknown error" );
+					RmLog( r->rm, LOG_ERROR, msg.c_str() );
+				}
+				lua_pop( L2, 1 );
+				lua_pushnil( L2 );
+				lua_pushstring( L2, "html.parse() call failed" );
+				return 2;
+			}
+
+			// Stack: [doc, nil|errmsg] — return both slots
+			return 2;
+		}, 1 );
+		lua_setfield( L, -2, "html" );
+
+
+		// :json() — parses the body as JSON and returns data (identical to json(body))
+		// Requires the json module to be registered via json::RegisterModule().
+		lua_pushlightuserdata( L, rain );
+		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
+			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+
+			// Step 1: require("json")
+			lua_getglobal( L2, "require" );
+			lua_pushstring( L2, "json" );
+			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+				const char *err = lua_tostring( L2, -1 );
+				if ( r && r->rm ) {
+					std::wstring msg = L"[RainJIT:Fetch] response:json() — json module unavailable: " +
+					                   utf8_to_wstring( err ? err : "unknown error" );
+					RmLog( r->rm, LOG_ERROR, msg.c_str() );
+				}
+				lua_pop( L2, 1 );
+				lua_pushnil( L2 );
+				return 1;
+			}
+			// Stack: [json_fn]
+
+			// Step 2: push body as argument
+			lua_getfield( L2, 1, "__body" ); // stack: [json_fn, body]
+
+			// Step 3: call json(body) → data  (1 return value)
+			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+				const char *err = lua_tostring( L2, -1 );
+				if ( r && r->rm ) {
+					std::wstring msg = L"[RainJIT:Fetch] response:json() — parse failed: " +
+					                   utf8_to_wstring( err ? err : "unknown error" );
+					RmLog( r->rm, LOG_ERROR, msg.c_str() );
+				}
+				lua_pop( L2, 1 );
+				lua_pushnil( L2 );
+				return 1;
+			}
+
+			// Stack: [data]
+			return 1;
+		}, 1 );
+		lua_setfield( L, -2, "json" );
+
+
+		// :save(path) — resolves Rainmeter variables and relative paths via absPath
+		lua_pushlightuserdata( L, rain );
+		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
+			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+
+			if ( !lua_istable( L2, 1 ) ) {
+				lua_pushboolean( L2, 0 );
+				lua_pushstring( L2, "Invalid response table" );
+				return 2;
+			}
+
+			const char *filePath = luaL_checkstring( L2, 2 );
+			if ( !filePath || !*filePath ) {
+				lua_pushboolean( L2, 0 );
+				lua_pushstring( L2, "Invalid file path" );
+				return 2;
+			}
+
+			// Resolve Rainmeter variables and canonicalize path
+			std::wstring wPath = utf8_to_wstring( filePath );
+			if ( r ) {
+				std::wstring resolved = r->absPath( wPath );
+				if ( !resolved.empty() )
+					wPath = resolved;
+			}
+
+			if ( wPath.empty() ) {
+				lua_pushboolean( L2, 0 );
+				lua_pushstring( L2, "Invalid file path encoding" );
+				return 2;
+			}
+
+			lua_getfield( L2, 1, "__body" );
+			if ( !lua_isstring( L2, -1 ) ) {
+				lua_pop( L2, 1 );
+				lua_pushboolean( L2, 0 );
+				lua_pushstring( L2, "No body data in response" );
+				return 2;
+			}
+
+			size_t bodySize = 0;
+			const char *bodyData = lua_tolstring( L2, -1, &bodySize );
+			lua_pop( L2, 1 );
+
+			if ( !bodyData || bodySize == 0 ) {
+				lua_pushboolean( L2, 0 );
+				lua_pushstring( L2, "Empty response body" );
+				return 2;
+			}
+
+			if ( !fs::CreateDirectoriesRecursive( wPath ) ) {
+				lua_pushboolean( L2, 0 );
+				lua_pushstring( L2, "Failed to create directory" );
+				return 2;
+			}
+
+			bool ok = fs::SaveToFile( wPath, reinterpret_cast<const BYTE *>( bodyData ), bodySize );
+			lua_pushboolean( L2, ok ? 1 : 0 );
+			lua_pushstring( L2, ok ? nullptr : "Failed to write file" );
+			return ok ? 1 : 2;
+		}, 1 );
+		lua_setfield( L, -2, "save" );
 
 		lua_setmetatable( L, -2 );
 	}
@@ -303,7 +514,7 @@ namespace lua {
 		}
 
 		// Get body from response table
-		lua_getfield( L, 1, "body" );
+		lua_getfield( L, 1, "__body" );
 		if ( !lua_isstring( L, -1 ) ) {
 			lua_pop( L, 1 );
 			lua_pushboolean( L, 0 );
@@ -364,14 +575,6 @@ namespace lua {
 		if ( ctx->threadActive )
 			return 1; // Já está em andamento
 
-
-		if ( !http::IsInternetConnected() ) {
-			// Erro de conexão
-			ctx->completed = true;
-			ctx->response.error = "No internet connection available";
-			ctx->response.status = core::FetchResponse::STATUS_NO_INTERNET;
-			return 1;
-		}
 
 		// Configura estado
 		ctx->threadActive = true;
@@ -469,7 +672,7 @@ namespace lua {
 
 			if ( lua_isfunction( L, -1 ) ) {
 				lua_rawgeti( L, LUA_REGISTRYINDEX, ctx->refSelfLua ); // self
-				PushResponseTable( L, response ); // response
+				PushResponseTable( L, ctx->rain, response ); // response
 
 				if ( lua_pcall( L, 2, 0, 0 ) != 0 ) {
 					const char *err = lua_tostring( L, -1 );
@@ -489,22 +692,6 @@ namespace lua {
 				lua_pop( L, 1 ); // Remove não-função
 		}
 
-		return 1;
-	}
-
-
-
-	int fetch_getResponse( lua_State *L ) {
-		auto ctx = GetFetchContext( L, 1 );
-		if ( !ctx ) {
-			lua_pushnil( L );
-			return 1;
-		}
-
-		std::lock_guard<std::mutex> lock( ctx->mutex );
-		const core::FetchResponse &response = ctx->response;
-
-		PushResponseTable( L, response );
 		return 1;
 	}
 
@@ -623,11 +810,10 @@ namespace lua {
 
 		// clang-format off
 		static const struct luaL_Reg methods[] = {
-			{ "send", fetch_send },
-			{ "callback", fetch_callback },
+			{ "send",         fetch_send         },
+			{ "callback",     fetch_callback     },
 			{ "hasCompleted", fetch_hasCompleted },
-			{ "getResponse", fetch_getResponse },
-			{ "cancel", fetch_cancel },
+			{ "cancel",       fetch_cancel       },
 			{ NULL, NULL }
 		};
 		// clang-format on
@@ -654,52 +840,24 @@ namespace lua {
 		const char *method = lua_tostring( L, lua_upvalueindex( 2 ) );
 		const char *url = luaL_checkstring( L, 1 );
 
-		// Create temporary context
 		auto ctx = std::make_shared<core::FetchContext>( rain );
-		ctx->request.url = utf8_to_wstring( url );
+		ctx->request.url    = utf8_to_wstring( url );
 		ctx->request.method = utf8_to_wstring( string::ToUpperCase( method ) );
 
-		// Parse options
 		if ( lua_istable( L, 2 ) )
 			requestOptions( L, ctx );
 
-		// Execute synchronously
-		ctx->threadActive = true;
-		ctx->completed = false;
-		ctx->response.status = -1;
-		ctx->response.error = "Request pending";
+		// Register so CleanupContexts() can mark rainValid=false if Finalize()
+		// is called while the request is in flight.
+		ctx->refSelf = core::ContextRegistry::instance().registerContext( ctx );
 
-		std::thread worker( http::ExecuteFetchThread, ctx );
-		worker.detach();
+		// Execute directly on the current thread — no busy-wait, no worker thread.
+		http::ExecuteFetchThread( ctx );
 
-		// Wait for completion
-		int maxWaitTime = ctx->request.timeout;
-		int waitedTime = 0;
+		core::ContextRegistry::instance().removeContext( ctx->refSelf );
 
-		while ( !ctx->completed && waitedTime < maxWaitTime ) {
-			MSG msg;
-			while ( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) ) {
-				TranslateMessage( &msg );
-				DispatchMessage( &msg );
-			}
-
-			std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
-			waitedTime += 10;
-		}
-
-		// Timeout handling
-		if ( !ctx->completed ) {
-			std::lock_guard<std::mutex> lock( ctx->mutex );
-			ctx->cancelled = true;
-			ctx->response.status = -1;
-			ctx->response.error = "Request timeout";
-		}
-
-		// Return response
 		std::lock_guard<std::mutex> lock( ctx->mutex );
-		const core::FetchResponse &response = ctx->response;
-
-		PushResponseTable( L, response );
+		PushResponseTable( L, rain, ctx->response );
 		return 1;
 	}
 

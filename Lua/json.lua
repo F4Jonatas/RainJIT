@@ -385,4 +385,10 @@ function json.decode(str)
 end
 
 
+setmetatable( json, {
+	__call = function( _, str )
+		return json.decode( str )
+	end
+})
+
 return json

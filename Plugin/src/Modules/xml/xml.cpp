@@ -24,6 +24,33 @@ static constexpr const char *MT_NODE = "xml.node";
 static constexpr const char *MT_NODESET = "xml.nodeSet";
 
 
+// ---------------------------------------------------------------------------
+// Internal logging helper
+//
+// Retrieves the Rain* stored in the Lua registry by RegisterModule and logs
+// via RmLog. Falls back silently if Rain* is unavailable (e.g. unit-test env).
+// ---------------------------------------------------------------------------
+
+static Rain *GetRain( lua_State *L ) {
+	lua_getfield( L, LUA_REGISTRYINDEX, "__xml_rain" );
+	Rain *rain = static_cast<Rain *>( lua_touserdata( L, -1 ) );
+	lua_pop( L, 1 );
+	return rain;
+}
+
+static void XmlLog( lua_State *L, int level, const char *msg ) {
+#ifdef __RAINMETERAPI_H__
+	Rain *rain = GetRain( L );
+	if ( rain && rain->rm )
+		RmLog( rain->rm, level, utf8_to_wstring( msg ).c_str() );
+#else
+	(void)L;
+	(void)level;
+	(void)msg;
+#endif
+}
+
+
 /**
  * @brief Fix HTML5 void elements so they are valid self-closing XHTML tags.
  *
@@ -285,14 +312,22 @@ NodeSet Document::select( const std::string &xpath ) {
 		std::lock_guard<std::mutex> lock( cache_mutex );
 		auto it = xpath_cache.find( xpath );
 		if ( it == xpath_cache.end() ) {
-			pugi::xpath_query query( xpath.c_str() );
-			if ( !query )
+			try {
+				pugi::xpath_query query( xpath.c_str() );
+				if ( !query )
+					return NodeSet();
+				it = xpath_cache.emplace( xpath, std::move( query ) ).first;
+			} catch ( const pugi::xpath_exception & ) {
 				return NodeSet();
-			it = xpath_cache.emplace( xpath, std::move( query ) ).first;
+			}
 		}
 		set = it->second.evaluate_node_set( *doc );
 	} else {
-		set = doc->select_nodes( xpath.c_str() );
+		try {
+			set = doc->select_nodes( xpath.c_str() );
+		} catch ( const pugi::xpath_exception & ) {
+			return NodeSet();
+		}
 	}
 	return NodeSet( set, shared_from_this() );
 }
@@ -303,14 +338,22 @@ Node Document::select_single( const std::string &xpath ) {
 		std::lock_guard<std::mutex> lock( cache_mutex );
 		auto it = xpath_cache.find( xpath );
 		if ( it == xpath_cache.end() ) {
-			pugi::xpath_query query( xpath.c_str() );
-			if ( !query )
+			try {
+				pugi::xpath_query query( xpath.c_str() );
+				if ( !query )
+					return Node();
+				it = xpath_cache.emplace( xpath, std::move( query ) ).first;
+			} catch ( const pugi::xpath_exception & ) {
 				return Node();
-			it = xpath_cache.emplace( xpath, std::move( query ) ).first;
+			}
 		}
 		xn = it->second.evaluate_node( *doc );
 	} else {
-		xn = doc->select_node( xpath.c_str() );
+		try {
+			xn = doc->select_node( xpath.c_str() );
+		} catch ( const pugi::xpath_exception & ) {
+			return Node();
+		}
 	}
 	return Node( xn.node(), shared_from_this() );
 }
@@ -381,14 +424,66 @@ NodeSet Node::select( const std::string &xpath ) const {
 	auto d = doc.lock();
 	if ( !d )
 		return NodeSet();
-	return NodeSet( node.select_nodes( xpath.c_str() ), d );
+
+	pugi::xpath_node_set set;
+
+	// Reuse the document's compiled-query cache when available.
+	// The query is compiled once and cached; evaluation always uses this
+	// node as context (not the document root), so relative paths work correctly.
+	if ( d->cache_enabled ) {
+		std::lock_guard<std::mutex> lock( d->cache_mutex );
+		auto it = d->xpath_cache.find( xpath );
+		if ( it == d->xpath_cache.end() ) {
+			try {
+				pugi::xpath_query query( xpath.c_str() );
+				if ( !query )
+					return NodeSet();
+				it = d->xpath_cache.emplace( xpath, std::move( query ) ).first;
+			} catch ( const pugi::xpath_exception & ) {
+				return NodeSet();
+			}
+		}
+		set = it->second.evaluate_node_set( node );
+	} else {
+		try {
+			set = node.select_nodes( xpath.c_str() );
+		} catch ( const pugi::xpath_exception & ) {
+			return NodeSet();
+		}
+	}
+
+	return NodeSet( set, d );
 }
 
 Node Node::select_single( const std::string &xpath ) const {
 	auto d = doc.lock();
 	if ( !d )
 		return Node();
-	pugi::xpath_node xn = node.select_node( xpath.c_str() );
+
+	pugi::xpath_node xn;
+
+	if ( d->cache_enabled ) {
+		std::lock_guard<std::mutex> lock( d->cache_mutex );
+		auto it = d->xpath_cache.find( xpath );
+		if ( it == d->xpath_cache.end() ) {
+			try {
+				pugi::xpath_query query( xpath.c_str() );
+				if ( !query )
+					return Node();
+				it = d->xpath_cache.emplace( xpath, std::move( query ) ).first;
+			} catch ( const pugi::xpath_exception & ) {
+				return Node();
+			}
+		}
+		xn = it->second.evaluate_node( node );
+	} else {
+		try {
+			xn = node.select_node( xpath.c_str() );
+		} catch ( const pugi::xpath_exception & ) {
+			return Node();
+		}
+	}
+
 	return Node( xn.node(), d );
 }
 
@@ -454,6 +549,10 @@ static int l_parse( lua_State *L ) {
 	auto doc = std::make_shared<Document>();
 	pugi::xml_parse_result result = doc->doc->load_buffer( str, len, flags );
 	if ( !result ) {
+		std::string msg = std::string( "[RainJIT:XML] xml.parse() failed at offset " ) +
+		                  std::to_string( static_cast<int>( result.offset ) ) +
+		                  ": " + result.description();
+		XmlLog( L, LOG_WARNING, msg.c_str() );
 		lua_pushnil( L );
 		lua_pushfstring( L, "XML parse error at offset %d: %s", static_cast<int>( result.offset ), result.description() );
 		return 2;
@@ -495,6 +594,10 @@ static int l_parse_html( lua_State *L ) {
 	auto doc = std::make_shared<Document>();
 	pugi::xml_parse_result result = doc->doc->load_buffer( str, len, flags );
 	if ( !result ) {
+		std::string msg = std::string( "[RainJIT:XML] xml.parse_html() failed at offset " ) +
+		                  std::to_string( static_cast<int>( result.offset ) ) +
+		                  ": " + result.description();
+		XmlLog( L, LOG_WARNING, msg.c_str() );
 		lua_pushnil( L );
 		lua_pushfstring( L, "HTML parse error at offset %d: %s", static_cast<int>( result.offset ), result.description() );
 		return 2;
@@ -678,6 +781,7 @@ static int node_outer_xml( lua_State *L ) {
 static int node_html( lua_State *L ) {
 	Node *node = check_node( L, 1 );
 	if ( !node->valid() ) {
+		XmlLog( L, LOG_WARNING, "[RainJIT:XML] node:html() — node is invalid or document has been collected" );
 		lua_pushnil( L );
 		lua_pushstring( L, "node:html() — node is invalid or document has been collected" );
 		return 2;
@@ -703,6 +807,7 @@ static int node_html( lua_State *L ) {
 	std::string html_content = has_element_child ? node->inner_xml() : node->text();
 
 	if ( html_content.empty() ) {
+		XmlLog( L, LOG_WARNING, "[RainJIT:XML] node:html() — node has no extractable content" );
 		lua_pushnil( L );
 		lua_pushstring( L, "node:html() — node has no extractable content" );
 		return 2;
@@ -717,9 +822,14 @@ static int node_html( lua_State *L ) {
 	auto new_doc = std::make_shared<Document>();
 	const unsigned int flags = pugi::parse_fragment | pugi::parse_embed_pcdata | pugi::parse_ws_pcdata;
 
-	pugi::xml_parse_result result = new_doc->doc->load_string( fixed_html.c_str(), flags );
+	// Use load_buffer (consistent with l_parse/l_parse_html — avoids internal strlen call)
+	pugi::xml_parse_result result = new_doc->doc->load_buffer( fixed_html.c_str(), fixed_html.size(), flags );
 
 	if ( !result ) {
+		std::string msg = std::string( "[RainJIT:XML] node:html() failed at offset " ) +
+		                  std::to_string( static_cast<int>( result.offset ) ) +
+		                  ": " + result.description();
+		XmlLog( L, LOG_WARNING, msg.c_str() );
 		lua_pushnil( L );
 		lua_pushfstring( L, "node:html() — parse error at offset %d: %s", static_cast<int>( result.offset ), result.description() );
 		return 2;
@@ -764,7 +874,7 @@ static int nodeset_iter_next( lua_State *L ) {
 	lua_pushinteger( L, i );
 	lua_replace( L, lua_upvalueindex( 2 ) );
 
-	lua_rawgeti( L, lua_upvalueindex( 1 ), i );
+	lua_rawgeti( L, lua_upvalueindex( 1 ), static_cast<int>( i ) );
 	if ( lua_isnil( L, -1 ) )
 		return 0; // stop
 	return 1;
@@ -797,6 +907,48 @@ static int nodeset_iter( lua_State *L ) {
 	lua_pushcclosure( L, nodeset_iter_next, 2 );
 	return 1;
 }
+
+// ---------------------------------------------------------------------------
+// __tostring metamethods
+//
+// Provide human-readable descriptions for Rainmeter log and Lua debug output.
+//   xml.document  → "xml.document<root_tag_name>"
+//   xml.node      → "xml.node<tag_name>" or "xml.node<invalid>"
+//   xml.nodeSet   → "xml.nodeSet[N]"
+// ---------------------------------------------------------------------------
+
+static int doc_tostring( lua_State *L ) {
+	auto *ptr = static_cast<std::shared_ptr<Document> *>( lua_touserdata( L, 1 ) );
+	if ( !ptr || !*ptr || !( *ptr )->doc ) {
+		lua_pushstring( L, "xml.document<invalid>" );
+		return 1;
+	}
+	const char *root_name = ( *ptr )->doc->document_element().name();
+	lua_pushfstring( L, "xml.document<%s>", root_name && *root_name ? root_name : "?" );
+	return 1;
+}
+
+static int node_tostring( lua_State *L ) {
+	auto *node = static_cast<Node *>( lua_touserdata( L, 1 ) );
+	if ( !node || !node->valid() ) {
+		lua_pushstring( L, "xml.node<invalid>" );
+		return 1;
+	}
+	const char *name = node->node.name();
+	lua_pushfstring( L, "xml.node<%s>", name && *name ? name : node_type_string( node->node.type() ).c_str() );
+	return 1;
+}
+
+static int nodeset_tostring( lua_State *L ) {
+	auto *set = static_cast<NodeSet *>( lua_touserdata( L, 1 ) );
+	if ( !set ) {
+		lua_pushstring( L, "xml.nodeSet[?]" );
+		return 1;
+	}
+	lua_pushfstring( L, "xml.nodeSet[%d]", static_cast<int>( set->size() ) );
+	return 1;
+}
+
 
 // ---------------------------------------------------------------------------
 // __gc metamethods
@@ -896,6 +1048,8 @@ static void register_metatables( lua_State *L ) {
 		lua_setfield( L, -2, "select" );
 		lua_pushcfunction( L, doc_select_single );
 		lua_setfield( L, -2, "select_single" );
+		lua_pushcfunction( L, doc_tostring );
+		lua_setfield( L, -2, "__tostring" );
 		lua_pushcfunction( L, doc_gc );
 		lua_setfield( L, -2, "__gc" );
 	}
@@ -932,6 +1086,8 @@ static void register_metatables( lua_State *L ) {
 		lua_setfield( L, -2, "outer_xml" );
 		lua_pushcfunction( L, node_html );
 		lua_setfield( L, -2, "html" );
+		lua_pushcfunction( L, node_tostring );
+		lua_setfield( L, -2, "__tostring" );
 		lua_pushcfunction( L, node_gc );
 		lua_setfield( L, -2, "__gc" );
 	}
@@ -948,6 +1104,8 @@ static void register_metatables( lua_State *L ) {
 		lua_setfield( L, -2, "get" );
 		lua_pushcfunction( L, nodeset_iter );
 		lua_setfield( L, -2, "iter" );
+		lua_pushcfunction( L, nodeset_tostring );
+		lua_setfield( L, -2, "__tostring" );
 		lua_pushcfunction( L, nodeset_gc );
 		lua_setfield( L, -2, "__gc" );
 	}
@@ -969,7 +1127,11 @@ extern "C" int luaopen_xml( lua_State *L ) {
 	return 1;
 }
 
-void xml::RegisterModule( lua_State *L, Rain * /*rain*/ ) {
+void xml::RegisterModule( lua_State *L, Rain *rain ) {
+	// Store Rain* in the Lua registry so binding functions can retrieve it for logging.
+	lua_pushlightuserdata( L, static_cast<void *>( rain ) );
+	lua_setfield( L, LUA_REGISTRYINDEX, "__xml_rain" );
+
 	lua_getglobal( L, "package" );
 	lua_getfield( L, -1, "preload" );
 	lua_pushcfunction( L, luaopen_xml );

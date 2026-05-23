@@ -39,7 +39,6 @@ local METEREVENTS = {}
 -- The event object contains information about the action type and,
 -- when available, cursor coordinates.
 --
--- @local
 -- @param target Unique callback identifier.
 -- @param action Event type (ex: `leftup`, `over`, `wheelup`).
 -- @param mousex Cursor X position in pixels.
@@ -50,7 +49,6 @@ local METEREVENTS = {}
 function METERONMESSAGE( target, action, mousex, mousey, mousexs, mouseys )
 	if METEREVENTS[ target ] then
 		local response = {
-			target = METEREVENTS[ target .. '_OUT' ].name,
 			type = action
 		}
 
@@ -65,7 +63,7 @@ function METERONMESSAGE( target, action, mousex, mousey, mousexs, mouseys )
 		end
 
 
-		METEREVENTS[ target ]( METEREVENTS[ target .. '_OUT' ], response )
+		METEREVENTS[ target ]( METEREVENTS[ target ..'_OUT' ], response )
 	end
 end
 
@@ -78,6 +76,7 @@ end
 -- to the corresponding Rainmeter meter options.
 --
 -- @local
+--
 local listEvents = {
 	over         = 'MouseOverAction',
 	leave        = 'MouseLeaveAction',
@@ -114,6 +113,7 @@ local listEvents = {
 -- @param prop Meter property (`X`, `Y`, `W`, `H`).
 -- @param value Optional value to assign.
 -- @return string|table Current value when used as getter, or meter instance when used as setter.
+--
 local function dimension( self, prop, value )
 	if value == nil then
 		return rain:var( '['..self.name..':'..prop..']' )
@@ -121,6 +121,27 @@ local function dimension( self, prop, value )
 
 	rain:bang( '!setOption', self.name, prop, value )
 	return self
+end
+
+
+
+local function updateMatrix( self )
+	local scale  = self._scale  or 1
+	local width  = self._origW  or 0
+	local height = self._origH  or 0
+	local uTX    = self._userTx or 0
+	local uTY    = self._userTy or 0
+
+	-- Translation required to maintain the center (scale from the center)
+	local centerTX = width  * ( 1 - scale ) / 2
+	local centerTY = height * ( 1 - scale ) / 2
+
+	local TX = centerTX + uTX
+	local TY = centerTY + uTY
+
+	local matrix = string.format( '%s;0;0;%s;%s;%s', scale, scale, TX, TY )
+	rain:bang( '!setOption', self.name, 'transformationMatrix', matrix )
+	return matrix
 end
 
 
@@ -139,6 +160,7 @@ end
 -- clock:left(100)
 -- clock:top(50)
 -- clock:show()
+--
 local meter = {}
 meter.__index = meter
 
@@ -167,6 +189,7 @@ meter.__index = meter
 -- @param events Event name or multiple events separated by spaces.
 -- @param callback Function executed when the event occurs.
 -- @return string|table Returns the callback identifier or meter instance.
+--
 function meter:event( events, callback )
 
 	-- fire event
@@ -233,13 +256,15 @@ end
 -- @return string|table Returns option value when used as getter or meter instance when used as setter.
 --
 -- @see https://docs.rainmeter.net/manual/bangs/#SetOption
+--
 function meter:option( option, value, config )
+	-- print( option, value  )
 	if value ~= nil then
 		rain:bang( '!setOption', self.name, option, value )
 		return self
 
 	else
-		local result = rain:option( self.name, option, value )
+		local result = rain:option( self.name, option )
 		return result
 	end
 end
@@ -250,6 +275,7 @@ end
 --
 -- @param value Optional new Y coordinate.
 -- @return string|table Current value or meter instance.
+--
 function meter:top( value )
 	return dimension( self, 'Y', value )
 end
@@ -260,6 +286,7 @@ end
 --
 -- @param value Optional new X coordinate.
 -- @return string|table Current value or meter instance.
+--
 function meter:left( value )
 	return dimension( self, 'X', value )
 end
@@ -270,6 +297,7 @@ end
 --
 -- @param value Optional new width.
 -- @return string|table Current value or meter instance.
+--
 function meter:width( value )
 	return dimension( self, 'W', value )
 end
@@ -280,9 +308,70 @@ end
 --
 -- @param value Optional new height.
 -- @return string|table Current value or meter instance.
+--
 function meter:height( value )
 	return dimension( self, 'H', value )
 end
+
+
+
+--- TranslateY
+function meter:translatey( value )
+	if value ~= nil then
+		rain:bang( '!setOption', self.name, 'transformationMatrix', '1;0;0;1;0;' .. value )
+		return self
+
+	else
+		local result = rain:option( self.name, 'transformationMatrix' )
+		if result then
+			return tonumber( result:match( '([%+%-%d%.]+)%s*$' ))
+		end
+
+		return nil
+	end
+
+end
+
+
+
+
+--- TranslateX
+function meter:translatex( value )
+	if value ~= nil then
+		rain:bang( '!setOption', self.name, 'transformationMatrix', '1;0;0;1;' ..value.. ';0' )
+		return self
+
+	else
+		local result = rain:option( self.name, 'transformationMatrix' )
+		if result then
+			return tonumber( result:match( '([%+%-%d%.]+)%s*;%s*[%+%-%d%.]+$' ))
+		end
+
+		return nil
+	end
+end
+
+
+
+
+--- Scale uniforme a partir do centro
+-- @param value  número (fator de escala) ou nil para consultar
+function meter:scale( value )
+	if value == nil then
+		return self._scale
+	end
+
+	-- The first time, it captures the original dimensions of the meter.
+	if not self._origW then
+		self._origW = tonumber( rain:var( '[&'.. self.name ..':W]' )) or 0
+		self._origH = tonumber( rain:var( '[&'.. self.name ..':H]' )) or 0
+	end
+
+	self._scale = value
+	updateMatrix( self )
+	return self
+end
+
 
 
 
@@ -301,9 +390,10 @@ end
 -- meter:update(true)
 --
 -- @return meter
+--
 function meter:update( force )
 	-- Force update
-	if force then
+	if force == true then
 		if self.type ~= 'string' then
 			rain:bang( '!setOption', self.name, 'text', '""' )
 		else
@@ -327,6 +417,7 @@ end
 -- meter:hide()
 --
 -- @return meter
+--
 function meter:hide()
 	rain:bang( '!hideMeter', self.name )
 	return self
@@ -342,6 +433,7 @@ end
 -- meter:show()
 --
 -- @return meter
+--
 function meter:show()
 	rain:bang( '!showMeter', self.name )
 	return self

@@ -1,5 +1,5 @@
 --- Window effects module for Windows.
--- Applies visual effects (Mica, Acrylic, Blur, Dark mode, Rounded corners, Shadow) to a window handle (HWND).
+-- Applies visual effects (Mica, Acrylic, Blur, Dark mode, Rounded corners, Shadow, Border) to a window handle (HWND).
 -- Uses FFI to call Windows API functions from user32, dwmapi, and ntdll.
 -- Compatible with Windows 10/11, with version checks for specific features.
 -- @module glass
@@ -75,7 +75,13 @@ local FLAG_ALLBORDERS = 0x1E0
 local DWMWA_NCRENDERING_POLICY       = 2
 local DWMWA_USE_IMMERSIVE_DARK_MODE  = 20
 local DWMWA_WINDOW_CORNER_PREFERENCE = 33
+local DWMWA_BORDER_COLOR             = 34
 local DWMWA_SYSTEMBACKDROP_TYPE      = 38
+
+--- Special DWM color values.
+-- @section DWMColor
+local DWMWA_COLOR_DEFAULT = 0xFFFFFFFF  -- Restore system default border color.
+local DWMWA_COLOR_NONE    = 0xFFFFFFFE  -- Remove the border entirely.
 
 --- Corner preference values.
 -- @section DWMWCP
@@ -105,6 +111,15 @@ local function argb( alpha, rgb )
 end
 
 
+--- Converts a 0xRRGGBB color to the BGR format expected by DWM.
+-- @tparam number rgb RGB color (0xRRGGBB).
+-- @treturn number BGR integer.
+local function rgbToBgr( rgb )
+	local r = bit.band( bit.rshift( rgb, 16 ), 0xFF )
+	local g = bit.band( bit.rshift( rgb, 8 ),  0xFF )
+	local b = bit.band( rgb, 0xFF )
+	return bit.bor( bit.lshift( b, 16 ), bit.lshift( g, 8 ), r )
+end
 
 
 --- Retrieves the Windows version information using RtlGetVersion.
@@ -124,11 +139,9 @@ local function getWindowsVersion()
 end
 
 
-
-
 --- Resets all effects on a window to their default/disabled state.
 -- Disables accent, system backdrop, restores default corners, disables dark mode,
--- and re-enables non-client rendering.
+-- restores the default border color, and re-enables non-client rendering.
 -- @tparam HWND hwnd Handle to the target window.
 local function resetAll( hwnd )
 	-- Accent off
@@ -150,17 +163,19 @@ local function resetAll( hwnd )
 	local corners = ffi.new( 'int[1]', DWMWCP_DEFAULT )
 	dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, corners, ffi.sizeof( corners ))
 
-	-- Dark mode off (both known attributes)
+	-- Dark mode off (both known attribute IDs for compatibility)
 	local dark = ffi.new( 'int[1]', 0 )
-	dwmapi.DwmSetWindowAttribute( hwnd, 20, dark, ffi.sizeof( dark ))
+	dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, dark, ffi.sizeof( dark ))
 	dwmapi.DwmSetWindowAttribute( hwnd, 19, dark, ffi.sizeof( dark ))
+
+	-- Border color default
+	local borderColor = ffi.new( 'DWORD[1]', DWMWA_COLOR_DEFAULT )
+	dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_BORDER_COLOR, borderColor, ffi.sizeof( borderColor ))
 
 	-- NC rendering enabled
 	local nc = ffi.new( 'int[1]', DWMNCRP_ENABLED )
 	dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_NCRENDERING_POLICY, nc, ffi.sizeof( nc ))
 end
-
-
 
 
 --- Applies the requested visual effects to a window.
@@ -174,20 +189,21 @@ end
 -- @tparam string opt.corners Corner style: "round", "small", "none", "default".
 -- @tparam boolean opt.dark Enable/disable dark mode.
 -- @tparam boolean opt.shadow Enable/disable window shadow.
+-- @tparam boolean|number opt.border false to remove border, true to restore default,
+--   or a 0xRRGGBB number to set a custom border color. Requires Windows 11 build >= 22000.
 -- @raise Asserts if acrylic is used on Windows builds < 17134.
 local function applyEffects( hwnd, winver, opt )
 	opt = opt or {}
 
-		-- Mica
+	-- Mica
 	if ( opt.effect == 'mica' or opt.effect == 'mica_alt' ) and winver.build >= 22000 then
 		local v = ffi.new( 'int[1]',
-			opt.effect == 'mica' and DWMSBT_MICA or
+			opt.effect == 'mica'     and DWMSBT_MICA     or
 			opt.effect == 'mica_alt' and DWMSBT_MICA_ALT or
 			DWMSBT_NONE
 		)
 
 		dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_SYSTEMBACKDROP_TYPE, v, ffi.sizeof( v ))
-
 
 	-- Accent
 	elseif opt.effect then
@@ -227,9 +243,9 @@ local function applyEffects( hwnd, winver, opt )
 	-- Corners
 	if opt.corners then
 		local v = ffi.new( 'int[1]',
-			opt.corners == 'round' and DWMWCP_ROUND or
+			opt.corners == 'round' and DWMWCP_ROUND      or
 			opt.corners == 'small' and DWMWCP_ROUNDSMALL or
-			opt.corners == 'none' and DWMWCP_DONOTROUND or
+			opt.corners == 'none'  and DWMWCP_DONOTROUND or
 			DWMWCP_DEFAULT
 		)
 
@@ -238,18 +254,36 @@ local function applyEffects( hwnd, winver, opt )
 
 	-- Dark mode
 	if opt.dark ~= nil then
-		local v = ffi.new( 'int[1]', opt.dark and 1 or 0)
-		dwmapi.DwmSetWindowAttribute( hwnd, 20, v, ffi.sizeof( v ))
+		local v = ffi.new( 'int[1]', opt.dark and 1 or 0 )
+		dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, v, ffi.sizeof( v ))
 		dwmapi.DwmSetWindowAttribute( hwnd, 19, v, ffi.sizeof( v ))
 	end
 
 	-- Shadow
 	if opt.shadow ~= nil then
-		local v = ffi.new( 'int[1]', opt.shadow and DWMNCRP_ENABLED or DWMNCRP_DISABLED)
-		dwmapi.DwmSetWindowAttribute(hwnd, DWMWA_NCRENDERING_POLICY, v, ffi.sizeof( v ))
+		local v = ffi.new( 'int[1]', opt.shadow and DWMNCRP_ENABLED or DWMNCRP_DISABLED )
+		dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_NCRENDERING_POLICY, v, ffi.sizeof( v ))
+	end
+
+	-- Border (requires Windows 11 build >= 22000)
+	if opt.border ~= nil and winver.build >= 22000 then
+		local color
+
+		if opt.border == false then
+			-- Remove the border entirely
+			color = DWMWA_COLOR_NONE
+		elseif opt.border == true then
+			-- Restore the system default border color
+			color = DWMWA_COLOR_DEFAULT
+		else
+			-- Custom 0xRRGGBB color — DWM expects BGR
+			color = rgbToBgr( opt.border )
+		end
+
+		local v = ffi.new( 'DWORD[1]', color )
+		dwmapi.DwmSetWindowAttribute( hwnd, DWMWA_BORDER_COLOR, v, ffi.sizeof( v ))
 	end
 end
-
 
 
 --- Applies visual effects to a window.
@@ -262,10 +296,11 @@ end
 -- @usage
 -- local glass = require( 'glass' )
 -- glass( rain.hwnd, {
---   effect = 'mica',
+--   effect  = 'mica',
 --   corners = 'round',
---   dark = true,
---   shadow = true
+--   dark    = true,
+--   shadow  = true,
+--   border  = false   -- remove border
 -- })
 return function( hwnd, options )
 	assert( hwnd ~= nil and hwnd ~= ffi.NULL, 'Invalid HWND' )

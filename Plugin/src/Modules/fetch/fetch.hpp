@@ -17,7 +17,6 @@
 #include "lua.hpp"
 
 
-
 /**
  * @namespace fetch
  * @brief HTTP client module for RainJIT with async support

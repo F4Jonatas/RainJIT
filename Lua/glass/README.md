@@ -7,7 +7,7 @@
 </div>
 
 
-A lightweight Lua module that applies modern Windows visual effects (Mica, Acrylic, Blur, Dark Mode, Rounded Corners, Shadow) to any window using FFI and native Windows APIs.
+A lightweight Lua module that applies modern Windows visual effects (Mica, Acrylic, Blur, Dark Mode, Rounded Corners, Border, Shadow) to any window using FFI and native Windows APIs.
 
 ---
 
@@ -20,14 +20,15 @@ A lightweight Lua module that applies modern Windows visual effects (Mica, Acryl
 > [!TIP]
 > All effects can be combined, and the module automatically resets previous settings before applying new ones.
 
-- **Mica & Mica Alt** – Windows 11 backdrop materials
-- **Acrylic Blur** – Fluent Design acrylic effect (Windows 10 1803+)
-- **Blur Behind** – Classic Aero-style blur
-- **Transparent Gradient** – Simple transparency
-- **Solid Color** – Opaque fill with optional opacity
-- **Rounded Corners** – Control window corner rounding
-- **Dark Mode** – Toggle immersive dark mode
-- **Shadow** – Enable or disable the window shadow
+- **Mica & Mica Alt** – Windows 11 backdrop materials
+- **Acrylic Blur** – Fluent Design acrylic effect (Windows 10 1803+)
+- **Blur Behind** – Classic Aero-style blur
+- **Transparent Gradient** – Simple transparency
+- **Solid Color** – Opaque fill with optional opacity
+- **Rounded Corners** – Control window corner rounding
+- **Dark Mode** – Toggle immersive dark mode
+- **Border** – Remove, restore, or set a custom color for the DWM border
+- **Shadow** – Enable or disable the window shadow
 
 ---
 
@@ -37,9 +38,9 @@ A lightweight Lua module that applies modern Windows visual effects (Mica, Acryl
 
 ## Requirements
 
-- **Windows 10/11** (some effects require specific builds – see Compatibility)
-- **LuaJIT** (or any Lua with `ffi` support)
-- No external dependencies – the module uses `user32.dll`, `dwmapi.dll`, and `ntdll.dll` via FFI.
+- **Windows 10/11** (some effects require specific builds – see Compatibility)
+- **LuaJIT** (or any Lua with `ffi` support)
+- No external dependencies – the module uses `user32.dll`, `dwmapi.dll`, and `ntdll.dll` via FFI.
 
 ---
 
@@ -51,7 +52,7 @@ A lightweight Lua module that applies modern Windows visual effects (Mica, Acryl
 
 ```lua
 -- @usage glass( hwnd, options ) → nil
--- @param (number|userdata) hwnd - a valid Windows window handle (LuaJIT FFI `HWND` cdata).
+-- @param (number|userdata) hwnd - a valid Windows window handle (LuaJIT FFI `HWND` cdata).
 -- @param (table) options – a table with the desired effects (all fields optional).
 
 glass(hwnd, options)
@@ -65,10 +66,20 @@ glass(hwnd, options)
 local glass = require("glass")
 
 glass( rain.hwnd, {
-  effect = "mica",
+  effect  = "mica",
   corners = "round",
-  dark = true,
-  shadow = true
+  dark    = true,
+  shadow  = true,
+  border  = false  -- remove the DWM border
+})
+```
+
+Custom border color:
+
+```lua
+glass( rain.hwnd, {
+  effect = "acrylic",
+  border = 0xFF0000  -- red border (0xRRGGBB)
 })
 ```
 
@@ -189,6 +200,26 @@ glass( rain.hwnd, {
 
   <tr>
     <td align="center" nowrap="nowrap">
+      <h5><code>border</code></h5>
+    </td>
+    <td rowspan="2">
+      Controls the DWM border drawn around the window frame.
+      <ul>
+        <li><b>false</b> – Removes the border entirely.</li>
+        <li><b>true</b> – Restores the system default border color.</li>
+        <li><b>0xRRGGBB</b> – Sets a custom border color (e.g. <code>0xFF0000</code> for red).</li>
+      </ul>
+      <i>(Requires Windows 11 build ≥ 22000. Ignored silently on older builds.)</i>
+    </td>
+  </tr>
+  <tr>
+    <td nowrap="nowrap">
+      <b>Type:</b> <code>boolean | number</code>
+    </td>
+  </tr>
+
+  <tr>
+    <td align="center" nowrap="nowrap">
       <h5><code>shadow</code></h5>
     </td>
     <td rowspan="2">
@@ -213,7 +244,7 @@ glass( rain.hwnd, {
 ## Compatibility
 
 > [!NOTE]
-> Effects that are not supported on the current Windows version will be ignored. The module does not throw errors (except for `acrylic`, which explicitly asserts if the build is too old).
+> Effects that are not supported on the current Windows version will be ignored. The module does not throw errors (except for `acrylic`, which explicitly asserts if the build is too old).
 
 | Effect          | Minimum Windows Build | Notes                                           |
 | --------------- | --------------------- | ----------------------------------------------- |
@@ -222,8 +253,9 @@ glass( rain.hwnd, {
 | Blur            | Any Win10/Win11       |                                                 |
 | Transparent     | Any Win10/Win11       |                                                 |
 | Solid           | Any Win10/Win11       |                                                 |
-| Rounded Corners | 22000 (Win11 21H2)    | Also works on some Win10 builds with newer DWM? |
+| Rounded Corners | 22000 (Win11 21H2)    | Also works on some Win10 builds with newer DWM  |
 | Dark Mode       | 17763 (Win10 1809)    | Attribute IDs 19 & 20                           |
+| Border          | 22000 (Win11 21H2)    | `DWMWA_BORDER_COLOR` — ignored on older builds  |
 | Shadow          | Any Win10/Win11       |                                                 |
 
 ---
@@ -234,8 +266,8 @@ glass( rain.hwnd, {
 
 ## Known Issues
 
-- **Battery Saver Mode** – On laptops, when battery saver is active, Windows may automatically disable some visual effects (especially acrylic and blur) to save power. The module will still attempt to apply them, but the OS may override the settings.
-- **Per‑Monitor DPI** – Some effects may behave unexpectedly on systems with mixed DPI settings.
+- **Battery Saver Mode** – On laptops, when battery saver is active, Windows may automatically disable some visual effects (especially acrylic and blur) to save power. The module will still attempt to apply them, but the OS may override the settings.
+- **Per‑Monitor DPI** – Some effects may behave unexpectedly on systems with mixed DPI settings.
 
 ---
 
@@ -245,13 +277,13 @@ glass( rain.hwnd, {
 
 ## How It Works
 
-The module uses LuaJIT’s FFI to call three Windows API functions:
+The module uses LuaJIT's FFI to call three Windows API functions:
 
-- `SetWindowCompositionAttribute` – for legacy accent effects (blur, acrylic, transparency).
-- `DwmSetWindowAttribute` – for modern DWM attributes (Mica, dark mode, corners, shadow).
-- `RtlGetVersion` – to check the Windows build number for compatibility.
+- `SetWindowCompositionAttribute` – for legacy accent effects (blur, acrylic, transparency).
+- `DwmSetWindowAttribute` – for modern DWM attributes (Mica, dark mode, corners, border color, shadow).
+- `RtlGetVersion` – to check the Windows build number for compatibility.
 
-Before applying new effects, `glass` always calls an internal `resetAll` function that disables all previously set attributes, ensuring a clean slate.
+Before applying new effects, `glass` always calls an internal `resetAll` function that disables all previously set attributes (including border color), ensuring a clean slate.
 
 ---
 

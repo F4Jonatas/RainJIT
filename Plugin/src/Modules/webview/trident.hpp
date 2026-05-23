@@ -183,6 +183,11 @@ namespace trident {
 		// Visibility
 		bool hidden; ///< If true, window is created but kept hidden. Use show()/hide() to toggle.
 
+		// Interaction
+		bool contextMenu; ///< If false, suppresses the browser context menu and forwards right-click to the skin window.
+		HWND hwndIEServer; ///< Handle to the Internet Explorer_Server child window.
+		void *ieServerSubclassData; ///< Opaque pointer to IEServerSubclassData.
+
 		// ponteiro para o objeto ExternalDispatch (IDispatchEx)
 		void *externalDispatch;
 

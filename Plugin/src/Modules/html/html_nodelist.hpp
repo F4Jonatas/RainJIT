@@ -15,6 +15,10 @@ namespace html {
 
 	/**
 	 * @brief Represents a list of HTML nodes.
+	 *
+	 * @note docRef is a Lua registry reference to the owning HtmlDocument
+	 *       userdata, preventing premature GC of the document while this
+	 *       list is alive.
 	 */
 	typedef struct HtmlNodeList {
 
@@ -22,10 +26,19 @@ namespace html {
 
 		HtmlDocument *owner;
 
+		/// @brief Lua registry reference to the owning HtmlDocument userdata.
+		int docRef;
+
 	} HtmlNodeList;
 
 
-	void PushNodeList( lua_State *L, HtmlDocument *doc, const std::vector<GumboNode *> &nodes );
+	/**
+	 * @brief Push nodelist userdata onto the Lua stack.
+	 *
+	 * @param docRef Lua registry reference to the owning HtmlDocument.
+	 *               The list takes ownership of this ref and releases it in __gc.
+	 */
+	void PushNodeList( lua_State *L, HtmlDocument *doc, const std::vector<GumboNode *> &nodes, int docRef );
 
 
 	HtmlNodeList *CheckNodeList( lua_State *L, int index );

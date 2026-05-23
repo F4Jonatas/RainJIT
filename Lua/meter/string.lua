@@ -57,9 +57,9 @@ M.__index = M
 --
 -- @see https://docs.rainmeter.net/manual/meters/string/
 -- @see https://docs.rainmeter.net/manual/bangs/#SetOption
-M.text = function( self, value )
+function M:text( value )
 	if value ~= nil then
-		rain:bang( '!setoption', self.name, 'text', value )
+		rain:bang( '!setOption', self.name, 'text', value )
 
 	else
 		local result = rain:option( self.name, 'text' )
@@ -107,9 +107,9 @@ end
 --     :update()
 --
 -- @see https://docs.rainmeter.net/manual/meters/string/
-M.postfix = function( self, value )
+function M:postfix( value )
 	if value ~= nil then
-		rain:bang( '!setoption', self.name, 'postfix', value )
+		rain:bang( '!setOption', self.name, 'postfix', value )
 
 	else
 		local result = rain:option( self.name, 'postfix' )
@@ -156,13 +156,59 @@ end
 --     :update()
 --
 -- @see https://docs.rainmeter.net/manual/meters/string/
-M.prefix = function( self, value )
-	if value ~= nil then
-		rain:bang( '!setoption', self.name, 'prefix', value )
+function M:prefix( value )
+	if value then
+		rain:bang( '!setOption', self.name, 'prefix', value )
 
 	else
 		local result = rain:option( self.name, 'prefix' )
-		return result ~= '' and result or nil
+		return
+			result ~= ''
+			and result
+			or nil
+	end
+
+	return self
+end
+
+
+
+--- Get or set the inline options of the meter.
+-- @see https://docs.rainmeter.net/manual/meters/string/inline/
+--
+function M:inline( index, option, value )
+	local setting
+	local key = option:lower()
+
+	index =
+		( index or 1 ) == 1
+		and ''
+		or index
+
+
+	if key == 'match' then
+		option = 'inlinePattern'.. index
+		setting = value
+
+	elseif key == 'size' then
+		option = 'inlineSetting'.. index
+		setting = value and ( 'size|'.. value ) or nil
+
+	elseif key == 'color' then
+		option = 'inlineSetting'.. index
+		setting = value and ( 'color|'.. value ) or nil
+	end
+
+
+	if value then
+		rain:bang( '!setOption', self.name, option, setting )
+
+	else
+		local result = rain:option( self.name, option ):lower()
+		return
+			result ~= ''
+			and result:gsub( key.. '%s*|%s*', '' )
+			or nil
 	end
 
 	return self

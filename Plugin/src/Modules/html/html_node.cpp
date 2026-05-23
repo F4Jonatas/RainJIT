@@ -11,21 +11,39 @@
 #include "html_nodelist.hpp"
 #include "html_selector.hpp"
 
+#include <Includes/rain.hpp>
+#include <Utils/strings.hpp>
+
 namespace html {
 
 	/* ============================================================
-		TEXT EXTRACTION
+		Internal logging helper
 	============================================================ */
 
-	/**
-	 * @brief Recursive text extraction.
-	 */
-	static void ExtractText( GumboNode *node, std::string &out ) {
+	static void HtmlLog( lua_State *L, int level, const char *msg ) {
+#ifdef __RAINMETERAPI_H__
+		lua_getfield( L, LUA_REGISTRYINDEX, "__html_rain" );
+		Rain *rain = static_cast<Rain *>( lua_touserdata( L, -1 ) );
+		lua_pop( L, 1 );
+		if ( rain && rain->rm )
+			RmLog( rain->rm, level, utf8_to_wstring( msg ).c_str() );
+#else
+		(void)L;
+		(void)level;
+		(void)msg;
+#endif
+	}
+
+
+
+	/* ============================================================
+		TEXT EXTRACTION  (shared — used by html_nodelist.cpp too)
+	============================================================ */
+
+	void ExtractText( GumboNode *node, std::string &out ) {
 
 		if ( node->type == GUMBO_NODE_TEXT ) {
-
 			out += node->v.text.text;
-
 			return;
 		}
 
@@ -34,10 +52,8 @@ namespace html {
 
 		GumboVector *children = &node->v.element.children;
 
-		for ( unsigned int i = 0; i < children->length; ++i ) {
-
-			ExtractText( (GumboNode *)children->data[i], out );
-		}
+		for ( unsigned int i = 0; i < children->length; ++i )
+			ExtractText( static_cast<GumboNode *>( children->data[i] ), out );
 	}
 
 
@@ -46,23 +62,67 @@ namespace html {
 		USERDATA CORE
 	============================================================ */
 
-	void PushNode( lua_State *L, HtmlDocument *doc, GumboNode *node ) {
+	void PushNode( lua_State *L, HtmlDocument *doc, GumboNode *node, int docRef ) {
 
-		HtmlNode *wrapper = (HtmlNode *)lua_newuserdata( L, sizeof( HtmlNode ) );
+		HtmlNode *wrapper = static_cast<HtmlNode *>( lua_newuserdata( L, sizeof( HtmlNode ) ) );
 
-		wrapper->node = node;
-
-		wrapper->owner = doc;
+		wrapper->node   = node;
+		wrapper->owner  = doc;
+		wrapper->docRef = docRef;
 
 		luaL_getmetatable( L, "HtmlNode" );
-
 		lua_setmetatable( L, -2 );
 	}
 
 
 	HtmlNode *CheckNode( lua_State *L, int index ) {
 
-		return (HtmlNode *)luaL_checkudata( L, index, "HtmlNode" );
+		return static_cast<HtmlNode *>( luaL_checkudata( L, index, "HtmlNode" ) );
+	}
+
+
+
+	/* ============================================================
+		__gc  (Bug 7 — was missing; Bug 2 — releases docRef)
+	============================================================ */
+
+	int node_gc( lua_State *L ) {
+
+		HtmlNode *wrapper = static_cast<HtmlNode *>( lua_touserdata( L, 1 ) );
+
+		if ( wrapper && wrapper->docRef != LUA_NOREF ) {
+			luaL_unref( L, LUA_REGISTRYINDEX, wrapper->docRef );
+			wrapper->docRef = LUA_NOREF;
+		}
+
+		return 0;
+	}
+
+
+
+	/* ============================================================
+		__tostring  (Bug 9)
+	============================================================ */
+
+	static int node_tostring( lua_State *L ) {
+
+		HtmlNode *wrapper = static_cast<HtmlNode *>( lua_touserdata( L, 1 ) );
+
+		if ( !wrapper || !wrapper->node ) {
+			lua_pushstring( L, "html.node<invalid>" );
+			return 1;
+		}
+
+		if ( wrapper->node->type == GUMBO_NODE_ELEMENT ) {
+			const char *name = gumbo_normalized_tagname( wrapper->node->v.element.tag );
+			lua_pushfstring( L, "html.node<%s>", ( name && *name ) ? name : "?" );
+		} else if ( wrapper->node->type == GUMBO_NODE_TEXT ) {
+			lua_pushstring( L, "html.node<text>" );
+		} else {
+			lua_pushstring( L, "html.node<other>" );
+		}
+
+		return 1;
 	}
 
 
@@ -76,7 +136,6 @@ namespace html {
 		HtmlNode *wrapper = CheckNode( L, 1 );
 
 		if ( wrapper->node->type != GUMBO_NODE_ELEMENT ) {
-
 			lua_pushnil( L );
 			return 1;
 		}
@@ -84,7 +143,6 @@ namespace html {
 		const char *name = gumbo_normalized_tagname( wrapper->node->v.element.tag );
 
 		lua_pushstring( L, name );
-
 		return 1;
 	}
 
@@ -99,11 +157,9 @@ namespace html {
 		HtmlNode *wrapper = CheckNode( L, 1 );
 
 		std::string text;
-
 		ExtractText( wrapper->node, text );
 
 		lua_pushlstring( L, text.c_str(), text.size() );
-
 		return 1;
 	}
 
@@ -125,17 +181,18 @@ namespace html {
 
 			for ( unsigned int i = 0; i < children->length; ++i ) {
 
-				GumboNode *child = (GumboNode *)children->data[i];
+				GumboNode *child = static_cast<GumboNode *>( children->data[i] );
 
-				if ( child->type == GUMBO_NODE_ELEMENT ) {
-
+				if ( child->type == GUMBO_NODE_ELEMENT )
 					results.push_back( child );
-				}
 			}
 		}
 
-		PushNodeList( L, wrapper->owner, results );
+		// Duplicate docRef so the nodelist gets its own independent reference.
+		lua_rawgeti( L, LUA_REGISTRYINDEX, wrapper->docRef );
+		int newRef = luaL_ref( L, LUA_REGISTRYINDEX );
 
+		PushNodeList( L, wrapper->owner, results, newRef );
 		return 1;
 	}
 
@@ -152,13 +209,14 @@ namespace html {
 		GumboNode *parent = wrapper->node->parent;
 
 		if ( !parent ) {
-
 			lua_pushnil( L );
 			return 1;
 		}
 
-		PushNode( L, wrapper->owner, parent );
+		lua_rawgeti( L, LUA_REGISTRYINDEX, wrapper->docRef );
+		int newRef = luaL_ref( L, LUA_REGISTRYINDEX );
 
+		PushNode( L, wrapper->owner, parent, newRef );
 		return 1;
 	}
 
@@ -173,7 +231,6 @@ namespace html {
 		HtmlNode *wrapper = CheckNode( L, 1 );
 
 		if ( wrapper->node->type != GUMBO_NODE_ELEMENT ) {
-
 			lua_pushnil( L );
 			return 1;
 		}
@@ -183,13 +240,11 @@ namespace html {
 		GumboAttribute *attr = gumbo_get_attribute( &wrapper->node->v.element.attributes, name );
 
 		if ( !attr ) {
-
 			lua_pushnil( L );
 			return 1;
 		}
 
 		lua_pushstring( L, attr->value );
-
 		return 1;
 	}
 
@@ -208,17 +263,19 @@ namespace html {
 		SelectorGroup group;
 
 		if ( !ParseSelectorGroup( selector, group ) ) {
-
+			std::string msg = std::string( "[RainJIT:HTML] node:find() — invalid selector: " ) + selector;
+			HtmlLog( L, LOG_WARNING, msg.c_str() );
 			lua_pushnil( L );
 			return 1;
 		}
 
 		std::vector<GumboNode *> results;
-
 		FindNodesGroup( wrapper->node, group, results );
 
-		PushNodeList( L, wrapper->owner, results );
+		lua_rawgeti( L, LUA_REGISTRYINDEX, wrapper->docRef );
+		int newRef = luaL_ref( L, LUA_REGISTRYINDEX );
 
+		PushNodeList( L, wrapper->owner, results, newRef );
 		return 1;
 	}
 
@@ -231,6 +288,12 @@ namespace html {
 	void CreateNodeMeta( lua_State *L ) {
 
 		luaL_newmetatable( L, "HtmlNode" );
+
+		lua_pushcfunction( L, node_gc );
+		lua_setfield( L, -2, "__gc" );
+
+		lua_pushcfunction( L, node_tostring );
+		lua_setfield( L, -2, "__tostring" );
 
 		lua_newtable( L );
 

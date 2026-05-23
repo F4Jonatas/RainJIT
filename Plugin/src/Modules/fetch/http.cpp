@@ -16,12 +16,13 @@
 #include <thread>
 #include <windows.h>
 #include <winhttp.h>
-#include <wininet.h>
 
 
 
 #pragma comment( lib, "winhttp.lib" )
-#pragma comment( lib, "wininet.lib" )
+
+#define FETCH_USER_AGENT L"RainJIT/1.0"
+#define FETCH_USER_AGENT_A  "RainJIT/1.0"
 
 
 
@@ -32,13 +33,6 @@
 
 
 namespace http {
-
-	bool IsInternetConnected() {
-		DWORD dwFlags = 0;
-		return InternetGetConnectedState( &dwFlags, 0 ) != FALSE;
-	}
-
-
 
 	std::string WinHttpErrorToString( DWORD errorCode ) {
 		// clang-format off
@@ -116,21 +110,14 @@ namespace http {
 		auto totalDeadline = operationStart + totalTimeout;
 
 		try {
-			if ( !IsInternetConnected() ) {
-				std::wstring errMsg = L"[RainJIT:Fetch] No internet connection detected\n";
-#ifdef __RAINMETERAPI_H__
-				if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-					RmLog( ctx->rain->rm, LOG_ERROR, errMsg.c_str() );
-#endif
-
-				throw std::runtime_error( "No internet connection available" );
-			}
-
 			if ( ctx->cancelled.load() )
 				throw std::runtime_error( "Request cancelled before start" );
 
-			// Parse URL
+			// Parse URL using WinHttpCrackUrl — handles IPv6, credentials,
+			// fragments, and custom ports correctly without manual string parsing.
 			std::wstring url = request.url;
+
+			// Normalize schemeless URLs
 			if ( url.find( L"://" ) == std::wstring::npos ) {
 				if ( url.size() >= 2 && url[0] == L'/' && url[1] == L'/' )
 					url = L"http:" + url;
@@ -138,43 +125,34 @@ namespace http {
 					url = L"http://" + url;
 			}
 
-			std::wstring host, path;
-			INTERNET_PORT port = INTERNET_DEFAULT_HTTP_PORT;
-			DWORD flags = 0;
+			URL_COMPONENTS uc = {};
+			uc.dwStructSize = sizeof( uc );
 
-			size_t scheme_end = url.find( L"://" );
-			if ( scheme_end != std::wstring::npos ) {
-				std::wstring scheme = url.substr( 0, scheme_end );
-				std::wstring rest = url.substr( scheme_end + 3 );
+			// Set non-zero lengths to request allocation of each component.
+			uc.dwSchemeLength    = (DWORD)-1;
+			uc.dwHostNameLength  = (DWORD)-1;
+			uc.dwUrlPathLength   = (DWORD)-1;
+			uc.dwExtraInfoLength = (DWORD)-1;
+			uc.dwUserNameLength  = (DWORD)-1;
+			uc.dwPasswordLength  = (DWORD)-1;
 
-				if ( scheme == L"https" ) {
-					flags |= WINHTTP_FLAG_SECURE;
-					port = INTERNET_DEFAULT_HTTPS_PORT;
-				}
-
-				size_t path_start = rest.find( L'/' );
-				if ( path_start != std::wstring::npos ) {
-					host = rest.substr( 0, path_start );
-					path = rest.substr( path_start );
-				} else {
-					host = rest;
-					path = L"/";
-				}
-
-				// Check for custom port
-				size_t port_start = host.find( L':' );
-				if ( port_start != std::wstring::npos ) {
-					std::wstring port_str = host.substr( port_start + 1 );
-					try {
-						port = static_cast<INTERNET_PORT>( std::stoi( port_str ) );
-					} catch ( ... ) {
-						// Keep default port
-					}
-					host = host.substr( 0, port_start );
-				}
-			} else {
-				throw std::runtime_error( "Invalid URL format" );
+			if ( !WinHttpCrackUrl( url.c_str(), 0, 0, &uc ) ) {
+				DWORD err = GetLastError();
+				throw std::runtime_error( "Invalid URL: " + WinHttpErrorToString( err ) );
 			}
+
+			// Extract components as std::wstring
+			std::wstring host( uc.lpszHostName, uc.dwHostNameLength );
+			std::wstring path;
+			if ( uc.dwUrlPathLength > 0 )
+				path.assign( uc.lpszUrlPath, uc.dwUrlPathLength );
+			if ( uc.dwExtraInfoLength > 0 )
+				path.append( uc.lpszExtraInfo, uc.dwExtraInfoLength );
+			if ( path.empty() )
+				path = L"/";
+
+			INTERNET_PORT port = uc.nPort;
+			DWORD flags = ( uc.nScheme == INTERNET_SCHEME_HTTPS ) ? WINHTTP_FLAG_SECURE : 0;
 
 			// Debug log
 			std::wstring debugMsg = L"[RainJIT:Fetch] Starting request to: \n" + url;
@@ -186,7 +164,7 @@ namespace http {
 			// Open session
 			// clang-format off
 			hSession = WinHttpOpen(
-				L"HTTP/1.0",
+				FETCH_USER_AGENT,
 				WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
 				WINHTTP_NO_PROXY_NAME,
 				WINHTTP_NO_PROXY_BYPASS,
@@ -237,7 +215,6 @@ namespace http {
 
 
 			// Connect
-			checkTotalTimeout();
 			hConnect = WinHttpConnect( hSession, host.c_str(), port, 0 );
 			if ( !hConnect ) {
 				DWORD err = GetLastError();
@@ -258,18 +235,16 @@ namespace http {
 			}
 
 			// Configure request options
-			DWORD decompress = WINHTTP_DECOMPRESSION_FLAG_ALL;
-			WinHttpSetOption( hRequest, WINHTTP_OPTION_DECOMPRESSION, &decompress, sizeof( decompress ) );
+			// Disable automatic decompression — WinHTTP's built-in decompressor
+			// has known issues with chunked responses, causing WinHttpReadData to
+			// return 0 bytes immediately. Request identity encoding so the server
+			// sends uncompressed data, which WinHttpReadData handles correctly.
+			if ( request.headers.find( L"Accept-Encoding" ) == request.headers.end() ) {
+				WinHttpAddRequestHeaders( hRequest, L"Accept-Encoding: identity", -1L, WINHTTP_ADDREQ_FLAG_ADD );
+			}
 
 			DWORD redirectPolicy = request.followRedirects ? WINHTTP_OPTION_REDIRECT_POLICY_ALWAYS : WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
 			WinHttpSetOption( hRequest, WINHTTP_OPTION_REDIRECT_POLICY, &redirectPolicy, sizeof( redirectPolicy ) );
-
-			DWORD disableCookies = WINHTTP_DISABLE_COOKIES;
-			WinHttpSetOption( hRequest, WINHTTP_OPTION_DISABLE_FEATURE, &disableCookies, sizeof( disableCookies ) );
-
-			// Set send/receive timeouts (these are for data transfer phases)
-			WinHttpSetOption( hRequest, WINHTTP_OPTION_RECEIVE_TIMEOUT, &receiveTimeout, sizeof( receiveTimeout ) );
-			WinHttpSetOption( hRequest, WINHTTP_OPTION_SEND_TIMEOUT, &sendTimeout, sizeof( sendTimeout ) );
 
 			// Add headers
 			for ( const auto &header : request.headers ) {
@@ -279,7 +254,7 @@ namespace http {
 
 			// Default headers
 			if ( request.headers.find( L"User-Agent" ) == request.headers.end() ) {
-				WinHttpAddRequestHeaders( hRequest, L"User-Agent: HTTP/1.0", -1L, WINHTTP_ADDREQ_FLAG_ADD );
+				WinHttpAddRequestHeaders( hRequest, L"User-Agent: " FETCH_USER_AGENT, -1L, WINHTTP_ADDREQ_FLAG_ADD );
 			}
 
 			// Always accept all content types
@@ -374,198 +349,51 @@ namespace http {
 				}
 			}
 
-			// try WinHTTP first, fallback to WinINet
 			std::vector<BYTE> buffer;
 			DWORD totalBytes = 0;
 			bool readSuccess = false;
 
-#ifdef __RAINMETERAPI_H__
-			if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-				RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Attempting WinHTTP read..." );
-#endif
-
-			const DWORD CHUNK_SIZE = 8192;
-			buffer.resize( CHUNK_SIZE );
+			// WinHttpQueryDataAvailable is intentionally avoided — it fails with
+			// E_UNEXPECTED on chunked Transfer-Encoding in synchronous mode.
+			// WinHttpReadData with a fixed buffer handles both chunked and
+			// Content-Length responses: 0 bytes read signals genuine EOF.
+			const DWORD CHUNK_SIZE = 16384;
 			DWORD bytesRead = 0;
 
 			do {
-				// Calcular espaço disponível de forma segura
-				size_t availableSpace = buffer.size() - totalBytes;
-				DWORD dwBytesToRead;
+				size_t offset = buffer.size();
+				buffer.resize( offset + CHUNK_SIZE );
 
-				if ( availableSpace > UINT32_MAX ) {
-					dwBytesToRead = UINT32_MAX; // Máximo de 4GB por leitura
-
-#ifdef __RAINMETERAPI_H__
-					if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-						RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Limiting read to 4GB" );
-#endif
-				}
-
-				else
-					dwBytesToRead = static_cast<DWORD>( availableSpace );
-
-
-				if ( !WinHttpReadData( hRequest, buffer.data() + totalBytes, static_cast<DWORD>( availableSpace ), &bytesRead ) ) {
+				bytesRead = 0;
+				if ( !WinHttpReadData( hRequest, buffer.data() + offset, CHUNK_SIZE, &bytesRead ) ) {
 					DWORD err = GetLastError();
+					buffer.resize( offset );
 
-					// If E_ABORT and we have data, consider it success
-					if ( ( err == E_ABORT || err == ERROR_OPERATION_ABORTED ) && totalBytes > 0 ) {
-#ifdef __RAINMETERAPI_H__
-						if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-							RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] E_ABORT with " + std::to_wstring( totalBytes ) + L" bytes - treating as success" ).c_str() );
-#endif
-
+					if ( err == E_ABORT || err == ERROR_OPERATION_ABORTED ) {
+						if ( totalBytes > 0 ) readSuccess = true;
+					} else if ( err == ERROR_WINHTTP_CONNECTION_ERROR && totalBytes > 0 ) {
 						readSuccess = true;
-						break;
-					}
-
-					// If connection error at the end with data, success
-					if ( err == ERROR_WINHTTP_CONNECTION_ERROR && totalBytes > 0 ) {
-#ifdef __RAINMETERAPI_H__
-						if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-							RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] Connection closed with data - success" );
-#endif
-
+					} else if ( totalBytes > 0 ) {
 						readSuccess = true;
-						break;
+					} else {
+						response.error = "WinHttpReadData failed: " + WinHttpErrorToString( err );
 					}
-
-					// If no data at all, fallback to WinINet
-					if ( totalBytes == 0 ) {
-#ifdef __RAINMETERAPI_H__
-						if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-							RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] WinHTTP failed with no data, falling back to WinINet" );
-#endif
-
-						// Cleanup WinHTTP handles
-						if ( hRequest ) {
-							WinHttpCloseHandle( hRequest );
-							hRequest = NULL;
-						}
-						if ( hConnect ) {
-							WinHttpCloseHandle( hConnect );
-							hConnect = NULL;
-						}
-						if ( hSession ) {
-							WinHttpCloseHandle( hSession );
-							hSession = NULL;
-						}
-
-						// Try WinINet
-						// clang-format off
-						HINTERNET hInetSession = InternetOpen(
-							HTTPVersion,
-							INTERNET_OPEN_TYPE_PRECONFIG,
-							NULL,
-							NULL, 0
-						);
-						// clang-format on
-
-						if ( hInetSession ) {
-							// Set timeouts
-							InternetSetOption( hInetSession, INTERNET_OPTION_CONNECT_TIMEOUT, &connectTimeout, sizeof( connectTimeout ) );
-							InternetSetOption( hInetSession, INTERNET_OPTION_RECEIVE_TIMEOUT, &receiveTimeout, sizeof( receiveTimeout ) );
-							InternetSetOption( hInetSession, INTERNET_OPTION_SEND_TIMEOUT, &sendTimeout, sizeof( sendTimeout ) );
-
-							// Open URL with WinINet
-							HINTERNET hInetUrl = InternetOpenUrl( hInetSession, url.c_str(),
-																										NULL, // headers (simplified)
-																										0, flags, 0 );
-
-							if ( hInetUrl ) {
-#ifdef __RAINMETERAPI_H__
-								if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-									RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] WinINet connected, reading..." );
-#endif
-
-								buffer.clear();
-								char tempBuffer[8192];
-
-								do {
-									if ( !InternetReadFile( hInetUrl, tempBuffer, sizeof( tempBuffer ), &bytesRead ) ) {
-										break;
-									}
-
-									if ( bytesRead > 0 ) {
-										size_t oldSize = buffer.size();
-										buffer.resize( oldSize + bytesRead );
-										memcpy( buffer.data() + oldSize, tempBuffer, bytesRead );
-										totalBytes += bytesRead;
-
-#ifdef __RAINMETERAPI_H__
-										if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-											RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] WinINet read: " + std::to_wstring( bytesRead ) + L" bytes" ).c_str() );
-#endif
-									}
-
-								} while ( bytesRead > 0 && !ctx->cancelled.load() );
-
-								InternetCloseHandle( hInetUrl );
-								readSuccess = ( totalBytes > 0 );
-							}
-
-							InternetCloseHandle( hInetSession );
-						}
-						break;
-					}
-
-// Other error, break
-#ifdef __RAINMETERAPI_H__
-					if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-						RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] Read error: " + std::to_wstring( err ) ).c_str() );
-#endif
-
 					break;
 				}
 
-				if ( bytesRead == 0 ) {
-#ifdef __RAINMETERAPI_H__
-					if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-						RmLog( ctx->rain->rm, LOG_DEBUG, L"[RainJIT:Fetch] End of WinHTTP data" );
-#endif
-
-					readSuccess = true;
-					break;
-				}
-
+				buffer.resize( offset + bytesRead );
 				totalBytes += bytesRead;
-				readSuccess = true;
 
-#ifdef __RAINMETERAPI_H__
-				if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] WinHTTP read: " + std::to_wstring( bytesRead ) + L" bytes (total: " + std::to_wstring( totalBytes ) + L")" ).c_str() );
-#endif
+				if ( bytesRead > 0 )
+					readSuccess = true;
 
-				// Preview
-				if ( totalBytes == bytesRead && bytesRead > 0 ) {
-					std::string preview( (char *)buffer.data(), min( bytesRead, 200 ) );
-#ifdef __RAINMETERAPI_H__
-					if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-						RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] PREVIEW: " + utf8_to_wstring( preview ) ).c_str() );
-#endif
-				}
-
-				// Expand buffer
-				if ( totalBytes + CHUNK_SIZE > buffer.size() ) {
-					buffer.resize( buffer.size() + CHUNK_SIZE );
-				}
-
-			} while ( !ctx->cancelled.load() && bytesRead > 0 );
+			} while ( bytesRead > 0 && !ctx->cancelled.load() );
 
 			if ( readSuccess && totalBytes > 0 ) {
-				buffer.resize( totalBytes );
 				response.body = std::move( buffer );
-				response.text = std::string( reinterpret_cast<const char *>( response.body.data() ), response.body.size() );
-				response.error.clear();
-
-#ifdef __RAINMETERAPI_H__
-				if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
-					RmLog( ctx->rain->rm, LOG_DEBUG, ( L"[RainJIT:Fetch] SUCCESS! " + std::to_wstring( response.body.size() ) + L" bytes received" ).c_str() );
-#endif
 			}
 
-			else {
+			else if ( !readSuccess ) {
 #ifdef __RAINMETERAPI_H__
 				if ( ctx->rainValid && ctx->rain && ctx->rain->rm )
 					RmLog( ctx->rain->rm, LOG_ERROR, L"[RainJIT:Fetch] FAILED to read any data" );
@@ -581,8 +409,8 @@ namespace http {
 			}
 
 
-			// Clear error on successful completion
-			if ( response.status >= 200 && response.status < 600 )
+			// Clear error only on 2xx/3xx — preserve error message on server-side failures.
+			if ( response.status >= 200 && response.status < 400 )
 				response.error.clear();
 
 			// Log successful completion time
@@ -599,8 +427,6 @@ namespace http {
 			if ( response.body.empty() ) {
 				response.status = -1;
 				response.error = e.what();
-				// response.body.clear();
-				// response.text.clear();
 
 				// Try to identify specific error by message
 				std::string errMsg = e.what();
@@ -624,8 +450,6 @@ namespace http {
 
 		} catch ( ... ) {
 			// Catch any other errors (including E_ABORT)
-			// response.body.clear();
-			// response.text.clear();
 
 			if ( response.body.empty() ) {
 				DWORD lastError = GetLastError();

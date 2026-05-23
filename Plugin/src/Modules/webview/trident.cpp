@@ -37,6 +37,7 @@
 /// Message posted by EventSink::Invoke to the hidden window to trigger
 /// immediate callback dispatch without waiting for Rainmeter's Update tick.
 #define WM_TRIDENT_EVENT ( WM_APP + 2 )
+#define WM_TRIDENT_FOCUS ( WM_APP + 3 )
 
 
 
@@ -52,9 +53,13 @@ namespace trident {
 		HWND hWndParent; ///< Handle to the parent window.
 	};
 
-
+	struct IEServerSubclassData {
+		Control *ctrl; ///< Owning control.
+	};
 
 	static LRESULT CALLBACK ParentSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData );
+	static LRESULT CALLBACK IEServerSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData );
+	static void EnumAndSubclassIEServer( Control *ctrl );
 
 
 
@@ -858,8 +863,21 @@ namespace trident {
 			return E_NOTIMPL;
 		}
 
-		STDMETHODIMP ShowContextMenu( DWORD, POINT *, IUnknown *, IDispatch * ) {
-			return S_FALSE;
+		STDMETHODIMP ShowContextMenu( DWORD dwID, POINT *ppt, IUnknown *pcmdtReserved, IDispatch *pdispReserved ) {
+			if ( !m_control || m_control->contextMenu )
+				return S_FALSE; // let the browser show its default context menu
+
+			// Forward right-click to the skin window so it behaves as if
+			// the user clicked through the browser onto the skin itself.
+			if ( m_control->hwndParent && ppt && IsWindow( m_control->hwndParent ) ) {
+				POINT pt = *ppt; // ppt is in screen coordinates
+				ScreenToClient( m_control->hwndParent, &pt );
+				LPARAM lParam = MAKELPARAM( pt.x, pt.y );
+				PostMessage( m_control->hwndParent, WM_RBUTTONDOWN, MK_RBUTTON, lParam );
+				PostMessage( m_control->hwndParent, WM_RBUTTONUP,   0,          lParam );
+			}
+
+			return S_OK; // suppress browser context menu
 		}
 
 		STDMETHODIMP GetHostInfo( DOCHOSTUIINFO *pInfo ) {
@@ -1041,6 +1059,9 @@ namespace trident {
 						}
 					}
 				}
+
+				// Reinstall IE Server subclass after each navigation.
+				EnumAndSubclassIEServer( it->second.get() );
 			}
 
 			else if ( dispIdMember == DISPID_NAVIGATECOMPLETE2 )
@@ -1277,6 +1298,12 @@ namespace trident {
 			}
 			break;
 
+		case WM_TRIDENT_FOCUS:
+			// Posted by IEServerSubclassProc when the user left-clicks inside the browser.
+			// Brings the skin window to the top without stealing activation from other apps.
+			SetWindowPos( hWnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE );
+			break;
+
 		case WM_NCDESTROY:
 			RemoveWindowSubclass( hWnd, ParentSubclassProc, uIdSubclass );
 			delete data;
@@ -1284,6 +1311,69 @@ namespace trident {
 		}
 
 		return DefSubclassProc( hWnd, uMsg, wParam, lParam );
+	}
+
+
+
+	// -------------------------------------------------------------------------
+	// Internet Explorer_Server subclass
+	// -------------------------------------------------------------------------
+
+	static LRESULT CALLBACK IEServerSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData ) {
+		IEServerSubclassData *data = (IEServerSubclassData *)dwRefData;
+
+		if ( data && data->ctrl && uMsg == WM_LBUTTONDOWN ) {
+			HWND hwndParent = data->ctrl->hwndParent;
+			if ( hwndParent && IsWindow( hwndParent ) )
+				PostMessage( hwndParent, WM_TRIDENT_FOCUS, 0, 0 );
+		}
+
+		if ( uMsg == WM_NCDESTROY ) {
+			RemoveWindowSubclass( hWnd, IEServerSubclassProc, uIdSubclass );
+			delete data;
+		}
+
+		return DefSubclassProc( hWnd, uMsg, wParam, lParam );
+	}
+
+	static BOOL CALLBACK FindIEServerProc( HWND hWnd, LPARAM lParam ) {
+		wchar_t className[64] = {};
+		GetClassNameW( hWnd, className, 64 );
+		if ( wcscmp( className, L"Internet Explorer_Server" ) == 0 ) {
+			*reinterpret_cast<HWND *>( lParam ) = hWnd;
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	static void EnumAndSubclassIEServer( Control *ctrl ) {
+		if ( !ctrl || !ctrl->hwndControl || !IsWindow( ctrl->hwndControl ) )
+			return;
+
+		// Remove previous subclass if window changed
+		if ( ctrl->hwndIEServer && IsWindow( ctrl->hwndIEServer ) ) {
+			RemoveWindowSubclass( ctrl->hwndIEServer, IEServerSubclassProc, (UINT_PTR)ctrl->configId );
+			if ( ctrl->ieServerSubclassData ) {
+				delete (IEServerSubclassData *)ctrl->ieServerSubclassData;
+				ctrl->ieServerSubclassData = nullptr;
+			}
+		}
+		ctrl->hwndIEServer = nullptr;
+
+		HWND found = nullptr;
+		EnumChildWindows( ctrl->hwndControl, FindIEServerProc, (LPARAM)&found );
+		if ( !found ) return;
+
+		ctrl->hwndIEServer = found;
+		IEServerSubclassData *subData = new IEServerSubclassData{};
+		subData->ctrl = ctrl;
+
+		if ( !SetWindowSubclass( found, IEServerSubclassProc, (UINT_PTR)ctrl->configId, (DWORD_PTR)subData ) ) {
+			delete subData;
+			ctrl->ieServerSubclassData = nullptr;
+		} else {
+			ctrl->ieServerSubclassData = subData;
+		}
 	}
 
 
@@ -1524,6 +1614,13 @@ namespace trident {
 				delete data;
 				ctrl.subclassData = nullptr;
 			}
+			if ( ctrl.ieServerSubclassData ) {
+				if ( ctrl.hwndIEServer && IsWindow( ctrl.hwndIEServer ) )
+					RemoveWindowSubclass( ctrl.hwndIEServer, IEServerSubclassProc, (UINT_PTR)ctrl.configId );
+				delete (IEServerSubclassData *)ctrl.ieServerSubclassData;
+				ctrl.ieServerSubclassData = nullptr;
+				ctrl.hwndIEServer = nullptr;
+			}
 			if ( ctrl.webBrowser ) {
 				ctrl.webBrowser->Stop();
 				ctrl.webBrowser->Release();
@@ -1606,6 +1703,13 @@ namespace trident {
 			RemoveWindowSubclass( data->hWndParent, ParentSubclassProc, (UINT_PTR)configId );
 			delete data;
 			ctrl->subclassData = nullptr;
+		}
+		if ( ctrl->ieServerSubclassData ) {
+			if ( ctrl->hwndIEServer && IsWindow( ctrl->hwndIEServer ) )
+				RemoveWindowSubclass( ctrl->hwndIEServer, IEServerSubclassProc, (UINT_PTR)configId );
+			delete (IEServerSubclassData *)ctrl->ieServerSubclassData;
+			ctrl->ieServerSubclassData = nullptr;
+			ctrl->hwndIEServer = nullptr;
 		}
 		if ( ctrl->webBrowser ) {
 			ctrl->webBrowser->Stop();
@@ -1992,6 +2096,18 @@ namespace trident {
 		return 0;
 	}
 
+	static int l_setContextMenu( lua_State *L ) {
+		ControlHandle *h = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
+		Control *ctrl = h ? h->ctrl : nullptr;
+		if ( !ctrl )
+			return 0;
+
+		if ( lua_isboolean( L, 1 ) )
+			ctrl->contextMenu = lua_toboolean( L, 1 );
+
+		return 0;
+	}
+
 	static int l_quit( lua_State *L ) {
 		ControlHandle *h = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
 		DoQuit( h, L );
@@ -2097,7 +2213,10 @@ namespace trident {
 		ctrl.padLeft = ctrl.padTop = ctrl.padWidth = ctrl.padHeight = 0;
 		ctrl.cornerRadius = 0;
 		ctrl.sanitizeFlags = SANITIZE_ALL;
-		ctrl.hidden = false;
+		ctrl.hidden            = false;
+		ctrl.contextMenu       = true;
+		ctrl.hwndIEServer      = nullptr;
+		ctrl.ieServerSubclassData = nullptr;
 
 		auto getNum = [&]( const char *field, long &out ) {
 			lua_getfield( L, 1, field );
@@ -2121,6 +2240,11 @@ namespace trident {
 
 		lua_getfield( L, 1, "silent" );
 		ctrl.silent = lua_toboolean( L, -1 );
+		lua_pop( L, 1 );
+
+		lua_getfield( L, 1, "contextMenu" );
+		if ( !lua_isnil( L, -1 ) )
+			ctrl.contextMenu = lua_toboolean( L, -1 );
 		lua_pop( L, 1 );
 
 		lua_getfield( L, 1, "insideSkin" );
@@ -2280,8 +2404,9 @@ namespace trident {
 		pushMethod( "getURL", l_getURL );
 		pushMethod( "quit", l_quit );
 		pushMethod( "reposition", l_reposition );
-		pushMethod( "show", l_show );
-		pushMethod( "hide", l_hide );
+		pushMethod( "show",           l_show           );
+		pushMethod( "hide",           l_hide           );
+		pushMethod( "setContextMenu", l_setContextMenu );
 
 		// browser:bind(name, func)
 		lua_pushlightuserdata( L, handle );
@@ -2307,57 +2432,51 @@ namespace trident {
 		lua_pushlightuserdata( L, (void *)storedCtrl->hwndControl );
 		lua_setfield( L, -2, "hwnd" );
 
-		// browser:document() — returns a ComProxy wrapping the live IHTMLDocument2.
-		// All properties and methods are accessible directly via __index/__newindex.
-		pushMethod( "document", []( lua_State *L ) -> int {
+		// browser.document and browser.window are live properties resolved via
+		// __index — no () needed, consistent with comProxy behaviour.
+		lua_newtable( L ); // metatable
+
+		lua_pushlightuserdata( L, handle );
+		lua_pushcclosure( L, []( lua_State *L ) -> int {
+			const char *key = lua_tostring( L, 2 );
+			if ( !key ) { lua_pushnil( L ); return 1; }
+
 			ControlHandle *h = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
 			Control *ctrl = h ? h->ctrl : nullptr;
-			if ( !ctrl || !ctrl->webBrowser ) {
-				lua_pushnil( L );
+			if ( !ctrl || !ctrl->webBrowser ) { lua_pushnil( L ); return 1; }
+
+			if ( strcmp( key, "document" ) == 0 ) {
+				CComPtr<IDispatch> docDisp;
+				if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
+					lua_pushnil( L ); return 1;
+				}
+				ComProxy::Push( L, docDisp );
 				return 1;
 			}
 
-			CComPtr<IDispatch> docDisp;
-			if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
-				lua_pushnil( L );
+			if ( strcmp( key, "window" ) == 0 ) {
+				CComPtr<IDispatch> docDisp;
+				if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
+					lua_pushnil( L ); return 1;
+				}
+				CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
+				if ( !htmlDoc ) { lua_pushnil( L ); return 1; }
+				CComPtr<IHTMLWindow2> win;
+				if ( FAILED( htmlDoc->get_parentWindow( &win ) ) || !win ) {
+					lua_pushnil( L ); return 1;
+				}
+				CComQIPtr<IDispatch> winDisp( win );
+				ComProxy::Push( L, winDisp );
 				return 1;
 			}
 
-			ComProxy::Push( L, docDisp );
+			// Any other key falls back to the browser table itself
+			lua_rawget( L, 1 );
 			return 1;
-		} );
+		}, 1 );
 
-		// browser:window() — returns a ComProxy wrapping the live IHTMLWindow2.
-		pushMethod( "window", []( lua_State *L ) -> int {
-			ControlHandle *h = (ControlHandle *)lua_touserdata( L, lua_upvalueindex( 1 ) );
-			Control *ctrl = h ? h->ctrl : nullptr;
-			if ( !ctrl || !ctrl->webBrowser ) {
-				lua_pushnil( L );
-				return 1;
-			}
-
-			CComPtr<IDispatch> docDisp;
-			if ( FAILED( ctrl->webBrowser->get_Document( &docDisp ) ) || !docDisp ) {
-				lua_pushnil( L );
-				return 1;
-			}
-
-			CComQIPtr<IHTMLDocument2> htmlDoc( docDisp );
-			if ( !htmlDoc ) {
-				lua_pushnil( L );
-				return 1;
-			}
-
-			CComPtr<IHTMLWindow2> window;
-			if ( FAILED( htmlDoc->get_parentWindow( &window ) ) || !window ) {
-				lua_pushnil( L );
-				return 1;
-			}
-
-			CComQIPtr<IDispatch> winDisp( window );
-			ComProxy::Push( L, winDisp );
-			return 1;
-		} );
+		lua_setfield( L, -2, "__index" );
+		lua_setmetatable( L, -2 );
 
 		storedCtrl->browserKey = "trident_browser_" + storedCtrl->callbackKey;
 		lua_pushvalue( L, -1 );

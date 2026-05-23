@@ -38,12 +38,12 @@
 - [Overview](#overview)
 - [Motivation](#dart-motivation)
 - [Features](#green_book-features)
-- [Manual Installation](#installation)
+- [Manual Installation](#package-installation)
 - [Quick Example](#jigsaw-quick-example)
   - [Skin Configuration](#skin-configuration)
   - [Inline Script](#inline-script)
   - [Command with Inline Script](#command-with-inline-script)
-- [Module `rain`](#green_book-module-rain)
+- [Module `rain`](#book-module-rain)
   - [Properties read-only](#diamond_shape_with_a_dot_inside-properties-read-only)
   - [Method `rain:absPath()`](#large_orange_diamond-method-rainabspath)
   - [Method `rain:formula()`](#large_orange_diamond-method-rainformula)
@@ -82,7 +82,7 @@
 ## Overview
 
 **RainJIT** is a native **Rainmeter** plugin that integrates a complete [**LuaJIT**](https://luajit.org/) runtime environment into each Measure. It enables the direct execution of scripts with near-C performance and provides full access to the **Rainmeter** API.<br>
-This plugin acts as a seamless bridge between the **Rainmeter** skins and the powerful features of [**LuaJIT**](https://luajit.org/), including the [**FFI library**](https://luajit.org/ext_ffi.html). It allows you to invoke external C functions without the need to compile a new plugin, while also using C data structures directly from pure Lua.
+This plugin acts as a seamless bridge between the **Rainmeter** Skins and the powerful features of [**LuaJIT**](https://luajit.org/), including the [**FFI library**](https://luajit.org/ext_ffi.html). It allows you to invoke external C functions without the need to compile a new plugin, while also using C data structures directly from pure Lua.
 
 <br>
 
@@ -90,7 +90,7 @@ This plugin acts as a seamless bridge between the **Rainmeter** skins and the po
 ## :dart: Motivation
 
 Initially, my intention was to try to create a plugin to run C scripts without needing to compile them, and the [**TinyCC**](https://bellard.org/tcc/) offers this functionality.<br>
-I found myself needing simple Windows features, such as a [**MessageBox**](https://learn.microsoft.com/pt-br/windows/win32/api/winuser/nf-winuser-messagebox). However, this approach diverges from typical **Rainmeter** [**community**](https://forum.rainmeter.net/) practices and I opted to use **LuaJIT** which also allows execution of C code without compilation and has slightly better performance than traditional Lua.
+I found myself needing simple Windows features, such as a [**MessageBox**](https://learn.microsoft.com/pt-br/windows/win32/api/winuser/nf-winuser-messagebox). However, this approach diverges from typical **Rainmeter** [**community**](https://forum.rainmeter.net/) practices and I opted to use [**LuaJIT**](https://luajit.org/) which also allows execution of C code without compilation and has slightly better performance than traditional Lua.
 
 
 <br>
@@ -111,9 +111,11 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 ## :package: Installation
 
-1. Install the package [`RainJIT.rmskin`](./dist/RainJIT.rmskin)
-2. Download (or update, if already present) the Lua modules from [`./Lua`](./Lua) into the Rainmeter [@Vault folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)
-   > These modules are compatible with **LuaJIT** and **Rainmeter**.
+Install the package [`RainJIT.rmskin`](./dist/RainJIT.rmskin)<br>
+
+> [!IMPORTANT]
+> After installation, it is highly recommended to move the [**Models folder**](#file-locations) to the Rainmeter [**@Vault folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/); this gives you access to all installed Skins, preventing file duplication.
+
 
 
 <br>
@@ -167,7 +169,7 @@ The global `rain` object provides access to **Rainmeter** functionality from Lua
 
 | Property    | Type       | Description               |
 | :--         | :--:       | :--                       |
-| `rain.hwnd` | _userdata_ | Window handle of the skin |
+| `rain.hwnd` | _userdata_ | Window handle of the Skin |
 | `rain.name` | _string_   | Name of the Measure       |
 
 <br>
@@ -176,7 +178,7 @@ The global `rain` object provides access to **Rainmeter** functionality from Lua
 ### :large_orange_diamond: Method `rain:absPath()`
 
 Converts relative paths to absolute paths. Accepts variables and [**canonical paths**](https://learn.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-pathcanonicalizew).<br>
-Useful for resolving paths relative to the current skin.
+Useful for resolving paths relative to the current Skin.
 
 ```lua
 -- @usage rain:absPath(filePath) → string
@@ -218,7 +220,7 @@ rain:formula("nil", 4)
 
 ### :large_orange_diamond: Method `rain:var()`
 
-Getter or setter skin variables.<br>
+Getter or setter Skin variables.<br>
 Converts the value to the appropriate Lua type (`number`/`boolean`/`string`) or `nil` if don't exist or empty variable.
 
 > [!NOTE]
@@ -268,7 +270,7 @@ end
 
 ### :large_orange_diamond: Method `rain:getSkin()`
 
-Get the window identifier (**HWND**). Based on the Skin name of current skin.
+Get the window identifier (**HWND**). Based on the Skin name of current Skin.
 
 > [!TIP]
 > functionality similar to [**PluginConfigActive**](https://github.com/jsmorley/ConfigActive)
@@ -290,7 +292,7 @@ Returns Skin window rectangle using WinAPI.<br>
 You can also obtain the rectangle from another **Skin** by specifying **HWND**.
 
 > [!NOTE]
-> To obtain a correct value, you must use this function after the skin has fully started.<br>
+> To obtain a correct value, you must use this function after the Skin has fully started.<br>
 > You can use it in [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
@@ -324,7 +326,7 @@ Get the section option and converts the value to the appropriate Lua type (`bool
 > [!IMPORTANT]
 > If you want to obtain a `boolean` value, it must be in lowercase (`true`/`false`), otherwise it will be converted as a string.<br>
 > If you try to get the value of the options (`X`/`Y`/`W`/`H`) and it contains letters, such as [`10R`](https://docs.rainmeter.net/manual/meters/general-options/#XY), it will return `string`.<br><br>
-> Whenever you try to get the Rect value from the section, this needs to be done after the skin has fully loaded, and for that you will need to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
+> Whenever you try to get the Rect value from the section, this needs to be done after the Skin has fully loaded, and for that you will need to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
 -- @usage rain:option(section, option [, default]) → any
@@ -348,10 +350,10 @@ end
 
 ### :large_orange_diamond: Method `rain:getX() Y·W·H`
 
-Get the position and size of the current skin using **Rainmeter** [**Built-in variables**](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTCONFIGXYWH).
+Get the position and size of the current Skin using **Rainmeter** [**Built-in variables**](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTCONFIGXYWH).
 
 > [!IMPORTANT]
-> The correct value will only be displayed after the skin has fully loaded. Remember to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
+> The correct value will only be displayed after the Skin has fully loaded. Remember to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
 -- @usage rain:getX() → number
@@ -390,7 +392,7 @@ rain:bang([[
 
 ### :large_orange_diamond: Method `rain:moveSkin()`
 
-Moves the skin window to the specified screen coordinates.
+Moves the Skin window to the specified screen coordinates.
 
 > [!WARNING]
 > Avoid using negative numbers
@@ -425,11 +427,11 @@ end
 
 ### :large_orange_diamond: Method `rain:init()`
 
-If the [`rain:init()`](#large_orange_diamond-method-raininit) method is defined, it will be called once when the skin is activated or refreshed. This happens even if the script Measure is disabled.
+If the [`rain:init()`](#large_orange_diamond-method-raininit) method is defined, it will be called once when the Skin is activated or refreshed. This happens even if the script Measure is disabled.
 
 > [!TIP]
 > Unlike the traditional **Rainmeter** [**Lua Initialize function**](https://docs.rainmeter.net/manual/lua-scripting/#Initialize), this function is only called after the Skin is fully loaded, including the [**Fade Duration**](https://docs.rainmeter.net/manual/settings/skin-sections/#FadeDuration).<br>
-> This helps to gather information about skin dimensions, avoiding incorrect zero values.
+> This helps to gather information about Skin dimensions, avoiding incorrect zero values.
 
 ```lua
 --- Called once when skin is ready
@@ -452,7 +454,7 @@ If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defi
 
 > [!TIP]
 > **Param `au`:** accumulated updates (resets every ~9 quadrillion seconds)<br>
-> A counter of the total number of updates since the skin started.
+> A counter of the total number of updates since the Skin started.
 > This value increments each time the Plugin Update() function is called, representing how many times the measure has been updated.
 > The counter automatically resets to zero when it reaches approximately 9 quadrillion (2^53 – 1), ensuring no loss of precision in numeric representations.
 > Ideal for frame‑based operations such as step‑by‑step animations, sequences, or any logic that depends on update counts.
@@ -596,13 +598,13 @@ This function allows **Rainmeter** to execute Lua code via variable substitution
 **RainJIT** resolves [**Lua modules**](./Lua_Modules) using the following search order:
 
 > [!TIP]
-> Vault Folder is the ideal place to store all Lua modules, allowing all skins to use the same modules and avoiding unnecessary duplication.
+> Vault Folder is the ideal place to store all Lua modules, allowing all Skins to use the same modules and avoiding unnecessary duplication.
 
 | Type                                                                                               | Folder Path              | Info                                                        |
 | :--:                                                                                               | :--:                     | :---                                                        |
-| [@Vault Folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)                | `#SKINSPATH#@Vault\lua\` | :trophy: ⠀**Recommended** – Shared by all skins             |
-| [@Resources Folder](https://docs.rainmeter.net/manual/skins/resources-folder/)                     | `#@#\lua\`               | :thumbsup: ⠀**Works well** – Good for skin-specific modules |
-| [Current Skin Folder](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTPATH) | `#CURRENTPATH#\lua\`     | :warning: ⠀**Restricted** – Limited to current skin         |
+| [@Vault Folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)                | `#SKINSPATH#@Vault\lua\` | :trophy: ⠀**Recommended** – Shared by all Skins             |
+| [@Resources Folder](https://docs.rainmeter.net/manual/skins/resources-folder/)                     | `#@#\lua\`               | :thumbsup: ⠀**Works well** – Good for Skin-specific modules |
+| [Current Skin Folder](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTPATH) | `#CURRENTPATH#\lua\`     | :warning: ⠀**Restricted** – Limited to current Skin         |
 
 ---
 
@@ -613,7 +615,7 @@ This function allows **Rainmeter** to execute Lua code via variable substitution
 
 1.  Use `print()` for debug output (goes to Rainmeter log)
 2.  Check Rainmeter log for Lua errors with stack traces
-3.  Use `rain:var()` to output debug values to skin
+3.  Use `rain:var()` to output debug values to Skin
 4.  Wrap risky code in `pcall()`
 
 <br>
@@ -623,7 +625,7 @@ This function allows **Rainmeter** to execute Lua code via variable substitution
 
 *   **Delta-Time**: Automatically clamped to 0.0-1.0 seconds
 *   **Update Rate**: Plugin returns accumulated seconds for Rainmeter timing
-*   **Memory**: Each Measure has isolated Lua state, cleaned up on skin close
+*   **Memory**: Each Measure has isolated Lua state, cleaned up on Skin close
 *   **String Limits**: `eval()` returns limited to 4095 characters
 
 <br>
@@ -750,7 +752,7 @@ RainJIT Repository
  |  └ Rainmeter plugin source code
  |
  ├ Skins
- |  └ Example skins demonstrating RainJIT usage
+ |  └ Example Skins demonstrating RainJIT usage
  |
  └ Lua
     └ Optional Lua/LuaJIT modules

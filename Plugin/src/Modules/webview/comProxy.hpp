@@ -177,17 +177,21 @@ namespace trident {
 	/**
 	 * @brief __index — intercepts property and method access.
 	 *
-	 * Uses IDispatchEx::GetMemberProperties to distinguish properties from
-	 * methods without triggering COM Invoke — avoiding script errors on pure
-	 * methods (e.g. getElementById) and ActiveX objects (e.g. WMP).
+	 * Strategy (mirrors AutoHotkey v2 ComObject):
 	 *
-	 * Falls back to ITypeInfo::GetFuncDesc if IDispatchEx is unavailable.
-	 * If neither is available, returns a closure (safe default).
+	 *  1. Always attempt DISPATCH_PROPERTYGET with no args.
+	 *       - Success + VT_DISPATCH  → wrap in ComProxy (transparent chaining).
+	 *       - Success + primitive    → push value directly.
+	 *       - Failure               → member is a pure method; return closure.
 	 *
-	 * Strategy:
-	 *   canGet && !canCall  → confirmed property → PROPERTYGET eagerly
-	 *   canCall             → method             → return closure
-	 *   unknown             → return closure (safe, no script errors)
+	 *  2. Closure (PROPERTYGET failed):
+	 *       - 0 args → retry PROPERTYGET (ActiveX objects without metadata).
+	 *       - N args → DISPATCH_METHOD directly.
+	 *
+	 * This makes all COM properties transparent without needing ():
+	 *   doc.body.style.color          -- works
+	 *   el.settings.volume            -- works
+	 *   doc.getElementById('foo')     -- still callable
 	 */
 	static int proxy_index( lua_State *L ) {
 		IDispatch *disp = CheckProxy( L, 1 );
@@ -205,42 +209,17 @@ namespace trident {
 			return 1;
 		}
 
-		bool isConfirmedProperty = false;
-
-		// Strategy 1: IDispatchEx::GetMemberProperties — no Invoke, no script errors.
-		// Works on MSHTML elements and most ActiveX objects.
-		CComQIPtr<IDispatchEx> dispEx( disp );
-		if ( dispEx ) {
-			DWORD props = 0;
-			HRESULT hr = dispEx->GetMemberProperties( id, fdexPropCanGet | fdexPropCanCall, &props );
-			if ( SUCCEEDED( hr ) ) {
-				bool canGet = ( props & fdexPropCanGet ) != 0;
-				bool canCall = ( props & fdexPropCanCall ) != 0;
-				isConfirmedProperty = canGet && !canCall;
-			}
-		} else {
-			// Strategy 2: ITypeInfo::GetFuncDesc — fallback for non-IDispatchEx objects.
-			CComPtr<ITypeInfo> typeInfo;
-			if ( SUCCEEDED( disp->GetTypeInfo( 0, LOCALE_USER_DEFAULT, &typeInfo ) ) && typeInfo ) {
-				TYPEATTR *typeAttr = nullptr;
-				if ( SUCCEEDED( typeInfo->GetTypeAttr( &typeAttr ) ) && typeAttr ) {
-					for ( UINT i = 0; i < typeAttr->cFuncs; ++i ) {
-						FUNCDESC *funcDesc = nullptr;
-						if ( SUCCEEDED( typeInfo->GetFuncDesc( i, &funcDesc ) ) && funcDesc ) {
-							if ( funcDesc->memid == id ) {
-								isConfirmedProperty = ( funcDesc->invkind == INVOKE_PROPERTYGET );
-								typeInfo->ReleaseFuncDesc( funcDesc );
-								break;
-							}
-							typeInfo->ReleaseFuncDesc( funcDesc );
-						}
-					}
-					typeInfo->ReleaseTypeAttr( typeAttr );
-				}
-			}
-		}
-
-		if ( isConfirmedProperty ) {
+		// Always attempt PROPERTYGET first — this mirrors AutoHotkey v2 ComObject
+		// behaviour and is the only reliable approach for MSHTML objects.
+		// Classification via GetMemberProperties / ITypeInfo is unreliable:
+		// many MSHTML properties (body, style, settings, etc.) return ambiguous
+		// or empty metadata, causing them to be misidentified as methods.
+		//
+		// If PROPERTYGET succeeds → push result directly.
+		//   VT_DISPATCH becomes a chained ComProxy (transparent object access).
+		//   Primitives are pushed as-is.
+		// If PROPERTYGET fails   → member is a pure method; return closure.
+		{
 			DISPPARAMS noArgs = {};
 			CComVariant result;
 			HRESULT hr = disp->Invoke( id, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYGET, &noArgs, &result, nullptr, nullptr );
@@ -250,10 +229,10 @@ namespace trident {
 			}
 		}
 
-		// Not a confirmed property — return a callable closure.
-		// ComProxy as upvalue ensures Release() on GC.
-		// When called with 0 args, tries PROPERTYGET first (handles ActiveX
-		// objects like WMP that lack IDispatchEx/ITypeInfo metadata).
+		// PROPERTYGET failed — pure method. Return a callable closure.
+		// ComProxy upvalue ensures Release() on GC.
+		// When called with 0 args, retries PROPERTYGET first (handles ActiveX
+		// objects that lack IDispatchEx/ITypeInfo metadata, e.g. some WMP props).
 		// When called with N args, goes directly to DISPATCH_METHOD.
 		ComProxy::Push( L, disp );
 		lua_pushinteger( L, id );

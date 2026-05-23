@@ -7,6 +7,7 @@
 --
 -- It is designed for LuaJIT but compatible with Lua 5.1+.
 --
+-- @submodule math.utils
 -- @author F4Jonatas
 -- @version 1.3.0
 --
@@ -232,42 +233,60 @@ end
 
 --- Computes the median of a list of numbers.
 --
--- The function filters out non-numeric values and sorts the remaining numbers.
+-- The function accepts any number of arguments, which can be numbers or tables.
+-- Tables are expected to contain only numbers (they are traversed via ipairs).
+-- If any argument is not a number or a table, or if any table contains a non-number,
+-- an error is raised.
 -- For an odd count, returns the middle element; for an even count, returns
 -- the average of the two central elements.
 --
--- @tparam table tbl A table (array) containing numbers (may include other types, which are ignored).
--- @treturn number|nil The median value, or `nil` if the filtered list is empty.
+-- @param ... Numbers or tables of numbers.
+-- @treturn number|nil The median value, or `nil` if no valid numbers are provided.
 -- @usage
---   math.median({3, 1, 4, 1, 5})        --> 3
---   math.median({10, 20, 30, 40})       --> 25
---   math.median({})                     --> nil
---   math.median({1, "foo", 2, nil, 3})  --> 2
+--   math.median(3, 1, 4, 1, 5)                 --> 3
+--   math.median({10, 20, 30, 40})              --> 25
+--   math.median({1, 2}, {3, 4})                --> 2.5
+--   math.median({1, "foo", 2})                 --> error: non-number in table
+--   math.median({1, 2}, 3)                     --> 2
+--   math.median(42)                            --> 42
+--   math.median()                              --> nil
 --
-math.median = function( tbl )
+math.median = function( ... )
 	local numbers = {}
-	for _, v in ipairs(tbl) do
-		if type( v ) == 'number' then
-			table.insert( numbers, v )
+
+	for _, arg in ipairs( {...} ) do
+		if type( arg ) == 'number' then
+			table.insert( numbers, arg )
+
+		elseif type( arg ) == 'table' then
+			for _, v in ipairs( arg ) do
+				if type( v ) ~= 'number' then
+					error( 'math.median: table contains non-number value' )
+				end
+
+				table.insert( numbers, v )
+			end
+		else
+
+			error( 'math.median: argument must be a number or a table, got '.. type( arg ))
 		end
 	end
 
-	table.sort( numbers )
-	local n = #numbers
 
+	table.sort(numbers)
+
+	local n = #numbers
 	if n == 0 then
 		return nil
 	end
 
-
 	if n % 2 == 1 then
-		-- Odd: return the middle element
-		return numbers[ math.floor( n / 2 ) + 1 ]
+		return numbers[ math.ceil( n / 2 )]
+
 	else
-		-- Even: return the average of the two middle elements
-		local mid1 = numbers[ n / 2 ]
-		local mid2 = numbers[ n / 2 + 1 ]
-		return ( mid1 + mid2 ) / 2
+		local mid1 = n / 2
+		local mid2 = mid1 + 1
+		return ( numbers[ mid1 ] + numbers[ mid2 ]) / 2
 	end
 end
 
@@ -275,25 +294,45 @@ end
 
 --- Computes the arithmetic mean (average) of a list of numbers.
 --
--- All elements in the table must be numbers; non-numeric values are ignored.
--- Returns `nil` for an empty table.
+-- The function accepts any number of arguments, which can be numbers or tables.
+-- Tables are expected to contain only numbers (they are traversed via ipairs).
+-- If any argument is not a number or a table, or if any table contains a non-number,
+-- an error is raised.
+-- Returns `nil` if no valid numbers are provided.
 --
--- @tparam table numbers An array of numbers.
--- @treturn number|nil The average, or `nil` if the table is empty.
+-- @param ... Numbers or tables of numbers.
+-- @treturn number|nil The average, or `nil` if no numbers are given.
 -- @usage
---   math.average({1, 2, 3, 4, 5})  --> 3
---   math.average({10, 20})         --> 15
---   math.average({})                --> nil
---   math.average({1, "foo", 3})    --> 2   ("foo" ignored)
+--   math.average(1, 2, 3, 4, 5)                --> 3
+--   math.average({10, 20})                     --> 15
+--   math.average({1, 2}, {3, 4})               --> 2.5
+--   math.average({1, 2}, 3)                    --> 2
+--   math.average(42)                           --> 42
+--   math.average()                             --> nil
+--   math.average({1, "foo", 2})                --> error: non-number in table
+--   math.average(1, "bar")                     --> error: argument must be number or table
 --
-math.average = function( numbers )
-	local sum = 0
+math.average = function( ... )
+	local sum   = 0
 	local count = 0
 
-	for _, val in ipairs( numbers ) do
-		if type(val) == 'number' then
-			sum = sum + val
+	for _, arg in ipairs( {...} ) do
+		if type( arg ) == 'number' then
+			sum   = sum + arg
 			count = count + 1
+
+		elseif type( arg ) == 'table' then
+			for _, v in ipairs( arg ) do
+				if type(v) ~= 'number' then
+					error( 'math.average: table contains non-number value' )
+				end
+
+				sum   = sum + v
+				count = count + 1
+			end
+
+		else
+			error( 'math.average: argument must be a number or a table, got '.. type( arg ))
 		end
 	end
 
@@ -303,6 +342,101 @@ math.average = function( numbers )
 		return nil
 	end
 end
+
+
+
+--- Finds the maximum value among a set of numbers.
+--
+-- The function accepts any number of arguments, which can be numbers or tables.
+-- Tables are expected to contain only numbers (they are traversed via ipairs).
+-- If any argument is not a number or a table, or if any table contains a non-number,
+-- an error is raised.
+-- Returns `nil` if no valid numbers are provided.
+--
+-- @param ... Numbers or tables of numbers.
+-- @treturn number|nil The maximum value, or `nil` if no numbers are given.
+-- @usage
+--   math.maximo(3, 1, 4, 1, 5)                 --> 5
+--   math.maximo({10, 20, 30, 40})              --> 40
+--   math.maximo({1, 2}, {3, 4})                --> 4
+--   math.maximo({1, 2}, 3)                     --> 3
+--   math.maximo(42)                            --> 42
+--   math.maximo()                              --> nil
+--   math.maximo({1, "foo", 2})                 --> error: non-number in table
+--   math.maximo(1, "bar")                      --> error: argument must be number or table
+--
+math.maximo = function(...)
+	local max = nil
+
+	for _, arg in ipairs({...}) do
+		if type(arg) == 'number' then
+			if max == nil or arg > max then
+				max = arg
+			end
+		elseif type(arg) == 'table' then
+			for _, v in ipairs(arg) do
+				if type(v) ~= 'number' then
+					error("math.maximo: table contains non-number value")
+				end
+				if max == nil or v > max then
+					max = v
+				end
+			end
+		else
+			error("math.maximo: argument must be a number or a table, got " .. type(arg))
+		end
+	end
+
+	return max
+end
+
+
+
+--- Finds the minimum value among a set of numbers.
+--
+-- The function accepts any number of arguments, which can be numbers or tables.
+-- Tables are expected to contain only numbers (they are traversed via ipairs).
+-- If any argument is not a number or a table, or if any table contains a non-number,
+-- an error is raised.
+-- Returns `nil` if no valid numbers are provided.
+--
+-- @param ... Numbers or tables of numbers.
+-- @treturn number|nil The minimum value, or `nil` if no numbers are given.
+-- @usage
+--   math.minimo(3, 1, 4, 1, 5)                 --> 1
+--   math.minimo({10, 20, 30, 40})              --> 10
+--   math.minimo({1, 2}, {3, 4})                --> 1
+--   math.minimo({1, 2}, 3)                     --> 1
+--   math.minimo(42)                            --> 42
+--   math.minimo()                              --> nil
+--   math.minimo({1, "foo", 2})                 --> error: non-number in table
+--   math.minimo(1, "bar")                      --> error: argument must be number or table
+--
+math.minimo = function(...)
+	local min = nil
+
+	for _, arg in ipairs({...}) do
+		if type(arg) == 'number' then
+			if min == nil or arg < min then
+				min = arg
+			end
+		elseif type(arg) == 'table' then
+			for _, v in ipairs(arg) do
+				if type(v) ~= 'number' then
+					error("math.minimo: table contains non-number value")
+				end
+				if min == nil or v < min then
+					min = v
+				end
+			end
+		else
+			error("math.minimo: argument must be a number or a table, got " .. type(arg))
+		end
+	end
+
+	return min
+end
+
 
 
 return math

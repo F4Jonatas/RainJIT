@@ -17,8 +17,9 @@
 -- ## Lifecycle
 --
 -- 1. Configure animation via `:from()` and `:to()`
--- 2. Call `:create()` to initialize and register animation
--- 3. Call `updateAll(dt)` once per frame
+-- 2. Configure optional delay via `:delay()`
+-- 3. Call `:create()` to initialize and register animation
+-- 4. Call `updateAll(dt)` once per frame
 --
 -- ## States (Web Animations API inspired)
 --
@@ -35,6 +36,7 @@
 -- local a = animate(meter, 1.0, "outQuad")
 --   :from({ top = -255 })
 --   :to({ top = 0 })
+--   :delay(0.25)
 --   :create()
 --
 -- function Update()
@@ -117,6 +119,7 @@ M.__index = M
 function M:cancel()
 	self.playState = 'idle'
 	self.clock = 0
+	self.delayClock = 0
 
 	if self.tween then
 		local values = self.tween:reset()
@@ -160,6 +163,24 @@ end
 --
 function M:to( attributes )
 	self.toValues = attributes
+	return self
+end
+
+
+
+--- Define delay before animation starts.
+--
+-- The animation will wait for the specified amount of time before
+-- beginning interpolation.
+--
+-- Delay time is affected by `pause()` and reset by `cancel()`,
+-- `reset()`, and `restart()`.
+--
+-- @tparam number seconds Delay duration in seconds
+-- @treturn self
+--
+function M:delay( seconds )
+	self.delayTime = seconds or 0
 	return self
 end
 
@@ -213,6 +234,7 @@ function M:create( opts )
 	)
 
 	self.clock = 0
+	self.delayClock = 0
 	self.playState = 'running'
 
 	if self.manual == false then
@@ -261,7 +283,6 @@ end
 
 
 
-
 --- Internal update for a single animation.
 --
 -- This method is called automatically by `updateAll`.
@@ -277,6 +298,19 @@ function M:_update(dt)
 
 	if not self.tween then
 		error( '[animate] animation not created. Call :create() first.' )
+	end
+
+	-- Delay phase
+	if self.delayClock < self.delayTime then
+		self.delayClock = self.delayClock + dt
+
+		-- Still waiting
+		if self.delayClock < self.delayTime then
+			return
+		end
+
+		-- Consume overflow time
+		dt = self.delayClock - self.delayTime
 	end
 
 	self.clock = self.clock + dt
@@ -297,8 +331,9 @@ end
 -- and Rainmeter does not accept exponents.
 -- @local
 --
-local function formatNumber(v)
-	return ('%.7f'):format(v)
+local function formatNumber( value, decimal )
+	decimal = decimal or 7
+	return ('%.' ..decimal.. 'f'):format( value )
 end
 
 
@@ -332,6 +367,7 @@ function M:_apply( values )
 	for key, value in pairs( values ) do
 		key = key:lower()
 
+
 		if type( self.meter[ key ]) == 'function' then
 			self.meter[ key ]( self.meter, formatNumber( value ))
 		else
@@ -361,10 +397,39 @@ function M:reset()
 	local values = self.tween:reset()
 
 	self.clock = 0
+	self.delayClock = 0
 	self.playState = 'idle'
 
 	self:_apply( values )
 
+	return self
+end
+
+
+
+--- Reverse the animation direction by swapping from/to values.
+--
+-- Exchanges the `fromValues` and `toValues` tables, so the next
+-- execution (via :create() or :restart()) will play in reverse.
+--
+-- **Note:** If the animation is currently running, this method does
+-- not affect the active tween. To reverse during playback, cancel
+-- (:cancel()) first, then recreate or restart.
+--
+-- @treturn self
+--
+-- @usage Setup and later play backwards
+-- local a = animate(meter, 1.0)
+--   :from({ x = 0 })
+--   :to({ x = 100 })
+--   :create()
+-- -- when finished...
+-- a:reverse():restart()  -- now goes from 100 to 0
+--
+function M:reverse()
+	self.fromValues, self.toValues = self.toValues, self.fromValues
+
+	self:restart()
 	return self
 end
 
@@ -434,6 +499,7 @@ function M:restart()
 	)
 
 	self.clock = 0
+	self.delayClock = 0
 	self.playState = 'running'
 
 	-- Set default values
@@ -497,13 +563,16 @@ end
 -- @treturn table Animation instance
 --
 return setmetatable( module, {
-	__call = function(_, meter, duration, easing)
+	__call = function( _, meter, duration, easing )
 		return setmetatable({
-			meter     = meter,
-			duration  = duration,
-			easing    = easing,
-			playState = 'idle',
-			clock     = 0,
+			meter      = meter[ 'meter' ] or meter,
+			duration   = duration,
+			easing     = easing,
+			playState  = 'idle',
+			clock      = 0,
+
+			delayTime  = 0,
+			delayClock = 0,
 		}, M )
 	end
 })

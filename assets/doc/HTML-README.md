@@ -3,7 +3,7 @@
 
   # HTML Module
 
-  ### HTML parsing for Lua<br>Created for efficient extraction of web data
+  ### Built for efficient web scraping with Lua
 
   <br>
   <br>
@@ -14,6 +14,8 @@
 </div>
 
 
+## Overview
+
 A lightweight, read‑only HTML parsing module for Lua, built on top of [Google’s **Gumbo** HTML5 parser](https://github.com/google/gumbo-parser).<br>
 Designed for **web scraping** and **DOM querying**, it offers a familiar **jQuery‑like** API with [**CSS selector support**](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Selectors), including attribute operators and basic pseudo‑classes.
 
@@ -21,7 +23,7 @@ Designed for **web scraping** and **DOM querying**, it offers a familiar **jQuer
 <br>
 
 
-## Features
+## :green_book: Features
 
 - **Parse HTML** into a DOM tree – fast, compliant with HTML5.
 - **CSS‑like selectors** (subset):
@@ -30,8 +32,8 @@ Designed for **web scraping** and **DOM querying**, it offers a familiar **jQuer
   - Attribute operators: `=` (equals), `^=` (starts with), `$=` (ends with), `*=` (contains)
   - Pseudo‑classes: `:first‑child`, `:last‑child`, `:empty`
   - Combinators: descendant (space), direct child (`>`), group (`,`)
-- **Traversal methods** on nodes: children, parent, text content, attributes.
-- **Node list** with common helpers (`count`, `first`, `last`, `eq`, `text`, `attr`).
+- **Traversal methods** – on nodes: children, parent, text content, attributes.
+- **Node list** – with common helpers (`count`, `first`, `last`, `eq`, `text`, `attr`).
 - **Deduplicated results** – no duplicate nodes in query outputs.
 - **Zero modification** – the DOM is immutable, perfect for scraping.
 
@@ -41,29 +43,17 @@ Designed for **web scraping** and **DOM querying**, it offers a familiar **jQuer
 <br>
 
 
+## :book: API Reference
 
-### Loading in Lua
-
-```lua
-
--- Register the module with package.preload (C side)
--- In your C/C++ host: html::RegisterModule(L);
--- Then in Lua:
-local html = require("html")
-```
-
-
-## API Reference
-
-### `html.parse(html_string)`
+### :large_orange_diamond: Method `html.parse(html_string)`
 
 Parses a string containing HTML and returns an `HtmlDocument` object.
 
 
 
 ```lua
-
 local doc = html.parse("<html>...</html>")
+```
 
 ### `HtmlDocument`
 
@@ -208,4 +198,4 @@ Gumbo is distributed under the Apache License 2.0.
 
 ---
 
-_Built for efficient web scraping with Lua. Contributions and bug reports welcome._
+_Contributions and bug reports welcome._

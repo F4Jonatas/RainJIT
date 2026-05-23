@@ -30,7 +30,7 @@ namespace lua {
 
 	// Forward declarations for internal functions
 	std::shared_ptr<core::FetchContext> GetFetchContext( lua_State *L, int idx );
-	void PushResponseTable( lua_State *L, const core::FetchResponse &response );
+	void PushResponseTable( lua_State *L, Rain *rain, const core::FetchResponse &response );
 
 	// Lua binding functions
 	int response_save( lua_State *L );
@@ -38,7 +38,6 @@ namespace lua {
 	int fetch_callback( lua_State *L );
 	int fetch_hasCompleted( lua_State *L );
 	int fetch_dispatch( lua_State *L );
-	int fetch_getResponse( lua_State *L );
 	int fetch_cancel( lua_State *L );
 	int fetch_async( lua_State *L );
 	int fetch_sync( lua_State *L );

@@ -14,8 +14,8 @@
  *
  * @example
  * @code
- * Depot depot("MySection", "config.ini");
- * depot.set("Key", "Value");
+ * depot::Depot d("MySection", "config.ini");
+ * d.set("Key", "Value");
  * @endcode
  */
 
@@ -25,6 +25,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <utils/strings.hpp>
 
@@ -33,7 +34,7 @@ struct Rain;
 
 
 
-
+namespace depot {
 
 /**
  * @struct Depot
@@ -61,7 +62,7 @@ struct Depot {
 	/**
 	 * @brief Constructs a Depot bound to a section and file.
 	 *
-	 * @param section Section name (UTF-8).
+	 * @param section  Section name (UTF-8).
 	 * @param filePath INI file path (UTF-8).
 	 *
 	 * @post Section and SectionW are initialized with UTF-16 equivalents.
@@ -79,11 +80,11 @@ struct Depot {
 	 * @brief Writes or deletes a string value in the INI file.
 	 *
 	 * Behavior:
-	 * - value.has_value() == false -> deletes the key
-	 * - value == ""               -> writes empty string
-	 * - otherwise                 -> writes value
+	 * - value.has_value() == false → deletes the key
+	 * - value == ""               → writes empty string
+	 * - otherwise                 → writes value
 	 *
-	 * @param key Key name (UTF-8).
+	 * @param key   Key name (UTF-8).
 	 * @param value Optional value (UTF-8). nullopt deletes the key.
 	 */
 	void set( const std::string &key, const std::optional<std::string> &value ) const noexcept {
@@ -98,7 +99,7 @@ struct Depot {
 				value_ptr = L"";
 
 			else {
-				storage = utf8_to_wstring( *value );
+				storage   = utf8_to_wstring( *value );
 				value_ptr = storage.c_str();
 			}
 		}
@@ -120,31 +121,38 @@ struct Depot {
 	/**
 	 * @brief Reads a string value from the INI file.
 	 *
-	 * @param key Key name (UTF-8).
-	 * @param defaultValue Optional default value (UTF-8) if key is not found.
-	 * @return Value as UTF-8 string, or empty string if not found.
+	 * Uses a dynamically growing buffer to avoid silent truncation of large values.
+	 *
+	 * @param key          Key name (UTF-8).
+	 * @param defaultValue Optional default value (UTF-8) returned when the key
+	 *                     is not found. If omitted, returns an empty string.
+	 * @return Value as UTF-8 string, or defaultValue/empty if not found.
 	 */
-	std::string get( std::string key, std::optional<std::string> defaultValue = std::nullopt ) const noexcept {
-		wchar_t buffer[4096]{};
+	std::string get( const std::string &key, std::optional<std::string> defaultValue = std::nullopt ) const noexcept {
+		std::wstring       wkey     = utf8_to_wstring( key );
+		std::wstring       wdef     = defaultValue ? utf8_to_wstring( *defaultValue ) : L"";
+		const wchar_t     *wdef_ptr = defaultValue ? wdef.c_str() : L"";
 
-		std::wstring wkey = utf8_to_wstring( key );
-		std::wstring wdef;
+		std::vector<wchar_t> buffer( 256 );
 
-		if ( defaultValue )
-			wdef = utf8_to_wstring( *defaultValue );
+		while ( true ) {
+			// clang-format off
+			DWORD read = GetPrivateProfileStringW(
+				SectionW.c_str(),
+				wkey.c_str(),
+				wdef_ptr,
+				buffer.data(),
+				static_cast<DWORD>( buffer.size() ),
+				FilePath.c_str()
+			);
+			// clang-format on
 
-		// clang-format off
-		GetPrivateProfileStringW(
-			SectionW.c_str(),
-			wkey.c_str(),
-			defaultValue ? wdef.c_str() : L"",
-			buffer,
-			_countof( buffer ),
-			FilePath.c_str()
-		);
-		// clang-format on
+			// read == buffer.size() - 1 means the value was truncated — double and retry.
+			if ( read < static_cast<DWORD>( buffer.size() ) - 1 )
+				return wstring_to_utf8( buffer.data() );
 
-		return wstring_to_utf8( buffer );
+			buffer.resize( buffer.size() * 2 );
+		}
 	}
 
 
@@ -152,29 +160,43 @@ struct Depot {
 	/**
 	 * @brief Reads a string value from the INI file with optional result.
 	 *
+	 * Uses a dynamically growing buffer and a sentinel default value to
+	 * correctly distinguish a missing key from a key with an empty value.
+	 *
 	 * @param key Key name (UTF-8).
-	 * @return Optional value as UTF-8 string.
+	 * @return UTF-8 value wrapped in std::optional, or std::nullopt if the
+	 *         key does not exist in the section.
 	 */
-	std::optional<std::string> getOptional( std::string key ) const noexcept {
-		wchar_t buffer[4096]{};
-
+	std::optional<std::string> getOptional( const std::string &key ) const noexcept {
 		std::wstring wkey = utf8_to_wstring( key );
 
-		// clang-format off
-		DWORD read = GetPrivateProfileStringW(
-			SectionW.c_str(),
-			wkey.c_str(),
-			L"",
-			buffer,
-			_countof( buffer ),
-			FilePath.c_str()
-		);
-		// clang-format on
+		// Sentinel default that cannot appear in real INI values, used to
+		// distinguish "key missing" from "key exists with empty value".
+		static constexpr const wchar_t *kSentinel = L"\x0001\x0002\x0003";
 
-		if ( read == 0 )
-			return std::nullopt;
+		std::vector<wchar_t> buffer( 256 );
 
-		return wstring_to_utf8( buffer );
+		while ( true ) {
+			// clang-format off
+			DWORD read = GetPrivateProfileStringW(
+				SectionW.c_str(),
+				wkey.c_str(),
+				kSentinel,
+				buffer.data(),
+				static_cast<DWORD>( buffer.size() ),
+				FilePath.c_str()
+			);
+			// clang-format on
+
+			if ( read < static_cast<DWORD>( buffer.size() ) - 1 ) {
+				if ( wcscmp( buffer.data(), kSentinel ) == 0 )
+					return std::nullopt; // key does not exist
+
+				return wstring_to_utf8( buffer.data() );
+			}
+
+			buffer.resize( buffer.size() * 2 );
+		}
 	}
 
 
@@ -184,7 +206,7 @@ struct Depot {
 	 *
 	 * @param key Key name (UTF-8) to delete.
 	 */
-	void delKey( std::string key ) const noexcept {
+	void delKey( const std::string &key ) const noexcept {
 		set( key, std::nullopt );
 	}
 
@@ -211,26 +233,31 @@ struct Depot {
 	/**
 	 * @brief Checks if a key exists in the section.
 	 *
+	 * Uses a sentinel default value to correctly distinguish a missing key
+	 * from a key with an empty value — unlike a plain read + length check.
+	 *
 	 * @param key Key name (UTF-8).
-	 * @return true if key exists, false otherwise.
+	 * @return true if the key exists (even with an empty value), false otherwise.
 	 */
-	bool hasKey( std::string key ) const noexcept {
-		wchar_t buffer[2]{};
-
+	bool hasKey( const std::string &key ) const noexcept {
 		std::wstring wkey = utf8_to_wstring( key );
 
+		static constexpr const wchar_t *kSentinel = L"\x0001\x0002\x0003";
+
+		wchar_t buffer[8]{};
+
 		// clang-format off
-		DWORD read = GetPrivateProfileStringW(
+		GetPrivateProfileStringW(
 			SectionW.c_str(),
 			wkey.c_str(),
-			L"",
+			kSentinel,
 			buffer,
 			_countof( buffer ),
 			FilePath.c_str()
 		);
 		// clang-format on
 
-		return read > 0;
+		return wcscmp( buffer, kSentinel ) != 0;
 	}
 
 
@@ -256,29 +283,51 @@ struct Depot {
 	}
 };
 
+} // namespace depot
+
 
 
 /**
  * @brief Lua module entry point for Depot.
  *
  * Called when Lua executes `require("depot")`.
+ * Kept as `extern "C"` for semantic compatibility with Lua's module loader.
  *
  * @param L Lua state.
  * @return 1 (module table with __call metamethod).
  *
- * @note Requires a Measure pointer as upvalue 1.
+ * @note Requires a Rain* pointer as upvalue 1.
  */
 extern "C" int luaopen_depot( lua_State *L );
 
 
 
+namespace depot {
+
 /**
- * @brief Register depot Lua module in package.preload.
+ * @brief Register the depot Lua module into package.preload.
  *
- * Allows embedded depot module to be loaded via `require()` in Lua,
- * without depending on external files.
+ * Allows the embedded depot module to be loaded via `require("depot")`
+ * from any Lua script without depending on external files.
  *
- * @param L Lua state.
- * @param rain Pointer to the Measure instance (passed as upvalue).
+ * Consistent with xml::RegisterModule and html::RegisterModule.
+ *
+ * @param L    Lua state.
+ * @param rain Rainmeter measure context (passed as upvalue to luaopen_depot).
+ *
+ * @example
+ * @code{.cpp}
+ * depot::RegisterModule( L, rain );
+ * @endcode
+ *
+ * @example
+ * @code{.lua}
+ * local depot = require("depot")
+ * local d = depot("MySection", "config.ini")
+ * d:set("Key", "Value")
+ * local v = d:get("Key")  -- "Value"
+ * @endcode
  */
-void RegisterDepotModule( lua_State *L, Rain *rain );
+void RegisterModule( lua_State *L, Rain *rain );
+
+} // namespace depot

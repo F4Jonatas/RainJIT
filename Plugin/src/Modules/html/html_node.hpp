@@ -18,6 +18,7 @@
 
 #include <gumbo.h>
 #include <lua.hpp>
+#include <string>
 
 #include "html_nodelist.hpp"
 
@@ -28,6 +29,10 @@ namespace html {
 
 	/**
 	 * @brief Represents a node wrapper.
+	 *
+	 * @note docRef is a Lua registry reference to the owning HtmlDocument
+	 *       userdata. It keeps the document alive (prevents GC) for as long
+	 *       as this node is reachable, avoiding use-after-free on owner->output.
 	 */
 	typedef struct HtmlNode {
 
@@ -35,19 +40,43 @@ namespace html {
 
 		HtmlDocument *owner;
 
+		/// @brief Lua registry reference to the owning HtmlDocument userdata.
+		int docRef;
+
 	} HtmlNode;
 
 
 	/**
-	 * @brief Push node userdata.
+	 * @brief Shared recursive text extraction.
+	 *
+	 * Declared here so html_nodelist.cpp can use it without duplicating the
+	 * implementation.
+	 *
+	 * @param node  Gumbo node to extract text from.
+	 * @param out   Output string (appended to).
 	 */
-	void PushNode( lua_State *L, HtmlDocument *doc, GumboNode *node );
+	void ExtractText( GumboNode *node, std::string &out );
+
+
+	/**
+	 * @brief Push node userdata onto the Lua stack.
+	 *
+	 * @param docRef Lua registry reference to the owning HtmlDocument.
+	 *               The node takes ownership of this ref and releases it in __gc.
+	 */
+	void PushNode( lua_State *L, HtmlDocument *doc, GumboNode *node, int docRef );
 
 
 	/**
 	 * @brief Validate node userdata.
 	 */
 	HtmlNode *CheckNode( lua_State *L, int index );
+
+
+	/**
+	 * @brief Node garbage collector — releases docRef.
+	 */
+	int node_gc( lua_State *L );
 
 
 	/**

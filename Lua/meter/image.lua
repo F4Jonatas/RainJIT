@@ -84,65 +84,8 @@ function M:opacity( value )
 
 	-- assert( type( value ) == 'number', 'value must be number' )
 	rain:bang( '!setOption', self.name, 'ImageAlpha', value )
-
 	return self
 end
-
-
-
--- TESTING
-function M:scale( value )
-	if value == nil then
-		-- Getter: return the current scale factor stored in the meter's option
-		local result = rain:option( self.name, 'scale' )
-		return result ~= '' and result or nil
-	end
-
-	-- assert(type(value) == 'number', 'value must be a number')
-
-	-- If the original dimensions have not yet been stored
-	if not self.originalRect.x then
-		-- Get the current (unscaled) dimensions from the skin file or from initial settings
-		-- Option 1: Read from the meter's initial options (if they are static)
-		-- Option 2: Store the first time this function is called (assuming no scaling before)
-		self.originalRect = {
-			x = rain:var( '[&'.. self.name ..':X]' ),
-			y = rain:var( '[&'.. self.name ..':Y]' ),
-			w = rain:var( '[&'.. self.name ..':W]' ),
-			h = rain:var( '[&'.. self.name ..':H]' )
-		}
-
-		local container = self:option( 'container' )
-		if container then
-			self.originalRect.y = self.originalRect.y - rain:var( '[&'.. container ..':Y]' )
-			self.originalRect.x = self.originalRect.x - rain:var( '[&'.. container ..':X]' )
-		end
-
-		-- If any are nil, fall back to a default (e.g., 0) or warn
-	end
-
-	local newW = self.originalRect.w * value
-	local newH = self.originalRect.h * value
-
-	-- Calculate new X,Y to keep the center fixed
-	local centerX = self.originalRect.x + self.originalRect.w / 2
-	local centerY = self.originalRect.y + self.originalRect.h / 2
-	local newX = centerX - newW / 2
-	local newY = centerY - newH / 2
-
-
-	-- Apply the changes
-	rain:bang(
-		'[!setOption '.. self.name ..' scale '.. value ..']'..
-		'[!setOption '.. self.name ..' x '.. newX ..']'..
-		'[!setOption '.. self.name ..' y '.. newY ..']'..
-		'[!setOption '.. self.name ..' w '.. newW ..']'..
-		'[!setOption '.. self.name ..' h '.. newH ..']'
-	)
-
-	return self
-end
-
 
 
 

@@ -171,10 +171,10 @@ namespace Lua {
 	 */
 	static inline void registerModules( Rain *rain ) {
 		hotkey::RegisterModule( rain->L, rain );
-		RegisterDepotModule( rain->L, rain );
+		depot::RegisterModule( rain->L, rain );
 		fetch::RegisterModule( rain->L, rain );
 		trident::RegisterModule( rain->L, rain );
-		html::RegisterModule( rain->L );
+		html::RegisterModule( rain->L, rain );
 		xml::RegisterModule( rain->L, rain );
 		// interval::RegisterModule(rain->L, rain);
 		exposeRainToLua( rain->L, rain );
@@ -201,7 +201,7 @@ namespace Lua {
 		int errfunc = lua_gettop( rain->L );
 
 		if ( luaL_loadfile( rain->L, utf8.c_str() ) != LUA_OK || lua_pcall( rain->L, 0, LUA_MULTRET, errfunc ) != LUA_OK ) {
-			lua_pop( rain->L, 1 );
+			// lua_pop( rain->L, 1 );
 			lua_remove( rain->L, errfunc );
 			return false;
 		}
@@ -230,14 +230,14 @@ namespace Lua {
 
 		// Load chunk
 		if ( luaL_loadbuffer( rain->L, script, strlen( script ), embedName ) != LUA_OK ) {
-			lua_pop( rain->L, 1 );
+			// lua_pop( rain->L, 1 );
 			lua_remove( rain->L, errfunc ); // remove error handler
 			return false;
 		}
 
 		// Call chunk using error handler
 		if ( lua_pcall( rain->L, 0, LUA_MULTRET, errfunc ) != LUA_OK ) {
-			lua_pop( rain->L, 1 );
+			// lua_pop( rain->L, 1 );
 			lua_remove( rain->L, errfunc ); // remove error handler
 			return false;
 		}

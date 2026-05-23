@@ -66,7 +66,17 @@ local GRADIENT = 0
 
 
 -- Lua Regex
+local REGEX = {
+	rectangle = 'rectangle%s*[%s,%d]+',
+	ellipse   = 'ellipse%s*[%s,%d]+',
+	curve     = '',
+	line      = '',
+	arc       = '',
+	path      = 'path[%s%w]+'
+}
+
 local SHAPE_PARAM = '([%s,%d%.%(%)%+%*-]+)'
+local REGEX_SHAPE = '^(%s*%w+%s*)'
 
 
 
@@ -76,10 +86,108 @@ local percentOf = function( value, percent )
 end
 
 
+-- Copia todos os métodos (funções) de 'super' para 'class'.
+-- Se quiser também copiar campos não-função, basta remover o if.
+local function clone( class, super )
+	for key, value in pairs( getmetatable( super )) do
+		if type( value ) == 'function' then
+			-- wrapper ignora o primeiro argumento (class) e chama super:method(...)
+			class[ key ] = function( _, ... )
+				local ok, result = pcall( super[ key ], super, ...)
+				return result
+			end
 
-local shape   = {}
-shape.__index = shape
-shape.paths   = 0
+		-- else
+			-- campos simples (como id) são copiados diretamente
+			-- class[key] = value
+		end
+	end
+
+	return class
+end
+
+
+-- local clone = function( self, super )
+-- 	self.id = super.id
+
+-- 	self.option = function( self, option, value, config )
+-- 		local ok, result = pcall( super.option, super, option, value, config )
+-- 		return result
+-- 	end
+
+-- 	self.event = function( self, events, callback )
+-- 		local ok, result = pcall( super.event, super, events, callback )
+-- 		return result
+-- 	end
+
+-- 	self.update = function( self )
+-- 		super:update()
+-- 		return self
+-- 	end
+
+-- 	return self
+-- end
+
+
+
+
+local function parseColor( r, g, b, a )
+	-- if hex or transparent
+	if r and not g and not b and not a then
+		g = ''
+		b = ''
+		a = ''
+
+		if r == 'transparent' then
+			r = '0,0,0,0'
+
+		-- using hex color 3 digits
+		elseif r:len() == 3 then
+			r = r:sub( 1, 1 ):rep( 2 ) ..
+			      r:sub( 2, 2 ):rep( 2 ) ..
+			      r:sub( 3, 3 ):rep( 2 )
+		end
+
+	-- rgb/a
+	else
+		g = ','.. g
+		b = ','.. b
+		a = a and ','.. a or ''
+
+	end
+
+	return r, g, b, a
+end
+
+
+
+
+local shape    = {}
+shape.__index  = shape
+shape.paths    = 0
+
+
+
+
+local function construct( super, name, index )
+	local class = clone( {}, super )
+	class.name = 'shape'.. ( index and index or '' )
+	class.meter = super
+
+	class.content = class.meter:option( class.name )
+	if not class.content then
+		class.content = 'rectangle 0,0,0,0|strokeWidth 0'
+		class.meter:option( class.name, class.content )
+		class.type = 'rectangle'
+
+	else
+		class.type = class.content:gsub( '(%w+).*', '%1' ):lower()
+
+	end
+
+	return setmetatable( class, shape )
+end
+
 
 
 
@@ -131,11 +239,11 @@ function shape:rectangle( left, top, width, height, radiusX, radiusY )
 
 	if value then -- If exists, substitute.
 		self.content = self.content:lower():gsub( '%s*rectangle%s*'.. SHAPE_PARAM ..'%s*',
-			'rectangle ' .. left .. ',' .. top .. ',' .. width .. ',' .. height .. ',' .. radiusX .. ',' .. radiusY )
+			'rectangle '.. left ..','.. top ..','.. width ..','.. height ..','.. radiusX ..','.. radiusY
+		)
 
-	else -- Add
-		self.content = self.content ..
-			'rectangle ' ..left.. ',' ..top.. ',' ..width.. ',' ..height.. ',' ..radiusX.. ',' ..radiusY
+	else -- Add/Change
+		self:changeType( 'rectangle ' ..left.. ',' ..top.. ',' ..width.. ',' ..height.. ',' ..radiusX.. ',' ..radiusY )
 	end
 
 	self.meter:option( self.name, self.content )
@@ -200,8 +308,10 @@ end
 -- path segments such as LineTo, CurveTo, and ArcTo.
 --
 -- Supported commands include:
+--   `M` → Move To
 --   `L` → line to
 --   `C` → cubic bezier
+--   `Q` → quadratic
 --   `A` → arc
 --   `Z` → close path
 --
@@ -215,6 +325,7 @@ end
 -- shape:path("0,0 L 100,0 L 100,50 Z")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Path
+-- @see https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Paths
 --
 function shape:path( inner )
 	local Name = self.content:lower():match( 'path%s*([%d%w]+)' )
@@ -231,20 +342,23 @@ function shape:path( inner )
 
 	inner =
 		inner:gsub( '|', ' ' )
-		:gsub( '%s*[Cc]%s*', '|curveTo ' )
-		:gsub( '%s*[Aa]%s*', '|arcTo ' )
-		:gsub( '%s*[Ll]%s*', '|lineTo ' )
-		:gsub( '%s*[Zz]%s*', '|closePath 1' )
-
+		:gsub( '%s*[Mm]%s*'  , '' )
+		:gsub( '%s*[Ll]%s*'  , '|lineTo ' )
+		:gsub( '%s*[QqCc]%s*', '|curveTo ' )
+		:gsub( '%s*[Aa]%s*'  , '|arcTo ' )
+		:gsub( '([%.%+%-%d]+)%s+([%.%+%-%d]+)%s*[Vv]%s*([%.%+%-%d]+)', '%1 %2|lineTo %1 %3' )
+		:gsub( '%s*[Zz]%s*'  , '|closePath 1' )
+		-- :gsub( '(%d%.)[^%d]', '%10' )
+		:gsub( '(%d)%s+(%d)' , '%1,%2' )
+		:gsub( '(%d)%s+(%d)' , '%1,%2' )
 
 	if Name then
 		self.meter:option( Name, inner )
 
 	else
 		PATHS = PATHS + 1
-		self.meter:option( self.meter.name, 'Paths' .. PATHS, inner )
 		self:changeType( 'Path Paths' .. PATHS )
-		self.meter:option( self.meter.name, self.name, self.content )
+		self.meter:option( 'Paths' .. PATHS, inner )
 	end
 
 	self.type = 'path'
@@ -274,49 +388,53 @@ end
 
 
 
---- Define a polygon shape.
+--- Define a polyline shape.
 --
--- Similar to `polyline` but automatically closes the path.
+-- Creates a path using a flat numeric coordinate array.
+--
+-- Similar to `polygon`, but does not automatically close the path.
 --
 -- @tparam shape self Shape instance.
--- @tparam[opt] (string) points List of points `"x1,y1 x2,y2 x3,y3"`.
+-- @tparam table points Flat coordinate array.
+-- @tparam[opt=false] boolean close Close the path automatically.
 --
 -- @treturn shape
 --
 -- @usage
--- shape:polygon("0,0 50,50 100,0")
+-- shape:polyline({0,0, 50,50, 100,0})
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Path
 --
 function shape:polyline( points, close )
-	local name = self.content:lower():match( 'path%s*'.. SHAPE_PARAM )
-	local inner = ''
+	local name = self.content:lower():match( 'path%s*(%w+)' )
+	local out = {}
 
-	for value in points:gmatch( '[%d%.]+%s*,%s*[%d%.]+' ) do
-		if inner == '' then
-			inner = value
-		else
-			inner = inner ..'|lineTo '.. value
-		end
+	out[1] = points[1] ..','.. points[2]
+
+	local index = 2
+	for indice = 3, #points, 2 do
+		out[ index ] = 'lineTo '.. points[ indice ] ..','.. points[ indice + 1 ]
+		index = index + 1
 	end
 
-	-- use for polygon
-	if close == true then
-		inner = inner ..'|closePath 1'
+	if close then
+		out[ index ] = 'closePath 1'
 		self.type = 'polygon'
 	else
-		self.type = 'polyline'
+			self.type = "polyline"
 	end
 
+	local inner = table.concat( out, '|' )
 
 	if name then
-		-- local Value = self.meter:option( name )
-		self.meter:option( self.name, inner )
+		self.meter:option( name, inner )
 
 	else
 		self.paths = self.paths + 1
-		self:changeType( 'path paths' .. self.paths )
-		self.meter:option( 'paths' .. self.paths, inner )
+		local pathName = 'paths'.. self.paths
+
+		self:changeType( 'path ' .. pathName )
+		self.meter:option( pathName, inner )
 		self.meter:option( self.name, self.content )
 	end
 
@@ -386,30 +504,7 @@ function shape:fill( red, green, blue, alpha )
 	end
 
 
-
-	-- if hex or transparent
-	if red and not green and not blue and not alpha then
-		green = ''
-		blue  = ''
-		alpha = ''
-
-		if red == 'transparent' then
-			red = '0,0,0,0'
-
-		-- using hex color 3 digits
-		elseif red:len() == 3 then
-			red = red:sub( 1, 1 ):rep( 2 ) ..
-			      red:sub( 2, 2 ):rep( 2 ) ..
-			      red:sub( 3, 3 ):rep( 2 )
-		end
-
-
-	else
-		green = ','.. green
-		blue  = ','.. blue
-		alpha = alpha and ','.. alpha or ''
-	end
-
+	red, green, blue, alpha = parseColor( red, green, blue, alpha )
 
 	if value then -- substitute fill, if exist
 		-- remove fill attribute
@@ -466,28 +561,7 @@ function shape:strokecolor( red, green, blue, alpha )
 	end
 
 
-	-- if hex
-	if red and not green and not blue and not alpha then
-		green = ''
-		blue  = ''
-		alpha = ''
-
-		if red == 'transparent' then
-			red = '0,0,0,0'
-
-		elseif red:len() == 3 then
-			red = red:sub( 1, 1 ):rep( 2 ) ..
-			      red:sub( 2, 2 ):rep( 2 ) ..
-			      red:sub( 3, 3 ):rep( 2 )
-		end
-
-	-- if rgba
-	else
-		green = ','.. green
-		blue  = ','.. blue
-		alpha = alpha and ','.. alpha or ''
-	end
-
+	red, green, blue, alpha = parseColor( red, green, blue, alpha )
 
 	if param then
 		self.content = self.content:lower():gsub(
@@ -636,6 +710,57 @@ end
 
 
 
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashOffset
+--
+function shape:strokedashoffset( offset )
+	local value = self.content:lower():match( 'strokedashoffset%s*(%d+)' )
+
+	if value then
+		self.content = self.content:lower():gsub( '%s*strokedashoffset%s*(%d+)%s*',
+			'strokedashoffset '.. offset )
+
+	else
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'strokedashoffset '.. offset
+
+	end
+
+
+	self.meter:option( self.name, self.content )
+	return self
+end
+
+
+
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashes
+--
+function shape:strokedashes( dashSize, gapSize )
+	local val1, val2 = self.content:lower():match( 'strokedashes%s*(%d+)%s*,%s*(%d+)' )
+
+	if not dashSize and not gapSize then
+		return tonumber( val1 ), tonumber( val2 )
+	end
+
+
+	if val1 and val2 then
+		self.content = self.content:lower():gsub( '%s*strokedashes%s*(%d+)%s*,%s*(%d+)%s*',
+			'strokedashes '.. dashSize ..','.. gapSize )
+
+	else
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'strokedashes '.. dashSize ..','.. gapSize
+
+	end
+
+
+	self.meter:option( self.name, self.content )
+	return self
+end
+
+
+
 --- Apply a scale transformation.
 --
 -- Scales the shape relative to an anchor point.
@@ -649,6 +774,8 @@ end
 -- @treturn shape
 --
 -- @usage
+-- shape:scale(1.5)
+-- shape:scale(1.5,1.5,50)
 -- shape:scale(1.5,1.5,50,50)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Scale
@@ -749,11 +876,11 @@ function shape:lgradient( angle, ... )
 
 
 	for index = 1, #arg do -- organize syntax.
-		local percentage = arg[ index ]:match( '(%d+)%%' )
+		local percentage = arg[ index ]:match( '([%-%d]+)%%' )
 		if percentage then
 			percentage = percentage / 100
 		else
-			percentage = arg[ index ]:match( '(%d?%.?%d+)' )
+			percentage = arg[ index ]:match( '([%-%d]?%.?[%-%d]+)' )
 		end
 
 		local color = arg[ index ]:match( '(%d+%s*,%s*%d+%s*,%s*%d+%s*,?%s*%d*)' )
@@ -770,9 +897,10 @@ function shape:lgradient( angle, ... )
 
 
 	if new then
-		self.content = self.content ..
-		( self.content:find( '|$' ) and '' or '|' ) ..
-		'fill linearGradient '.. value
+		self.content =
+			self.content ..
+			( self.content:find( '|$' ) and '' or '|' ) ..
+			'fill linearGradient '.. value
 
 		self.meter:option( self.name, '' )
 		self.meter:option( self.name, self.content )
@@ -864,9 +992,10 @@ function shape:rgradient( ... )
 
 
 	if new then
-		self.content = self.content ..
-		( self.content:find( '|$' ) and '' or '|' ) ..
-		'fill radialgradient '.. value
+		self.content =
+			self.content ..
+			( self.content:find( '|$' ) and '' or '|' ) ..
+			'fill radialgradient '.. value
 
 		self.meter:option( self.name, self.content )
 	end
@@ -874,17 +1003,8 @@ end
 
 
 
---[[ !!!TESTING!!!
---]]
-function shape:shadow( color, left, top, blur )
-	return self
-end
-
-
-
---[[ !!!TESTING!!!
---]]
-function shape:top( move )
+--- !!!TESTING!!!
+function shape:trasnlatey( move )
 	local result
 	local content
 
@@ -912,7 +1032,6 @@ function shape:top( move )
 		for value in content:gmatch( '[%d%.]+%s*,%s*[%d%.]+' ) do
 			value = tonumber( value:match( ',(%s*[%d.]+)' ))
 			value = value + move
-			print( value )
 		end
 	end
 
@@ -938,21 +1057,10 @@ end
 -- @see https://docs.rainmeter.net/manual/meters/shape/
 --
 function shape:changeType( newType )
-	local option = {
-		rectangle = 'rectangle%s*[%s,%d]+',
-		ellipse   = 'ellipse%s*([%s,%d]+)',
-		curve     = '',
-		line      = '',
-		arc       = '',
-		path      = ''
-	}
+	local shapeType = self.content:lower():match( REGEX_SHAPE ):gsub( '%s*$', '' )
+	assert( REGEX[ shapeType ], 'The Shape type is probably wrong: "'..  shapeType ..'".' )
 
-	local shapeType = self.type
-	if shapeType == 'polyline' then
-		shapeType = 'rectangle'
-	end
-
-	self.content = self.content:lower():gsub( option[ shapeType ], newType )
+	self.content = self.content:lower():gsub( REGEX[ shapeType ], newType )
 	return self
 end
 
@@ -960,31 +1068,77 @@ end
 
 --- Create a new shape entry in the meter.
 --
--- Automatically finds the next available shape option
--- (`Shape2`, `Shape3`, etc.) and returns a new shape instance.
+-- Automatically finds the first available shape slot, including the base
+-- `Shape` (no index) and subsequent indexed shapes (`Shape2`, `Shape3`, etc.).
+--
+-- If no shapes exist yet, this will create and return the base `Shape`.
+-- Otherwise, it will create the next available indexed shape.
 --
 -- @tparam shape self Shape instance.
 -- @treturn shape New shape instance.
 --
 -- @usage
--- local shape1 = meter("Graph"):rectangle(0,0,100,50)
--- local shape2 = shape1:add()
+-- local shape1 = meter("Graph"):rectangle(0,0,100,50) -- creates Shape
+-- local shape2 = shape1:add() -- creates Shape2
 -- shape2:ellipse(50,25,20,20)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
 --
 function shape:add()
-	index = 2
+	local index = 1
 
 	while true do
-		if self.meter:option( 'shape' .. index ) then
+		local key =
+			index == 1
+			and 'shape'
+			or 'shape'.. index
+
+		if self.meter:option( key ) then
 			index = index + 1
 		else
 			break
 		end
 	end
 
-	return require( 'meter' )( self.meter.name, index )
+	return construct( self.meter, self.meter.name, index ~= 1 and index or '' )
+end
+
+
+--- Retrieve an existing shape by index.
+--
+-- Returns a shape instance corresponding to the given index if it exists.
+-- The base `Shape` is represented by index `1` or `nil`.
+--
+-- This method does not create new shapes. If the requested shape does not
+-- exist, it returns `nil`.
+--
+-- @tparam shape self Shape instance.
+-- @tparam[opt=1] number index Shape index (`1` for base `Shape`, `2+` for `Shape2`, etc.).
+-- @treturn shape|nil Existing shape instance, or `nil` if not found.
+--
+-- @usage
+-- local base = shape:shape()     -- retrieves Shape
+-- local s2   = shape:shape(2)    -- retrieves Shape2 (if it exists)
+--
+-- if not s2 then
+--     s2 = shape:add()           -- explicitly create Shape2
+-- end
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
+--
+function shape:shape( index )
+	index = index or 1
+
+	local key =
+		index == 1
+		and 'shape'
+		or ( 'shape'.. index )
+
+	if self.meter:option( key ) then
+		return construct( self.meter, self.meter.name, index ~= 1 and index or '' )
+	end
+
+	return nil
 end
 
 
@@ -993,42 +1147,6 @@ end
 
 
 
-local clone = function( self, super )
-	self.option = super.option
-	self.id = super.id
-
-	self.event = function( self, events, callback )
-		local ok, result = pcall( super.event, super, events, callback )
-		return result
-	end
-
-	self.update = function( self )
-		super:update()
-		return self
-	end
-
-	return self
-end
 
 
-
-
-
-return function( super, name, index )
-	local class = clone( {}, super )
-	class.name = 'shape'.. ( index and index or '' )
-	class.meter = super
-
-	class.content = class.meter:option( class.name )
-	if not class.content then
-		class.meter:option( class.name, 'rectangle 0,0,0,0' )
-		class.content = 'rectangle 0,0,0,0'
-		class.type = 'rectangle'
-
-	else
-		class.type = class.content:gsub( '(%w+).*', '%1' ):lower()
-
-	end
-
-	return setmetatable( class, shape )
-end
+return construct

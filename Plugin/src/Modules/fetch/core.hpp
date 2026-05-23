@@ -42,7 +42,6 @@ namespace core {
 		std::map<std::string, std::string> headers;
 		std::map<std::string, std::string> cookies;
 		std::string error;
-		std::string text;
 
 		static const int STATUS_NETWORK_ERROR = -1; // Erro genérico de rede
 		static const int STATUS_CANCELLED = -2; // Requisição cancelada pelo usuário
