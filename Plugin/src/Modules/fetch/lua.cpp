@@ -11,14 +11,12 @@
 #include <vector>
 
 #include "http.hpp"
+#include "wininet.hpp"
 #include "lua.hpp"
 
 #include <Includes/rain.hpp>
 #include <RainmeterAPI.hpp>
 #include <Utils/filesystem.hpp>
-
-
-#define WM_FETCH_COMPLETE ( WM_APP + 3 )
 
 // Mapa global para associar Rain* ao HWND da janela de notificação
 static std::unordered_map<Rain *, HWND> g_notifyWindows;
@@ -269,21 +267,18 @@ namespace lua {
 		} );
 		lua_setfield( L, -2, "bytes" );
 
-		// :text() — returns body interpreted as a UTF-8 string, no conversion needed
-		// (body is already stored as raw bytes; Lua strings are byte arrays)
+		// :text() — returns body as UTF-8 string (Lua strings are byte arrays)
 		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
 			lua_getfield( L2, 1, "__body" );
 			return 1;
 		} );
 		lua_setfield( L, -2, "text" );
 
-		// :xml() — parses the body as XML and returns doc, err (identical to xml.parse(body))
-		// Requires the xml module to be registered via xml::RegisterModule().
+		// :xml() — identical to xml.parse( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			// Step 1: require("xml")
 			lua_getglobal( L2, "require" );
 			lua_pushstring( L2, "xml" );
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
@@ -298,16 +293,11 @@ namespace lua {
 				lua_pushstring( L2, "xml module not available" );
 				return 2;
 			}
-			// Stack: [xml_module]
 
-			// Step 2: get xml.parse
 			lua_getfield( L2, -1, "parse" );
-			lua_remove( L2, -2 ); // remove xml_module — stack: [xml.parse]
+			lua_remove( L2, -2 );
+			lua_getfield( L2, 1, "__body" );
 
-			// Step 3: push body as argument
-			lua_getfield( L2, 1, "__body" ); // stack: [xml.parse, body]
-
-			// Step 4: call xml.parse(body) → doc, err  (2 return values)
 			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
@@ -321,18 +311,15 @@ namespace lua {
 				return 2;
 			}
 
-			// Stack: [doc, err] — return both to preserve xml.parse() contract
 			return 2;
 		}, 1 );
 		lua_setfield( L, -2, "xml" );
 
-		// :html() — parses the body as HTML and returns doc, err (identical to html.parse(body))
-		// Requires the html module to be registered via html::RegisterModule().
+		// :html() — identical to html.parse( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			// Step 1: require("html")
 			lua_getglobal( L2, "require" );
 			lua_pushstring( L2, "html" );
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
@@ -347,16 +334,11 @@ namespace lua {
 				lua_pushstring( L2, "html module not available" );
 				return 2;
 			}
-			// Stack: [html_module]
 
-			// Step 2: get html.parse
 			lua_getfield( L2, -1, "parse" );
-			lua_remove( L2, -2 ); // remove html_module — stack: [html.parse]
+			lua_remove( L2, -2 );
+			lua_getfield( L2, 1, "__body" );
 
-			// Step 3: push body as argument
-			lua_getfield( L2, 1, "__body" ); // stack: [html.parse, body]
-
-			// Step 4: call html.parse(body) → doc [, err]  (2 slots)
 			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
@@ -370,19 +352,15 @@ namespace lua {
 				return 2;
 			}
 
-			// Stack: [doc, nil|errmsg] — return both slots
 			return 2;
 		}, 1 );
 		lua_setfield( L, -2, "html" );
 
-
-		// :json() — parses the body as JSON and returns data (identical to json(body))
-		// Requires the json module to be registered via json::RegisterModule().
+		// :json() — identical to json( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			// Step 1: require("json")
 			lua_getglobal( L2, "require" );
 			lua_pushstring( L2, "json" );
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
@@ -396,12 +374,9 @@ namespace lua {
 				lua_pushnil( L2 );
 				return 1;
 			}
-			// Stack: [json_fn]
 
-			// Step 2: push body as argument
-			lua_getfield( L2, 1, "__body" ); // stack: [json_fn, body]
+			lua_getfield( L2, 1, "__body" );
 
-			// Step 3: call json(body) → data  (1 return value)
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
@@ -414,11 +389,9 @@ namespace lua {
 				return 1;
 			}
 
-			// Stack: [data]
 			return 1;
 		}, 1 );
 		lua_setfield( L, -2, "json" );
-
 
 		// :save(path) — resolves Rainmeter variables and relative paths via absPath
 		lua_pushlightuserdata( L, rain );
@@ -582,9 +555,12 @@ namespace lua {
 		ctx->cancelled = false;
 		ctx->response = core::FetchResponse();
 
-		// Spawn thread
+		// Spawn thread using the configured driver
 		try {
-			std::thread( http::ExecuteFetchThread, ctx ).detach();
+			if ( ctx->request.driver == "wininet" )
+				std::thread( wininet::ExecuteFetchThread, ctx ).detach();
+			else
+				std::thread( http::ExecuteFetchThread, ctx ).detach();
 		} catch ( const std::exception &e ) {
 			ctx->threadActive = false;
 			ctx->completed = true;
@@ -715,9 +691,25 @@ namespace lua {
 
 
 
-	/**
-	 */
 	static void requestOptions( lua_State *L, auto ctx ) {
+		// Parse driver — must be read first so warnings about unsupported options
+		// can reference the active driver.
+		lua_getfield( L, 2, "driver" );
+		if ( lua_isstring( L, -1 ) ) {
+			const char *driver = lua_tostring( L, -1 );
+			ctx->request.driver = driver;
+
+			if ( ctx->request.driver != "winhttp" && ctx->request.driver != "wininet" ) {
+				std::wstring msg = L"[RainJIT:Fetch] Unknown driver \"" +
+				                   utf8_to_wstring( ctx->request.driver ) +
+				                   L"\" — falling back to \"winhttp\".";
+				if ( ctx->rain && ctx->rain->rm )
+					RmLog( ctx->rain->rm, LOG_WARNING, msg.c_str() );
+				ctx->request.driver = "winhttp";
+			}
+		}
+		lua_pop( L, 1 );
+
 		lua_getfield( L, 2, "httpVersion" );
 		if ( lua_isstring( L, -1 ) ) {
 			const char *version = lua_tostring( L, -1 );
@@ -730,7 +722,7 @@ namespace lua {
 		if ( lua_istable( L, -1 ) ) {
 			lua_pushnil( L );
 			while ( lua_next( L, -2 ) != 0 ) {
-				const char *key = lua_tostring( L, -2 );
+				const char *key   = lua_tostring( L, -2 );
 				const char *value = lua_tostring( L, -1 );
 				if ( key && value )
 					ctx->request.headers[utf8_to_wstring( key )] = utf8_to_wstring( value );
@@ -742,7 +734,7 @@ namespace lua {
 		// Parse body
 		lua_getfield( L, 2, "body" );
 		if ( lua_isstring( L, -1 ) ) {
-			size_t len;
+			size_t      len;
 			const char *body = lua_tolstring( L, -1, &len );
 			ctx->request.body.assign( body, body + len );
 		}
@@ -757,6 +749,28 @@ namespace lua {
 			ctx->request.timeout = timeout;
 		}
 		lua_pop( L, 1 );
+
+		// Parse phase-specific timeouts — warn if driver is wininet
+		auto checkPhaseTimeout = [&]( const char *field, int &target ) {
+			lua_getfield( L, 2, field );
+			if ( lua_isnumber( L, -1 ) ) {
+				target = static_cast<int>( lua_tointeger( L, -1 ) );
+
+				if ( ctx->request.driver == "wininet" && target > 0 ) {
+					std::wstring msg = L"[RainJIT:Fetch] driver=\"wininet\" — \"" +
+					                   utf8_to_wstring( field ) +
+					                   L"\" is not supported by WinINet and will be ignored.";
+					if ( ctx->rain && ctx->rain->rm )
+						RmLog( ctx->rain->rm, LOG_WARNING, msg.c_str() );
+				}
+			}
+			lua_pop( L, 1 );
+		};
+
+		checkPhaseTimeout( "dnsTimeout",     ctx->request.dnsTimeout     );
+		checkPhaseTimeout( "connectTimeout",  ctx->request.connectTimeout );
+		checkPhaseTimeout( "sendTimeout",     ctx->request.sendTimeout    );
+		checkPhaseTimeout( "receiveTimeout",  ctx->request.receiveTimeout );
 
 		// Parse followRedirects
 		ctx->request.followRedirects = true;
@@ -852,7 +866,10 @@ namespace lua {
 		ctx->refSelf = core::ContextRegistry::instance().registerContext( ctx );
 
 		// Execute directly on the current thread — no busy-wait, no worker thread.
-		http::ExecuteFetchThread( ctx );
+		if ( ctx->request.driver == "wininet" )
+			wininet::ExecuteFetchThread( ctx );
+		else
+			http::ExecuteFetchThread( ctx );
 
 		core::ContextRegistry::instance().removeContext( ctx->refSelf );
 

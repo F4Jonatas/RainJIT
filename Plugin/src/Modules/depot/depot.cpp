@@ -168,7 +168,7 @@ static int depot_get( lua_State *L ) {
 
 	auto value = D->getOptional( key );
 
-	if ( value ) {
+	if ( value && !value->empty() ) {
 		if ( raw )
 			lua_pushstring( L, value->c_str() );
 		else
@@ -418,7 +418,6 @@ static int depot_keys( lua_State *L ) {
 
 	const wchar_t *ptr = buffer.data();
 	int index = 1;
-
 	while ( *ptr ) {
 		lua_pushstring( L, wstring_to_utf8( ptr ).c_str() );
 		lua_rawseti( L, -2, index++ );
@@ -459,11 +458,11 @@ static int depot_values( lua_State *L ) {
 		buffer.resize( buffer.size() * 2 );
 	}
 
+
 	lua_newtable( L );
 
 	const wchar_t *ptr = buffer.data();
 	int index = 1;
-
 	while ( *ptr ) {
 		std::string key   = wstring_to_utf8( ptr );
 		std::string value = D->get( key );
@@ -601,24 +600,25 @@ extern "C" int luaopen_depot( lua_State *L ) {
 
 
 namespace depot {
-/**
- * @brief Register the depot Lua module into package.preload.
- *
- * Consistent with xml::RegisterModule and html::RegisterModule.
- *
- * @param L    Lua state.
- * @param rain Rainmeter measure context (passed as upvalue to luaopen_depot).
- */
-void RegisterModule( lua_State *L, Rain *rain ) {
-	lua_getglobal( L, "package" );
-	lua_getfield( L, -1, "preload" );
 
-	lua_pushlightuserdata( L, rain );
-	lua_pushcclosure( L, luaopen_depot, 1 );
+	/**
+	 * @brief Register the depot Lua module into package.preload.
+	 *
+	 * Consistent with xml::RegisterModule and html::RegisterModule.
+	 *
+	 * @param L    Lua state.
+	 * @param rain Rainmeter measure context (passed as upvalue to luaopen_depot).
+	 */
+	void RegisterModule( lua_State *L, Rain *rain ) {
+		lua_getglobal( L, "package" );
+		lua_getfield( L, -1, "preload" );
 
-	lua_setfield( L, -2, "depot" );
+		lua_pushlightuserdata( L, rain );
+		lua_pushcclosure( L, luaopen_depot, 1 );
 
-	lua_pop( L, 2 );
-}
+		lua_setfield( L, -2, "depot" );
+
+		lua_pop( L, 2 );
+	}
 
 } // namespace depot

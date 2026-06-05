@@ -82,6 +82,9 @@
     <ClCompile Include="src\Modules\hotkey\mouse.cpp">
       <Filter>Modules\hotkey</Filter>
     </ClCompile>
+    <ClCompile Include="src\Modules\fetch\wininet.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -173,6 +176,9 @@
     </ClInclude>
     <ClInclude Include="src\Modules\webview\sanitize.hpp">
       <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\wininet.hpp">
+      <Filter>Modules\fetch</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -2,9 +2,22 @@
 private.md
 Shotcut/*.yml
 
-@Resources/assets
-@Resources/depot
-@Resources/powershell
+@Resources
+!@Resources/fonts/rFont.ttf
+
+Music/icons/*
+!Music/icons/radio-net.png
+
+Shortcut/icons/cache
+Shortcut/inspiration
+Shortcut/skin.yml
+
+Wallhaven/downloadfile
+
+Weather/images/inspiration
+Weather/*.ps1
+
+
 AudioWave
 Battery
 Downloader

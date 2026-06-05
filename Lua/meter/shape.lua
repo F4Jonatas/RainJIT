@@ -308,12 +308,15 @@ end
 -- path segments such as LineTo, CurveTo, and ArcTo.
 --
 -- Supported commands include:
---   `M` → Move To
---   `L` → line to
---   `C` → cubic bezier
---   `Q` → quadratic
---   `A` → arc
---   `Z` → close path
+--   `M` → Move to
+--   `L` → Line to
+--   `V` → Vertical Line to.   Set Y and use last X
+--   `H` → Horizontal Line to. Set X and use last Y
+--   `C` → Cubic bezier
+--   `S` → Cubic bezier using last X Y.
+--   `Q` → Quadratic
+--   `A` → Arc
+--   `Z` → Close path
 --
 -- @tparam shape self Shape instance.
 -- @tparam[opt] string path Path definition string.
@@ -342,11 +345,12 @@ function shape:path( inner )
 
 	inner =
 		inner:gsub( '|', ' ' )
-		:gsub( '%s*[Mm]%s*'  , '' )
+		:gsub( '^%s*[Mm]%s*'  , '' )
 		:gsub( '%s*[Ll]%s*'  , '|lineTo ' )
 		:gsub( '%s*[QqCc]%s*', '|curveTo ' )
 		:gsub( '%s*[Aa]%s*'  , '|arcTo ' )
 		:gsub( '([%.%+%-%d]+)%s+([%.%+%-%d]+)%s*[Vv]%s*([%.%+%-%d]+)', '%1 %2|lineTo %1 %3' )
+		:gsub( '([%.%+%-%d]+)%s+([%.%+%-%d]+)%s*[Hh]%s*([%.%+%-%d]+)', '%1 %2|lineTo %3 %2' )
 		:gsub( '%s*[Zz]%s*'  , '|closePath 1' )
 		-- :gsub( '(%d%.)[^%d]', '%10' )
 		:gsub( '(%d)%s+(%d)' , '%1,%2' )

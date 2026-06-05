@@ -14,6 +14,7 @@
 // Include all component headers
 #include "core.hpp"
 #include "http.hpp"
+#include "wininet.hpp"
 #include "lua.hpp"
 
 

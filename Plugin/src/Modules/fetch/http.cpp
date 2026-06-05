@@ -151,6 +151,16 @@ namespace http {
 			if ( path.empty() )
 				path = L"/";
 
+			// Extract Basic Auth credentials from URL (user:password@host).
+			// WinHTTP does not send credentials from the URL automatically —
+			// WinHttpSetCredentials must be called explicitly after WinHttpOpenRequest.
+			std::wstring urlUser;
+			std::wstring urlPassword;
+			if ( uc.dwUserNameLength > 0 )
+				urlUser.assign( uc.lpszUserName, uc.dwUserNameLength );
+			if ( uc.dwPasswordLength > 0 )
+				urlPassword.assign( uc.lpszPassword, uc.dwPasswordLength );
+
 			INTERNET_PORT port = uc.nPort;
 			DWORD flags = ( uc.nScheme == INTERNET_SCHEME_HTTPS ) ? WINHTTP_FLAG_SECURE : 0;
 
@@ -232,6 +242,18 @@ namespace http {
 			if ( !hRequest ) {
 				DWORD err = GetLastError();
 				throw std::runtime_error( "WinHttpOpenRequest failed: " + WinHttpErrorToString( err ) );
+			}
+
+			// Apply Basic Auth credentials extracted from the URL, if present.
+			if ( !urlUser.empty() ) {
+				WinHttpSetCredentials(
+					hRequest,
+					WINHTTP_AUTH_TARGET_SERVER,
+					WINHTTP_AUTH_SCHEME_BASIC,
+					urlUser.c_str(),
+					urlPassword.c_str(),
+					nullptr
+				);
 			}
 
 			// Configure request options
@@ -391,6 +413,7 @@ namespace http {
 
 			if ( readSuccess && totalBytes > 0 ) {
 				response.body = std::move( buffer );
+				response.text = std::string( reinterpret_cast<const char *>( response.body.data() ), response.body.size() );
 			}
 
 			else if ( !readSuccess ) {
@@ -427,6 +450,8 @@ namespace http {
 			if ( response.body.empty() ) {
 				response.status = -1;
 				response.error = e.what();
+				// response.body.clear();
+				// response.text.clear();
 
 				// Try to identify specific error by message
 				std::string errMsg = e.what();
@@ -450,6 +475,8 @@ namespace http {
 
 		} catch ( ... ) {
 			// Catch any other errors (including E_ABORT)
+			// response.body.clear();
+			// response.text.clear();
 
 			if ( response.body.empty() ) {
 				DWORD lastError = GetLastError();

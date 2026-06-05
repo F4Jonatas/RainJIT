@@ -166,7 +166,8 @@ namespace trident {
 		std::string callbackKey; ///< Lua registry key for the callback function.
 		std::string browserKey; ///< Lua registry key for the browser object (used to inject self).
 		bool enabled; ///< Whether event processing is active.
-		void *subclassData; ///< Opaque pointer to ParentSubclassData.
+		void *subclassData;        ///< Opaque pointer to ParentSubclassData.
+		void *controlSubclassData; ///< Opaque pointer to ControlSubclassData (popup window subclass).
 		bool silent; ///< Suppress script error dialogs.
 
 		// Layout constraint and appearance

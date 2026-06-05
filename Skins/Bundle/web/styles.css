@@ -1,0 +1,87 @@
+body {
+	/* A cor principal que serve de ponto de partida para o navegador derivar outras cores, a menos que sejam explicitamente definidas. */
+	scrollbar-base-color: #131314;
+	/* Cor da superfície 3D (threedface) da caixa de rolagem (scroll box) e das setas. */
+	scrollbar-face-color: #C1C1C1;
+	/* Cor de fundo da área de arraste da barra (track). */
+	scrollbar-track-color: #131314;
+	/* Cor das setas direcionais localizadas nas pontas da barra. */
+	scrollbar-arrow-color: #C1C1C1;
+	/* Cor da borda de destaque superior e esquerda, e do trilho do slider (threedhighlight). */
+	scrollbar-highlight-color: #C1C1C1;
+	/* Cor da borda sombreada inferior e direita da caixa de rolagem e das setas (threedshadow). */
+	scrollbar-shadow-color: #131314;
+	/* Cor da borda de brilho 3D (threedlightshadow) externa da barra. */
+	scrollbar-3dlight-color: #C1C1C1;
+	/* Cor da borda de sombra 3D escura (threeddarkshadow) mais externa. */
+	scrollbar-darkshadow-color: #131314;
+}
+
+html, body {
+	margin: 0px;
+	padding: 0px;
+	background-color: #131314;
+	text-align: center;
+	cursor: default;
+	-ms-user-select: none;
+	    user-select: none;
+}
+
+img {
+	/* Força o IE (MSHTML) a usar interpolação de alta qualidade */
+	-ms-interpolation-mode: bicubic;
+	/* Usa o algoritmo padrão de suavização (não força um modo que aumentaria o serrilhado) */
+	image-rendering: optimizeQuality;
+}
+
+a {
+	color: #7078df;
+}
+
+
+
+
+#main {
+	/* padding-bottom: 88px; */
+	margin: 0;
+	color: #fff;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+	/* height: calc( 100% - 20px );
+	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 20px ;
+	width: calc( 100%  - 40px); */
+}
+
+
+#panel {
+	width: 200px;
+	height: 100%;
+	background-color: #1b1c1d;
+	position: absolute;
+}
+
+#panel .item {
+	width: 100%;
+	display: flex;
+	padding-left: 20px;
+	align-items: center;
+	height: 50px;
+}
+
+#panel .item span {
+	padding-left: 10px;
+	margin-top: -2px;
+}
+
+#panel .item svg {
+	width: 20px;
+	height: 20px;
+}
+
+#panel .item.config {
+	bottom: 0;
+	position: absolute;
+}
+

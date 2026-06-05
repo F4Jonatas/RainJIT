@@ -30,7 +30,9 @@
 #include <mshtmhst.h>
 #include <dispex.h>
 #include <urlmon.h>
+#include <dwmapi.h>
 
+#pragma comment( lib, "dwmapi.lib" )
 #pragma comment( lib, "urlmon.lib" )
 #pragma comment( lib, "comctl32.lib" )
 
@@ -57,8 +59,14 @@ namespace trident {
 		Control *ctrl; ///< Owning control.
 	};
 
+	/// Popup (browser) window subclass data — used to suppress DWM shadow.
+	struct ControlSubclassData {
+		Control *ctrl; ///< Owning control.
+	};
+
 	static LRESULT CALLBACK ParentSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData );
 	static LRESULT CALLBACK IEServerSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData );
+	static LRESULT CALLBACK ControlSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData );
 	static void EnumAndSubclassIEServer( Control *ctrl );
 
 
@@ -367,7 +375,7 @@ namespace trident {
 
 						if ( lua_pcall( L, 2, 0, 0 ) != LUA_OK ) {
 							const char *err = lua_tostring( L, -1 );
-							RN_LOG( rain, LOG_ERROR, ( L"Trident callback error: " + utf8_to_wstring( err ) ).c_str() );
+							RN_LOG( rain, LOG_ERROR, ( L"[RainJIT:Trident] callback error: " + utf8_to_wstring( err ) ).c_str() );
 							lua_pop( L, 1 );
 						}
 					} else {
@@ -600,7 +608,7 @@ namespace trident {
 				// FIX #2: use m_ctx->rain directly — ctrl may be null if already removed from map
 				Rain *logRain = m_ctx ? m_ctx->rain : nullptr;
 				if ( logRain )
-					RN_LOG( logRain, LOG_ERROR, ( L"Trident bound function error: " + utf8_to_wstring( err ) ).c_str() );
+					RN_LOG( logRain, LOG_ERROR, ( L"[RainJIT:Trident] bound function error: " + utf8_to_wstring( err ) ).c_str() );
 				lua_pop( L, 1 );
 				return DISP_E_EXCEPTION;
 			}
@@ -1024,8 +1032,6 @@ namespace trident {
 
 			if ( dispIdMember == DISPID_DOCUMENTCOMPLETE ) {
 				pushEvent( EVENT_DOCUMENT_COMPLETE );
-				if ( m_ctx && m_ctx->rain )
-					RN_LOG( m_ctx->rain, LOG_NOTICE, L"Trident: DocumentComplete" );
 
 				auto it = m_ctx->controls.find( m_configId );
 				if ( it != m_ctx->controls.end() ) {
@@ -1101,7 +1107,7 @@ namespace trident {
 									} else {
 										const char *err = lua_tostring( L, -1 );
 										if ( m_ctx && m_ctx->rain )
-											RN_LOG( m_ctx->rain, LOG_ERROR, ( L"Trident navigate callback error: " + utf8_to_wstring( err ) ).c_str() );
+											RN_LOG( m_ctx->rain, LOG_ERROR, ( L"[RainJIT:Trident] navigate callback error: " + utf8_to_wstring( err ) ).c_str() );
 										lua_pop( L, 1 );
 									}
 								} else {
@@ -1336,6 +1342,32 @@ namespace trident {
 		return DefSubclassProc( hWnd, uMsg, wParam, lParam );
 	}
 
+	/**
+	 * @brief Subclass procedure for the browser popup window (hwndControl).
+	 *
+	 * Intercepts WM_DWMNCRENDERINGCHANGED to suppress the DWM drop shadow
+	 * whenever an external caller (e.g. the glass Lua module) re-enables NC
+	 * rendering.  wParam == TRUE means rendering was just enabled; we
+	 * immediately re-apply DWMNCRP_DISABLED.  wParam == FALSE is our own
+	 * suppression firing back — ignored to avoid an infinite loop.
+	 */
+	static LRESULT CALLBACK ControlSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData ) {
+		if ( uMsg == WM_DWMNCRENDERINGCHANGED && wParam == TRUE ) {
+			DWMNCRENDERINGPOLICY policy = DWMNCRP_DISABLED;
+			DwmSetWindowAttribute( hWnd, DWMWA_NCRENDERING_POLICY, &policy, sizeof( policy ) );
+			return 0;
+		}
+
+		if ( uMsg == WM_NCDESTROY ) {
+			RemoveWindowSubclass( hWnd, ControlSubclassProc, uIdSubclass );
+			delete (ControlSubclassData *)dwRefData;
+		}
+
+		return DefSubclassProc( hWnd, uMsg, wParam, lParam );
+	}
+
+
+
 	static BOOL CALLBACK FindIEServerProc( HWND hWnd, LPARAM lParam ) {
 		wchar_t className[64] = {};
 		GetClassNameW( hWnd, className, 64 );
@@ -1429,7 +1461,7 @@ namespace trident {
 	static bool CreateWebBrowserControl( Control &ctrl, Rain *rain, std::string &outError ) {
 		if ( !IsWindow( ctrl.hwndParent ) ) {
 			outError = "Invalid parent window handle";
-			RN_LOG( rain, LOG_ERROR, L"Trident: Invalid hwndParent." );
+			RN_LOG( rain, LOG_ERROR, L"[RainJIT:Trident] Invalid hwndParent." );
 			return false;
 		}
 
@@ -1462,7 +1494,8 @@ namespace trident {
 			L"Shell.Explorer",
 			dwStyle,
 			screenX, screenY, finalW, finalH,
-			nullptr, nullptr,
+			ctrl.hwndParent, // owner window — keeps browser above skin in z-order
+			nullptr,
 			GetModuleHandleW( nullptr ),
 			nullptr
 		);
@@ -1471,13 +1504,34 @@ namespace trident {
 		if ( !hwndPopup ) {
 			DWORD err = GetLastError();
 			wchar_t buf[128];
-			swprintf_s( buf, L"CreateWindowEx failed. GetLastError=%lu", err );
+			swprintf_s( buf, L"[RainJIT:Trident] CreateWindowEx failed. GetLastError=%lu", err );
 			outError = wstring_to_utf8( buf );
 			RN_LOG( rain, LOG_ERROR, buf );
 			return false;
 		}
 
 		ctrl.hwndControl = hwndPopup;
+
+		// Remove border that AtlAxWin may add implicitly
+		SetWindowLongW( hwndPopup, GWL_STYLE, GetWindowLongW( hwndPopup, GWL_STYLE ) & ~WS_BORDER );
+
+		// Remove DWM drop shadow (applied automatically to WS_POPUP windows)
+		{
+			DWMNCRENDERINGPOLICY policy = DWMNCRP_DISABLED;
+			DwmSetWindowAttribute( hwndPopup, DWMWA_NCRENDERING_POLICY, &policy, sizeof( policy ) );
+		}
+
+		// Subclass the popup to re-suppress shadow whenever an external caller
+		// (e.g. the glass Lua module calling resetAll) re-enables NC rendering.
+		{
+			ControlSubclassData *ctrlSubData = new ControlSubclassData{ &ctrl };
+			if ( SetWindowSubclass( hwndPopup, ControlSubclassProc, (UINT_PTR)ctrl.configId, (DWORD_PTR)ctrlSubData ) )
+				ctrl.controlSubclassData = ctrlSubData;
+			else {
+				delete ctrlSubData;
+				ctrl.controlSubclassData = nullptr;
+			}
+		}
 
 		if ( ctrl.cornerRadius > 0 )
 			ApplyRoundedCorners( hwndPopup, finalW, finalH, ctrl.cornerRadius );
@@ -1488,7 +1542,7 @@ namespace trident {
 			DestroyWindow( hwndPopup );
 			ctrl.hwndControl = nullptr;
 			outError = "AtlAxGetControl failed";
-			RN_LOG( rain, LOG_ERROR, L"Trident: AtlAxGetControl failed." );
+			RN_LOG( rain, LOG_ERROR, L"[RainJIT:Trident] AtlAxGetControl failed." );
 			return false;
 		}
 
@@ -1497,7 +1551,7 @@ namespace trident {
 			DestroyWindow( hwndPopup );
 			ctrl.hwndControl = nullptr;
 			outError = "QueryInterface(IWebBrowser2) failed";
-			RN_LOG( rain, LOG_ERROR, L"Trident: QueryInterface(IWebBrowser2) failed." );
+			RN_LOG( rain, LOG_ERROR, L"[RainJIT:Trident] QueryInterface(IWebBrowser2) failed." );
 			return false;
 		}
 
@@ -1525,10 +1579,10 @@ namespace trident {
 		if ( !SetWindowSubclass( ctrl.hwndParent, ParentSubclassProc, subclassId, (DWORD_PTR)subData ) ) {
 			delete subData;
 			ctrl.subclassData = nullptr;
-			RN_LOG( rain, LOG_WARNING, L"Trident: SetWindowSubclass failed." );
+			RN_LOG( rain, LOG_WARNING, L"[RainJIT:Trident] SetWindowSubclass failed." );
 		} else {
 			ctrl.subclassData = subData;
-			RN_LOG( rain, LOG_NOTICE, L"Trident: Parent subclass installed." );
+			RN_LOG( rain, LOG_DEBUG, L"[RainJIT:Trident] Parent subclass installed." );
 		}
 
 		{
@@ -1538,14 +1592,14 @@ namespace trident {
 			wchar_t buf[256];
 			swprintf_s(
 				buf,
-				L"Trident: Popup created. Rect=(%d,%d,%d,%d) insideSkin=%s padding=(%d,%d,%d,%d) radius=%d",
+				L"[RainJIT:Trident] Popup created. Rect=(%d,%d,%d,%d) insideSkin=%s padding=(%d,%d,%d,%d) radius=%d",
 				rc.left, rc.top, rc.right, rc.bottom,
 				ctrl.insideSkin ? L"YES" : L"NO",
 				ctrl.padLeft, ctrl.padTop, ctrl.padWidth, ctrl.padHeight,
 				ctrl.cornerRadius
 			);
 			// clang-format on
-			RN_LOG( rain, LOG_NOTICE, buf );
+			RN_LOG( rain, LOG_DEBUG, buf );
 		}
 
 		return true;
@@ -1721,6 +1775,12 @@ namespace trident {
 			ctrl->oleObject->Release();
 			ctrl->oleObject = nullptr;
 		}
+		if ( ctrl->controlSubclassData ) {
+			if ( ctrl->hwndControl && IsWindow( ctrl->hwndControl ) )
+				RemoveWindowSubclass( ctrl->hwndControl, ControlSubclassProc, (UINT_PTR)configId );
+			delete (ControlSubclassData *)ctrl->controlSubclassData;
+			ctrl->controlSubclassData = nullptr;
+		}
 		if ( ctrl->hwndControl ) {
 			DestroyWindow( ctrl->hwndControl );
 			ctrl->hwndControl = nullptr;
@@ -1763,15 +1823,14 @@ namespace trident {
 		std::wstring wurl = ResolveUrl( ctrl->rain, url, isLocal );
 
 		if ( wurl.empty() ) {
-			RN_LOG( ctrl->rain, LOG_WARNING, ( L"Trident: navigate() failed to resolve: " + utf8_to_wstring( url ) ).c_str() );
+			RN_LOG( ctrl->rain, LOG_WARNING, ( L"[RainJIT:Trident] navigate() failed to resolve: " + utf8_to_wstring( url ) ).c_str() );
 			return 0;
 		}
 
 		if ( ctrl->sanitizeFlags & VALIDATE_URLS ) {
-			// Paths resolvidos via absPath são intencionais — herdam ALLOW_LOCAL
-			bool allowLocal = isLocal || ( ctrl->sanitizeFlags & ALLOW_LOCAL ) != 0;
+			bool allowLocal = ( ctrl->sanitizeFlags & ALLOW_LOCAL ) != 0;
 			if ( !sanitize::IsUrlSafe( wstring_to_utf8( wurl ), allowLocal ) ) {
-				RN_LOG( ctrl->rain, LOG_WARNING, ( L"Trident: [SECURITY] navigate() blocked: " + wurl ).c_str() );
+				RN_LOG( ctrl->rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] navigate() blocked: " + wurl ).c_str() );
 				return 0;
 			}
 		}
@@ -1779,7 +1838,6 @@ namespace trident {
 		CComVariant vUrl( wurl.c_str() );
 		CComVariant vFlags( 0x04 );
 		ctrl->webBrowser->Navigate2( &vUrl, &vFlags, nullptr, nullptr, nullptr );
-		RN_LOG( ctrl->rain, LOG_NOTICE, ( L"Trident: navigate -> " + wurl ).c_str() );
 		return 0;
 	}
 
@@ -1836,10 +1894,11 @@ namespace trident {
 		std::string content = html;
 		if ( ctrl->sanitizeFlags & ( BLOCK_SCRIPTS | BLOCK_EVENTS | FILTER_CSS | BLOCK_STYLE | VALIDATE_URLS ) ) {
 			sanitize::Options opts = FlagsToOptions( ctrl->sanitizeFlags );
+			opts.allowLocal = ( ctrl->sanitizeFlags & ALLOW_LOCAL ) != 0;
 			content = sanitize::HtmlFragment( html, opts );
 			if ( content != html )
 				RN_LOG( ctrl->rain, LOG_WARNING,
-								L"Trident: [SECURITY] write() content was modified — "
+								L"[RainJIT:Trident] [SECURITY] write() content was modified — "
 								L"dangerous tags, event attributes, or blocked CSS were removed." );
 		}
 
@@ -1928,7 +1987,6 @@ namespace trident {
 				lua_pushstring( L, "Failed to read script file" );
 				return 2;
 			}
-			RN_LOG( ctrl->rain, LOG_NOTICE, ( L"Trident: execScript loading file: " + resolved ).c_str() );
 		}
 
 		CComPtr<IDispatch> docDisp;
@@ -2169,7 +2227,7 @@ namespace trident {
 				} else if ( hr == RPC_E_CHANGED_MODE ) {
 					g_comInitialized = true;
 					g_comNeedsUninitialize = false;
-					RN_LOG( rain, LOG_WARNING, L"Trident: COM já inicializado com threading incompatível." );
+					RN_LOG( rain, LOG_WARNING, L"[RainJIT:Trident] COM already initialized with incompatible threading model." );
 				} else {
 					lua_pushnil( L );
 					lua_pushstring( L, "OLE initialization failed" );
@@ -2215,8 +2273,9 @@ namespace trident {
 		ctrl.sanitizeFlags = SANITIZE_ALL;
 		ctrl.hidden            = false;
 		ctrl.contextMenu       = true;
-		ctrl.hwndIEServer      = nullptr;
+		ctrl.hwndIEServer         = nullptr;
 		ctrl.ieServerSubclassData = nullptr;
+		ctrl.controlSubclassData  = nullptr;
 
 		auto getNum = [&]( const char *field, long &out ) {
 			lua_getfield( L, 1, field );
@@ -2313,8 +2372,8 @@ namespace trident {
 		{
 			const wchar_t *lvl = ctrl.sanitizeFlags == SANITIZE_ALL ? L"ALL" : ctrl.sanitizeFlags == SANITIZE_NONE ? L"NONE" : L"CUSTOM";
 			wchar_t buf[128];
-			swprintf_s( buf, L"Trident: sanitize=%s (flags=0x%X)", lvl, ctrl.sanitizeFlags );
-			RN_LOG( rain, LOG_NOTICE, buf );
+			swprintf_s( buf, L"[RainJIT:Trident] sanitize=%s (flags=0x%X)", lvl, ctrl.sanitizeFlags );
+			RN_LOG( rain, LOG_DEBUG, buf );
 		}
 
 		lua_getfield( L, 1, "callback" );
@@ -2336,11 +2395,11 @@ namespace trident {
 
 			if ( !resolved.empty() ) {
 				if ( ctrl.sanitizeFlags & VALIDATE_URLS ) {
-					bool allowLocal = isLocal || ( ctrl.sanitizeFlags & ALLOW_LOCAL ) != 0;
+					bool allowLocal = ( ctrl.sanitizeFlags & ALLOW_LOCAL ) != 0;
 					if ( sanitize::IsUrlSafe( wstring_to_utf8( resolved ), allowLocal ) )
 						wurl = resolved;
 					else
-						RN_LOG( rain, LOG_WARNING, ( L"Trident: [SECURITY] create() URL blocked — about:blank. Blocked: " + resolved ).c_str() );
+						RN_LOG( rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] create() URL blocked — about:blank. Blocked: " + resolved ).c_str() );
 				} else {
 					wurl = resolved;
 				}

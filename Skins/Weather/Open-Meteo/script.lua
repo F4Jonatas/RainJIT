@@ -7,7 +7,6 @@ local meter = require( 'meter' )
 local depot = require( 'depot' )
 local fetch = require( 'fetch' )
 local i18n  = require( 'i18n' )
-local json  = require( 'json' ).decode
 
 
 -- Get and set current system language
@@ -40,6 +39,8 @@ end
 
 
 function rain:init()
+	-- meter.group( 'themeWide' ):hidden( true ):update()
+
 	upgrade( gatherResults())
 end
 
@@ -128,7 +129,7 @@ function gatherResults()
 		error( 'Failed to fetch current weather data.\nError: '.. current.error )
 
 	else
-		local data = json( current.text )
+		local data = current:json()
 		local dict = mapWeather(
 			data.current.weather_code,
 			data.current.is_day == 1,

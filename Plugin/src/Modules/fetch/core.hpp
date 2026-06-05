@@ -9,6 +9,19 @@
 
 #pragma once
 
+/**
+ * @brief Window message sent by the worker thread when an HTTP request completes.
+ *
+ * Posted via PostMessage() to the fetch notify window (HWND per Rain instance).
+ * wParam carries the context ID (FetchContext::refSelf) used to retrieve
+ * the completed context from ContextRegistry.
+ *
+ * Defined here — core.hpp is the single header included by all fetch
+ * submodules — to avoid duplicating the constant across http.cpp, wininet.cpp
+ * and lua.cpp.
+ */
+#define WM_FETCH_COMPLETE ( WM_APP + 3 )
+
 #include <Windows.h>
 #include <atomic>
 #include <map>
@@ -42,6 +55,7 @@ namespace core {
 		std::map<std::string, std::string> headers;
 		std::map<std::string, std::string> cookies;
 		std::string error;
+		std::string text;
 
 		static const int STATUS_NETWORK_ERROR = -1; // Erro genérico de rede
 		static const int STATUS_CANCELLED = -2; // Requisição cancelada pelo usuário
@@ -78,13 +92,29 @@ namespace core {
 		int timeout = 30000;
 
 		// Timeouts específicos por fase (em milissegundos)
-		int dnsTimeout = 0; // 0 = usa timeout geral
+		// Nota: ignorados quando driver == "wininet" (não suportado pelo WinINet)
+		int dnsTimeout     = 0; // 0 = usa timeout geral
 		int connectTimeout = 0; // 0 = usa timeout geral
-		int sendTimeout = 0; // 0 = usa timeout geral
+		int sendTimeout    = 0; // 0 = usa timeout geral
 		int receiveTimeout = 0; // 0 = usa timeout geral
 
 		bool followRedirects = true;
-		bool HTTPVersion = false;
+		bool HTTPVersion     = false;
+
+		/**
+		 * @brief HTTP driver/stack to use for this request.
+		 *
+		 * Supported values:
+		 * - "winhttp"  (default) — WinHTTP stack, clean and fast.
+		 * - "wininet"            — WinINet stack, inherits IE/Edge session context.
+		 *                         Useful for sites that block non-browser clients
+		 *                         (e.g. Cloudflare-protected feeds).
+		 *
+		 * @note When "wininet" is used, phase-specific timeouts (dnsTimeout,
+		 *       connectTimeout, sendTimeout, receiveTimeout) are not supported
+		 *       and will be ignored with a warning.
+		 */
+		std::string driver = "winhttp";
 
 		FetchRequest() = default;
 	};

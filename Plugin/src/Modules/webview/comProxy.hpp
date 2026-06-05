@@ -12,8 +12,20 @@
  *   1. GetIDsOfNames(key) → DISPID.
  *   2. Try DISPATCH_PROPERTYGET eagerly.
  *      a. Returns primitive (string, number, bool) → push directly.
- *      b. Returns VT_DISPATCH → wrap in new ComProxy (chaining).
- *      c. Fails → return a closure for DISPATCH_METHOD.
+ *      b. Returns VT_DISPATCH → wrap in a parent-aware ComProxy.
+ *         The parent IDispatch* and DISPID are stored so that __call
+ *         can invoke DISPATCH_METHOD on the correct object rather than
+ *         falling back to DISPID_VALUE on the intermediate function object
+ *         (which MSHTML does not support for DOM methods).
+ *      c. Fails → return a closure for DISPATCH_METHOD (pure-method path).
+ *
+ * @par __call strategy:
+ *   - If the proxy carries a parent context (parentDisp / parentDispId):
+ *       parentDisp->Invoke(parentDispId, DISPATCH_METHOD | DISPATCH_PROPERTYGET, args)
+ *     This is identical to how AHK v2 resolves doc.getElementById('main') —
+ *     the method is always called on the owner object, not on an intermediate.
+ *   - Otherwise (no parent context, e.g. a root IDispatch object):
+ *       disp->Invoke(DISPID_VALUE, DISPATCH_METHOD | DISPATCH_PROPERTYGET, args)
  *
  * @par __tostring strategy:
  *   Uses IDispatch::GetTypeInfo → ITypeInfo::GetDocumentation to obtain
@@ -23,7 +35,7 @@
  * @par Usage from Lua:
  * @code{.lua}
  * local doc   = browser:document()
- * local el    = doc.getElementById('app')        -- method  → ComProxy
+ * local el    = doc.getElementById('app')        -- method  → ComProxy (parent-aware)
  * local title = doc.title                        -- property → string directly
  * local vol   = el.settings.volume               -- chained properties
  * doc.title   = "New title"                      -- PROPERTYPUT via __newindex
@@ -49,14 +61,32 @@ namespace trident {
 	/// Lua metatable name for ComProxy userdata objects.
 	static constexpr const char *COM_PROXY_MT = "trident.ComProxy";
 
-	/// Internal userdata layout.
+	/**
+	 * @brief Internal userdata layout for a COM IDispatch proxy.
+	 *
+	 * @details
+	 * `disp` is the wrapped object itself (e.g. the return value of a PROPERTYGET).
+	 *
+	 * `parentDisp` / `parentDispId` carry the context needed to call a DOM method
+	 * correctly.  When MSHTML's PROPERTYGET for a method (e.g. getElementById)
+	 * returns a VT_DISPATCH "function object", we cannot call that object via
+	 * DISPID_VALUE — MSHTML does not support it.  Instead, __call must re-invoke
+	 * DISPATCH_METHOD on the *owner* object (parentDisp) with the original DISPID
+	 * (parentDispId), exactly as AHK v2 does internally.
+	 *
+	 * When `parentDisp` is nullptr the proxy is a root object (e.g. document,
+	 * window) and __call falls back to DISPID_VALUE on `disp` as before.
+	 */
 	struct ComProxyData {
-		IDispatch *disp; ///< Owning reference (AddRef on Push, Release on __gc).
+		IDispatch *disp;       ///< Wrapped IDispatch* (AddRef on Push, Release on __gc).
+		IDispatch *parentDisp; ///< Owner object for method calls, or nullptr for root proxies.
+		DISPID     parentDispId; ///< DISPID on parentDisp that produced this proxy.
 	};
 
-	// Forward declaration so __index can create child proxies.
+	// Forward declarations so __index can create both plain and parent-aware proxies.
 	namespace ComProxy {
 		void Push( lua_State *L, IDispatch *disp );
+		void Push( lua_State *L, IDispatch *disp, IDispatch *parentDisp, DISPID parentDispId );
 	}
 
 	// -------------------------------------------------------------------------
@@ -76,12 +106,43 @@ namespace trident {
 		return ok ? static_cast<ComProxyData *>( ud )->disp : nullptr;
 	}
 
-	/// Resolves a named DISPID. Returns DISPID_UNKNOWN on failure.
+	/**
+	 * @brief Resolves a named DISPID, including runtime JavaScript globals.
+	 *
+	 * @details
+	 * Two-step resolution, identical to how AHK v2 resolves COM member names:
+	 *
+	 *  1. `IDispatch::GetIDsOfNames` — fast path; covers all static MSHTML members
+	 *     defined in the type library (body, getElementById, title, etc.).
+	 *
+	 *  2. `IDispatchEx::GetDispID` — fallback for members that are not in the
+	 *     static type library but exist at runtime, such as JavaScript global
+	 *     variables assigned to the window object (e.g. `window.legacyScroll`).
+	 *     `IDispatchEx` is the JScript/Chakra extension of `IDispatch` that
+	 *     tracks dynamic members; MSHTML's window object always implements it.
+	 *
+	 * @param disp  The IDispatch* to query.
+	 * @param name  Member name in UTF-16.
+	 * @return      DISPID on success, or DISPID_UNKNOWN if not found.
+	 */
 	static inline DISPID GetDispID( IDispatch *disp, const wchar_t *name ) {
+		// Step 1: static members via IDispatch (fast, no QI overhead)
 		DISPID id = DISPID_UNKNOWN;
 		LPOLESTR n = const_cast<LPOLESTR>( name );
-		disp->GetIDsOfNames( IID_NULL, &n, 1, LOCALE_USER_DEFAULT, &id );
-		return id;
+		HRESULT hr = disp->GetIDsOfNames( IID_NULL, &n, 1, LOCALE_USER_DEFAULT, &id );
+		if ( SUCCEEDED( hr ) && id != DISPID_UNKNOWN )
+			return id;
+
+		// Step 2: dynamic/runtime members via IDispatchEx (JS globals, expando properties)
+		CComQIPtr<IDispatchEx> dispEx( disp );
+		if ( dispEx ) {
+			CComBSTR bstrName( name );
+			hr = dispEx->GetDispID( bstrName, fdexNameCaseSensitive, &id );
+			if ( SUCCEEDED( hr ) && id != DISPID_UNKNOWN )
+				return id;
+		}
+
+		return DISPID_UNKNOWN;
 	}
 
 	/**
@@ -137,12 +198,18 @@ namespace trident {
 	// Metamethods
 	// -------------------------------------------------------------------------
 
-	/// __gc — releases the IDispatch reference.
+	/// __gc — releases both the wrapped IDispatch and the parent reference (if any).
 	static int proxy_gc( lua_State *L ) {
 		ComProxyData *d = static_cast<ComProxyData *>( lua_touserdata( L, 1 ) );
-		if ( d && d->disp ) {
-			d->disp->Release();
-			d->disp = nullptr;
+		if ( d ) {
+			if ( d->disp ) {
+				d->disp->Release();
+				d->disp = nullptr;
+			}
+			if ( d->parentDisp ) {
+				d->parentDisp->Release();
+				d->parentDisp = nullptr;
+			}
 		}
 		return 0;
 	}
@@ -180,7 +247,8 @@ namespace trident {
 	 * Strategy (mirrors AutoHotkey v2 ComObject):
 	 *
 	 *  1. Always attempt DISPATCH_PROPERTYGET with no args.
-	 *       - Success + VT_DISPATCH  → wrap in ComProxy (transparent chaining).
+	 *       - Success + VT_DISPATCH  → wrap in a parent-aware ComProxy so that
+	 *         __call can invoke the method correctly on the owner object.
 	 *       - Success + primitive    → push value directly.
 	 *       - Failure               → member is a pure method; return closure.
 	 *
@@ -189,9 +257,10 @@ namespace trident {
 	 *       - N args → DISPATCH_METHOD directly.
 	 *
 	 * This makes all COM properties transparent without needing ():
-	 *   doc.body.style.color          -- works
-	 *   el.settings.volume            -- works
-	 *   doc.getElementById('foo')     -- still callable
+	 *   doc.body.style.color              -- works (plain property chain)
+	 *   el.settings.volume                -- works (plain property chain)
+	 *   doc.getElementById('foo')         -- works (parent-aware method call)
+	 *   doc.querySelectorAll('.cls')[0]   -- works (parent-aware method call)
 	 */
 	static int proxy_index( lua_State *L ) {
 		IDispatch *disp = CheckProxy( L, 1 );
@@ -215,16 +284,24 @@ namespace trident {
 		// many MSHTML properties (body, style, settings, etc.) return ambiguous
 		// or empty metadata, causing them to be misidentified as methods.
 		//
-		// If PROPERTYGET succeeds → push result directly.
-		//   VT_DISPATCH becomes a chained ComProxy (transparent object access).
-		//   Primitives are pushed as-is.
-		// If PROPERTYGET fails   → member is a pure method; return closure.
+		// If PROPERTYGET succeeds:
+		//   - Primitive  → push directly.
+		//   - VT_DISPATCH → wrap in a parent-aware ComProxy.
+		//     The parent context (disp + id) is stored so __call can invoke
+		//     DISPATCH_METHOD on the owner rather than DISPID_VALUE on the
+		//     intermediate function object, which MSHTML does not support.
+		// If PROPERTYGET fails → member is a pure method; return closure.
 		{
 			DISPPARAMS noArgs = {};
 			CComVariant result;
 			HRESULT hr = disp->Invoke( id, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYGET, &noArgs, &result, nullptr, nullptr );
 			if ( SUCCEEDED( hr ) ) {
-				PushVariantResult( L, result );
+				// clang-format off
+				if ( result.vt == VT_DISPATCH && result.pdispVal )
+					ComProxy::Push( L, result.pdispVal, disp, id ); // parent-aware
+				else
+					luaVariant::Push( L, result );               // plain value
+				// clang-format on
 				return 1;
 			}
 		}
@@ -318,13 +395,27 @@ namespace trident {
 	}
 
 	/**
-	 * @brief __call — invokes the proxy itself as a callable object (DISPID_VALUE).
+	 * @brief __call — invokes the proxy as a callable object.
 	 *
-	 * First arg (self) is the proxy, remaining args are forwarded as COM args.
+	 * @details
+	 * Two dispatch paths depending on whether the proxy carries a parent context:
+	 *
+	 * **Parent context present** (parentDisp != nullptr):
+	 *   The proxy was created by __index when MSHTML's PROPERTYGET returned a
+	 *   VT_DISPATCH "function object" for a DOM method (e.g. getElementById,
+	 *   querySelector).  MSHTML does not support invoking that intermediate object
+	 *   via DISPID_VALUE.  Instead we invoke DISPATCH_METHOD on the *owner* object
+	 *   (parentDisp) using the original DISPID (parentDispId), which is exactly
+	 *   what AHK v2's ComObject does internally.
+	 *
+	 * **No parent context** (root proxy, e.g. document or window itself):
+	 *   Falls back to the classic DISPID_VALUE invocation on disp.
+	 *
+	 * First arg (self) is the proxy; remaining args are forwarded as COM args.
 	 */
 	static int proxy_call( lua_State *L ) {
-		IDispatch *disp = CheckProxy( L, 1 );
-		if ( !disp ) {
+		ComProxyData *d = static_cast<ComProxyData *>( lua_touserdata( L, 1 ) );
+		if ( !d || !d->disp ) {
 			lua_pushnil( L );
 			return 1;
 		}
@@ -340,7 +431,30 @@ namespace trident {
 		dp.cArgs = (UINT)nargs;
 
 		CComVariant result;
-		HRESULT hr = disp->Invoke( DISPID_VALUE, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD | DISPATCH_PROPERTYGET, &dp, &result, nullptr, nullptr );
+		HRESULT hr;
+
+		// clang-format off
+		if ( d->parentDisp && d->parentDispId != DISPID_UNKNOWN ) {
+			// Parent-aware path: call DISPATCH_METHOD on the owner with the original
+			// DISPID.  This mirrors AHK v2's resolution of doc.getElementById('x').
+			hr = d->parentDisp->Invoke(
+				d->parentDispId,
+				IID_NULL,
+				LOCALE_USER_DEFAULT,
+				DISPATCH_METHOD | DISPATCH_PROPERTYGET,
+				&dp, &result, nullptr, nullptr
+			);
+		} else {
+			// Root-proxy path: invoke DISPID_VALUE on the object itself.
+			hr = d->disp->Invoke(
+				DISPID_VALUE,
+				IID_NULL,
+				LOCALE_USER_DEFAULT,
+				DISPATCH_METHOD | DISPATCH_PROPERTYGET,
+				&dp, &result, nullptr, nullptr
+			);
+		}
+		// clang-format on
 
 		for ( auto &v : vargs )
 			VariantClear( &v );
@@ -383,7 +497,10 @@ namespace trident {
 		}
 
 		/**
-		 * @brief Wraps an IDispatch* in a ComProxy and pushes it onto the stack.
+		 * @brief Wraps an IDispatch* in a root ComProxy and pushes it onto the stack.
+		 *
+		 * Use this for top-level objects (document, window, collection results, etc.)
+		 * that are not the product of a PROPERTYGET on a parent IDispatch.
 		 *
 		 * Calls AddRef() on disp. The proxy __gc calls Release().
 		 * Pushes nil if disp is nullptr.
@@ -397,7 +514,45 @@ namespace trident {
 			disp->AddRef();
 
 			ComProxyData *d = static_cast<ComProxyData *>( lua_newuserdata( L, sizeof( ComProxyData ) ) );
-			d->disp = disp;
+			d->disp        = disp;
+			d->parentDisp  = nullptr;
+			d->parentDispId = DISPID_UNKNOWN;
+
+			luaL_getmetatable( L, COM_PROXY_MT );
+			lua_setmetatable( L, -2 );
+		}
+
+		/**
+		 * @brief Wraps an IDispatch* in a parent-aware ComProxy.
+		 *
+		 * Used by __index when MSHTML's PROPERTYGET returns a VT_DISPATCH for a
+		 * DOM method (e.g. getElementById, querySelector).  Storing the parent
+		 * context allows __call to invoke DISPATCH_METHOD on the owner object
+		 * (parentDisp / parentDispId) instead of relying on DISPID_VALUE, which
+		 * MSHTML does not support for intermediary function objects.
+		 *
+		 * Calls AddRef() on both disp and parentDisp.
+		 * The proxy __gc calls Release() on both.
+		 * Pushes nil if disp is nullptr.
+		 *
+		 * @param disp        The VT_DISPATCH result of PROPERTYGET.
+		 * @param parentDisp  The IDispatch* that owns the method.
+		 * @param parentDispId The DISPID on parentDisp that produced disp.
+		 */
+		inline void Push( lua_State *L, IDispatch *disp, IDispatch *parentDisp, DISPID parentDispId ) {
+			if ( !disp ) {
+				lua_pushnil( L );
+				return;
+			}
+
+			disp->AddRef();
+			if ( parentDisp )
+				parentDisp->AddRef();
+
+			ComProxyData *d  = static_cast<ComProxyData *>( lua_newuserdata( L, sizeof( ComProxyData ) ) );
+			d->disp          = disp;
+			d->parentDisp    = parentDisp;
+			d->parentDispId  = parentDispId;
 
 			luaL_getmetatable( L, COM_PROXY_MT );
 			lua_setmetatable( L, -2 );

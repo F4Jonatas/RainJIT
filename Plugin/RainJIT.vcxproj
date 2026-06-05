@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Modules\fetch\wininet.cpp" />
     <ClCompile Include="src\Modules\hotkey\keyboard.cpp" />
     <ClCompile Include="src\Modules\hotkey\mouse.cpp" />
     <ClCompile Include="packages\gumbo\src\attribute.c">
@@ -108,6 +109,7 @@
     <None Include=".editorconfig" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Modules\fetch\wininet.hpp" />
     <ClInclude Include="src\Modules\hotkey\keyboard.hpp" />
     <ClInclude Include="src\Modules\hotkey\mouse.hpp" />
     <ClInclude Include="src\Modules\webview\comProxy.hpp" />

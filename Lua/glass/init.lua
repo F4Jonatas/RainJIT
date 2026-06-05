@@ -45,6 +45,11 @@ ffi.cdef[[
 	);
 
 	LONG RtlGetVersion(RTL_OSVERSIONINFOW*);
+
+
+	long RegOpenKeyExA(void*, const char*, unsigned long, unsigned long, void**);
+	long RegQueryValueExA(void*, const char*, void*, unsigned long*, void*, unsigned long*);
+	long RegCloseKey(void*);
 ]]
 
 
@@ -286,6 +291,44 @@ local function applyEffects( hwnd, winver, opt )
 end
 
 
+
+
+
+
+local M = {}
+
+--- Verifica se o Windows está no modo escuro (tema do aplicativo).
+-- Lê o valor `AppsUseLightTheme` do registro (HKCU).
+-- @treturn boolean|nil `true` se modo escuro, `false` se modo claro, `nil` em caso de erro.
+-- @usage
+-- local glass = require('glass')
+-- if glass.isDark() then print("Dark mode ativo") end
+M.isDark = function()
+    -- Adicione estas definições ao bloco ffi.cdef existente
+    local HKEY_CURRENT_USER = ffi.cast("void*", 0x80000001)
+    local KEY_READ = 0x20019
+    local REG_DWORD = 4
+
+    local hkey = ffi.new("void*[1]")
+    local result = ffi.C.RegOpenKeyExA(HKEY_CURRENT_USER,
+        "Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+        0, KEY_READ, hkey)
+    if result ~= 0 then return nil end
+
+    local value = ffi.new("DWORD[1]")
+    local value_size = ffi.new("DWORD[1]", ffi.sizeof("DWORD"))
+    result = ffi.C.RegQueryValueExA(hkey[0], "AppsUseLightTheme", nil, nil,
+        value, value_size)
+    ffi.C.RegCloseKey(hkey[0])
+
+    if result ~= 0 then return nil end
+
+    -- 0 = dark, 1 = light
+    return value[0] == 0
+end
+
+
+
 --- Applies visual effects to a window.
 -- Resets any existing effects first, then applies the requested options.
 --
@@ -302,14 +345,12 @@ end
 --   shadow  = true,
 --   border  = false   -- remove border
 -- })
-return function( hwnd, options )
-	assert( hwnd ~= nil and hwnd ~= ffi.NULL, 'Invalid HWND' )
+return setmetatable( M, {
+	__call = function( _, hwnd, options )
+		assert( hwnd ~= nil and hwnd ~= ffi.NULL, 'Invalid HWND' )
 
-	resetAll( hwnd )
+		resetAll( hwnd )
 
-	applyEffects(
-		hwnd,
-		getWindowsVersion(),
-		options
-	)
-end
+		applyEffects( hwnd, getWindowsVersion(), options )
+	end
+})

@@ -5,7 +5,6 @@ local meter  = require( 'meter' )
 local anima  = require( 'meter.animate' )
 local glass  = require( 'glass' )
 local fetch  = require( 'fetch.utils' )
-local json   = require( 'json' ).decode
 local msgbox = require( 'winapi.msgbox' )
 local menu   = require( 'winapi.popupmenu' )
 
@@ -22,7 +21,7 @@ local totalPic   = 20
 local aDuration  = dp:get( 'animation-duration', 1500 )
 local aFunc      = dp:get( 'animation-function', 'OutExpo' )
 local tok        = dp:get( 'animation-delay', 2200 )
-local effect     = dp:get( 'animation-effect', 'slideup' ):lower()
+local effect     = dp:get( 'animation-effect', 'zoomfade' ):lower()
 local tik        = 0
 local reload     = 40000
 local upgradable = false
@@ -32,23 +31,23 @@ local upgradable = false
 local animaEffect = {
 	slideup = {
 		{ -- front
-			from = { opacity = 255, y = 0 },
-			to   = { opacity = 80 , y = -HEIGHT }
+			from = { translateY = 0 },
+			to   = { translateY = -HEIGHT }
 		},
 		{ -- cover
-			from = { y = HEIGHT },
-			to   = { y = 0 }
+			from = { translateY = HEIGHT },
+			to   = { translateY = 0 }
 		}
 	},
 
 	slideleft = {
 		{ -- front
-			from = { x = 0 },
-			to   = { x = -WIDTH }
+			from = { translateX = 0 },
+			to   = { translateX = -WIDTH }
 		},
 		{ -- cover
-			from = { x = WIDTH },
-			to   = { x = 0 }
+			from = { translateX = WIDTH },
+			to   = { translateX = 0 }
 		}
 	},
 
@@ -81,13 +80,13 @@ url.query.page        = dp:get( 'page'        )
 url.query.ratios      = dp:get( 'ratios'      )
 url.query.resolutions = dp:get( 'resolutions' )
 url.query.seed        = dp:get( 'seed'        )
+url.query.toprange    = dp:get( 'toprange'    )
 url.query.category    = dp:get( 'category', '111', true )
 url.query.order       = dp:get( 'order'   , 'desc'      )
 url.query.purity      = dp:get( 'purity'  , '100', true )
 url.query.sorting     = dp:get( 'sorting' , 'random'    )
-url.query.toprange    = dp:get( 'toprange', '1y'        )
 url.query.q           = fetch.url.raw( dp:get( 'query' ))
-
+-- print(url.href)
 
 
 -- Apply a acrylic effect
@@ -97,8 +96,8 @@ end
 
 
 
-local front    = meter( 'image-front' )
-local cover    = meter( 'image-cover' )
+local front = meter( 'image-front' )
+local cover = meter( 'image-cover' )
 
 front.anima = anima( front, aDuration, aFunc )
 	:from( animaEffect[ effect ][1].from )
@@ -109,14 +108,6 @@ cover.anima = anima( cover, aDuration, aFunc )
 	:from( animaEffect[ effect ][2].from )
 	:to( animaEffect[ effect ][2].to )
 	:create()
-
-
-if effect == 'slideleft' then
-	cover:left( WIDTH )
-elseif effect == 'slideup' then
-	cover:top( HEIGHT )
-end
-
 
 
 
@@ -141,6 +132,7 @@ function rain:update( au, dt )
 		-- change pictures for next step
 		front:image(('thumb%02d'):format( actualPic )):update()
 		cover:image(('thumb%02d'):format( nextPic )):update()
+		meter( 'resolution' ):text( thumbs[ actualPic ].resolution ):update()
 
 		front.anima:restart()
 		cover.anima:restart()
@@ -172,13 +164,14 @@ end
 -- @param (table) list is a all response
 local promise = fetch.promiseAll( function( list )
 	for index, response in ipairs( list ) do
-		local filePath = '%sdownloadfile\\thumb%02d.png'
-		response:save( filePath:format( rain:var( 'CURRENTPATH' ), index ))
+		local filePath = '#CURRENTPATH#/downloadfile/thumb%02d.png'
+		response:save( filePath:format( index ))
 	end
 
 	fetching = 'done'
 	front:update( true )
 	dp:set( 'wall-url', thumbs[1].url )
+	meter( 'resolution' ):text( thumbs[1].resolution ):update()
 end)
 
 
@@ -190,16 +183,19 @@ upgrade = function()
 	-- Request sync method
 	local response = fetch( url.href )
 
-	if response.ok then
-		local index = 1
-		thumbs = json( response.text ).data
+	if not response.ok then
+		error( 'Problem performing the fetch.\nERROR: '.. response.error )
+	end
 
-		for name, value in pairs( thumbs ) do
-			promise( value.thumbs.large )
 
-			index = index + 1
-			if index > 20 then break end
-		end
+	local index = 1
+	thumbs = response:json().data
+
+	for name, value in pairs( thumbs ) do
+		promise( value.thumbs.large )
+
+		index = index + 1
+		if index > 20 then break end
 	end
 end
 
@@ -209,9 +205,9 @@ function doubleClick()
 	local response = msgbox( 'Do you want to open the image link?' )
 	if response == 6 then
 		rain:bang(
-			#thumbs > 0 and
-			thumbs[ actualPic ].url or
-			dp:get( 'wall-url', 'https://wallhaven.cc' )
+			#thumbs > 0
+			and thumbs[ actualPic ].url
+			or  dp:get( 'wall-url', 'https://wallhaven.cc' )
 		)
 	end
 end
@@ -249,11 +245,18 @@ local function choice( param, i, toggle )
 	end
 
 	if not toggle then
+		if not dp:has( param ) or dp:get( param ) == '' then return end
 		return url.query[ param ] == list[i]
 	end
 
-	url.query[ param ] = list[i]
-	dp:set( param, url.query[ param ])
+	if url.query[ param ] == list[i] then
+		url.query[ param ] = ''
+		dp:remove( param )
+	else
+		url.query[ param ] = list[i]
+		dp:set( param, url.query[ param ])
+	end
+
 end
 
 
@@ -341,7 +344,6 @@ function openMenu()
 			if not thumbs[ actualPic ] then return end
 
 			rain:bang( '!setClip', thumbs[ actualPic ].url )
-			print( thumbs[ actualPic ].url, actualPic )
 		end)
 
 		:add( '---' )
