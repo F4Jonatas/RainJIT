@@ -26,13 +26,10 @@ jobs:
           Write-Host "Visual Studio encontrado em: $vsPath"
 
           $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-          $process = Start-Process -FilePath $installer -ArgumentList `
-            "modify", "--installPath", "`"$vsPath`"", `
-            "--add", "Microsoft.VisualStudio.Component.VC.ATL", `
-            "--quiet", "--norestart", "--wait" `
-            -Wait -PassThru
-          if ($process.ExitCode -ne 0) {
-            Write-Error "Installation of the ATL component failed with code $($process.ExitCode)"
+          & $installer modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.ATL --quiet --norestart --wait
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Instalação do componente ATL falhou com código $LASTEXITCODE"
             exit 1
           }
 
