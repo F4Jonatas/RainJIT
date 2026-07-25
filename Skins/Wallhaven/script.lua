@@ -120,11 +120,24 @@ end
 -- @param (int)   au number accumulated Updates
 -- @param (float) dt number deltaTime
 function rain:update( au, dt )
-	if fetching ~= 'done' then return end
+	-- Evitar atualizar o meter repetidamente, consumindo hardware.
+	local resChanged = false
+
+	-- make animation
+	if tik >= tok then
+		anima.updateAll( 1000 * dt )
+
+		if not resChanged and math.min( front.anima.tween.progress, 0.5 ) == 0.5 then
+			resChanged = true
+			meter( 'resolution' ):text( thumbs[ actualPic +1 ].resolution:gsub( 'x', '×' ) ):update()
+		end
+	end
+
 
 	tik = tik + 1
 
 	if front.anima.playState == 'finished' then
+		resChanged = false
 		actualPic  = actualPic == totalPic and 1 or actualPic + 1
 		nextPic    = nextPic   == totalPic and 1 or actualPic + 1
 		tik        = 0
@@ -132,7 +145,6 @@ function rain:update( au, dt )
 		-- change pictures for next step
 		front:image(('thumb%02d'):format( actualPic )):update()
 		cover:image(('thumb%02d'):format( nextPic )):update()
-		meter( 'resolution' ):text( thumbs[ actualPic ].resolution ):update()
 
 		front.anima:restart()
 		cover.anima:restart()
@@ -140,15 +152,13 @@ function rain:update( au, dt )
 
 		-- update thumbs
 		if upgradable then
+			if fetching ~= 'done' then return end
+
 			upgradable = false
 			upgrade()
 		end
-
-
-	-- make animation
-	elseif tik >= tok then
-		anima.updateAll( 1000 * dt )
 	end
+
 
 	-- update thumbs
 	if math.fmod( au, reload ) == 0 then
@@ -216,150 +226,94 @@ end
 
 
 
-local function check( param, i, toggle )
-	if not toggle then
-		return url.query[ param ]:sub( i, i )
-	end
+local SORTING_LIST  = { 'relevance', 'random', 'date_added', 'views', 'favorites', 'toplist', 'hot' }
+local ORDER_LIST    = { 'asc', 'desc' }
+local TOPRANGE_LIST = { '1d', '3d', '1w', '1M', '3M', '6M', '1y' }
 
-	local currentChar  = url.query[ param ]:sub( i, i )
-	local newChar      = currentChar == '1' and '0' or '1'
 
-	url.query[ param ] =
-		url.query[ param ]:sub( 1, i -1 ) ..
-		newChar..
-		url.query[ param ]:sub( i +1 )
-
-	dp:set( param, url.query[ param ])
+local function isBitOn( param, i )
+	return url.query[ param ]:sub( i, i ) == '1'
 end
 
 
-local function choice( param, i, toggle )
-	local list
+local function toggleBit( param, i )
+	local current = url.query[ param ]
+	local newChar = current:sub( i, i ) == '1' and '0' or '1'
 
-	if param == 'sorting' then
-		list = { 'relevance', 'random', 'date_added', 'views', 'favorites', 'toplist' }
-	elseif param == 'order' then
-		list = { 'asc', 'desc' }
-	elseif param == 'toprange' then
-		list = { '1d','3d','1w','1M','3M','6M','1y' }
-	end
+	url.query[ param ] = current:sub( 1, i - 1 ) .. newChar .. current:sub( i + 1 )
+	dp:set( param, url.query[ param ] )
+end
 
-	if not toggle then
-		if not dp:has( param ) or dp:get( param ) == '' then return end
-		return url.query[ param ] == list[i]
-	end
 
-	if url.query[ param ] == list[i] then
+local function isSelected( param, list, i )
+	return url.query[ param ] == list[ i ]
+end
+
+
+local function select( param, list, i )
+	if isSelected( param, list, i ) then
 		url.query[ param ] = ''
 		dp:remove( param )
 	else
-		url.query[ param ] = list[i]
-		dp:set( param, url.query[ param ])
+		url.query[ param ] = list[ i ]
+		dp:set( param, url.query[ param ] )
 	end
-
 end
+
 
 
 
 function openMenu()
 	local menuPurity = menu()
-		:add( 'SFW\t\t'.. ( check( 'purity', 1 ) == '1' and '☑' or '☐' ),
-			function() check( 'purity', 1, true ) end
-		)
-		:add( 'Sketchy\t\t'.. ( check( 'purity', 2 ) == '1' and '☑' or '☐' ),
-			function() check( 'purity', 2, true ) end
-		)
-		:add( 'NSFW\t\t'.. ( check( 'purity', 3 ) == '1' and '☑' or '☐' ),
-			function() check( 'purity', 3, true ) end
-		)
+		:add( 'SFW\t\t'     .. ( isBitOn( 'purity', 1 ) and '☑' or '☐' ), function() toggleBit( 'purity', 1 ) end )
+		:add( 'Sketchy\t\t' .. ( isBitOn( 'purity', 2 ) and '☑' or '☐' ), function() toggleBit( 'purity', 2 ) end )
+		:add( 'NSFW\t\t'    .. ( isBitOn( 'purity', 3 ) and '☑' or '☐' ), function() toggleBit( 'purity', 3 ) end )
 
 	local menuCategory = menu()
-		:add( 'General\t\t'.. ( check( 'category', 1 ) == '1' and '☑' or '☐' ),
-			function() check( 'category', 1, true ) end
-		)
-		:add( 'Anime\t\t'.. ( check( 'category', 2 ) == '1' and '☑' or '☐' ),
-			function() check( 'category', 2, true ) end
-		)
-		:add( 'People\t\t'.. ( check( 'category', 3 ) == '1' and '☑' or '☐' ),
-			function() check( 'category', 3, true ) end
-		)
+		:add( 'General\t\t' .. ( isBitOn( 'category', 1 ) and '☑' or '☐' ), function() toggleBit( 'category', 1 ) end )
+		:add( 'Anime\t\t'   .. ( isBitOn( 'category', 2 ) and '☑' or '☐' ), function() toggleBit( 'category', 2 ) end )
+		:add( 'People\t\t'  .. ( isBitOn( 'category', 3 ) and '☑' or '☐' ), function() toggleBit( 'category', 3 ) end )
 
 	local menuSorting = menu()
-			:add( 'Relevance\t\t'.. ( choice( 'sorting', 1 ) and '◉' or '○' ),
-				function() choice( 'sorting', 1, true ) end
-			)
-			:add( 'Random\t\t'.. ( choice( 'sorting', 2 ) and '◉' or '○' ),
-				function() choice( 'sorting', 2, true ) end
-			)
-			:add( 'Date Added\t\t'.. ( choice( 'sorting', 3 ) and '◉' or '○' ),
-				function() choice( 'sorting', 3, true ) end
-			)
-			:add( 'Views\t\t'.. ( choice( 'sorting', 4 ) and '◉' or '○' ),
-				function() choice( 'sorting', 4, true ) end
-			)
-			:add( 'Favorites\t\t'.. ( choice( 'sorting', 5 ) and '◉' or '○' ),
-				function() choice( 'sorting', 5, true ) end
-			)
-			:add( 'Toplist\t\t'.. ( choice( 'sorting', 6 ) and '◉' or '○' ),
-				function() choice( 'sorting', 6, true ) end
-			)
-			:add( 'Hot\t\t'.. ( choice( 'sorting', 7 ) and '◉' or '○' ),
-				function() choice( 'sorting', 7, true ) end
-			)
+		:add( 'Relevance\t\t'  .. ( isSelected( 'sorting', SORTING_LIST, 1 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 1 ) end )
+		:add( 'Random\t\t'     .. ( isSelected( 'sorting', SORTING_LIST, 2 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 2 ) end )
+		:add( 'Date Added\t\t' .. ( isSelected( 'sorting', SORTING_LIST, 3 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 3 ) end )
+		:add( 'Views\t\t'      .. ( isSelected( 'sorting', SORTING_LIST, 4 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 4 ) end )
+		:add( 'Favorites\t\t'  .. ( isSelected( 'sorting', SORTING_LIST, 5 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 5 ) end )
+		:add( 'Toplist\t\t'    .. ( isSelected( 'sorting', SORTING_LIST, 6 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 6 ) end )
+		:add( 'Hot\t\t'        .. ( isSelected( 'sorting', SORTING_LIST, 7 ) and '◉' or '○' ), function() select( 'sorting', SORTING_LIST, 7 ) end )
 
 	local menuOrder = menu()
-		:add( 'Ascending\t\t'.. ( choice( 'order', 1 ) and '◉' or '○' ),
-			function() choice( 'order', 1, true ) end
-		)
-		:add( 'Descending\t\t'.. ( choice( 'order', 2 ) and '◉' or '○' ),
-			function() choice( 'order', 2, true ) end
-		)
+		:add( 'Ascending\t\t'  .. ( isSelected( 'order', ORDER_LIST, 1 ) and '◉' or '○' ), function() select( 'order', ORDER_LIST, 1 ) end )
+		:add( 'Descending\t\t' .. ( isSelected( 'order', ORDER_LIST, 2 ) and '◉' or '○' ), function() select( 'order', ORDER_LIST, 2 ) end )
 
 	local menuTopRange = menu()
-			:add( '1d\t\t'.. ( choice( 'toprange', 1 ) and '◉' or '○' ),
-				function() choice( 'toprange', 1, true ) end
-			)
-			:add( '3d\t\t'.. ( choice( 'toprange', 2 ) and '◉' or '○' ),
-				function() choice( 'toprange', 2, true ) end
-			)
-			:add( '1w\t\t'.. ( choice( 'toprange', 3 ) and '◉' or '○' ),
-				function() choice( 'toprange', 3, true ) end
-			)
-			:add( '1M\t\t'.. ( choice( 'toprange', 4 ) and '◉' or '○' ),
-				function() choice( 'toprange', 4, true ) end
-			)
-			:add( '3M\t\t'.. ( choice( 'toprange', 5 ) and '◉' or '○' ),
-				function() choice( 'toprange', 5, true ) end
-			)
-			:add( '6M\t\t'.. ( choice( 'toprange', 6 ) and '◉' or '○' ),
-				function() choice( 'toprange', 6, true ) end
-			)
-			:add( '1y\t\t'.. ( choice( 'toprange', 7 ) and '◉' or '○' ),
-				function() choice( 'toprange', 7, true ) end
-			)
+		:add( '1d\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 1 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 1 ) end )
+		:add( '3d\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 2 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 2 ) end )
+		:add( '1w\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 3 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 3 ) end )
+		:add( '1M\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 4 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 4 ) end )
+		:add( '3M\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 5 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 5 ) end )
+		:add( '6M\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 6 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 6 ) end )
+		:add( '1y\t\t' .. ( isSelected( 'toprange', TOPRANGE_LIST, 7 ) and '◉' or '○' ), function() select( 'toprange', TOPRANGE_LIST, 7 ) end )
 
 
 	menu( rain.hwnd )
 		:add( 'Copy Wallpaper URL', function()
 			if not thumbs[ actualPic ] then return end
-
 			rain:bang( '!setClip', thumbs[ actualPic ].url )
 		end)
-
 		:add( '---' )
 		:add( 'Settings' )
-
 		:sub(
 			menu()
-				:sub( menuPurity  , 'Purity'    )
+				:sub( menuPurity,   'Purity'    )
 				:sub( menuCategory, 'Category'  )
-				:sub( menuSorting , 'Sorting'   )
-				:sub( menuOrder   , 'Order'     )
+				:sub( menuSorting,  'Sorting'   )
+				:sub( menuOrder,    'Order'     )
 				:sub( menuTopRange, 'Top Range' )
 		, 'Filters' )
-
 		:add( '---' )
-		:add( 'Restart Skin', function() rain:bang( '!refresh' ) end )
+		:add( 'Restart Skin', function() rain:bang( '!refresh'  ) end )
 		:add( 'Default Menu', function() rain:bang( '!skinMenu' ) end )
 		:show()
 end

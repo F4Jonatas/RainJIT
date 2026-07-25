@@ -20,6 +20,7 @@ body {
 html, body {
 	margin: 0px;
 	padding: 0px;
+	font-size: 14px;
 	background-color: #131314;
 	text-align: center;
 	cursor: default;
@@ -57,17 +58,39 @@ a {
 
 #panel {
 	width: 200px;
-	height: 100%;
+	height: calc( 100% - 5px );
 	background-color: #1b1c1d;
 	position: absolute;
+	padding-top: 5px;
 }
 
+#panel .item-group {
+	font-size: 13px;
+	color: rgb( 107, 107, 119 );
+	margin-bottom: 20px;
+}
+
+#panel .item-group .item {
+	font-size: 14px;
+	color: white;
+}
+
+
+
 #panel .item {
-	width: 100%;
+	width: calc( 100% - 26px );
 	display: flex;
-	padding-left: 20px;
+	padding-left: 14px;
 	align-items: center;
-	height: 50px;
+	height: 32px;
+	left: 6px;
+	position: relative;
+	border-radius: 4px;
+}
+
+#panel .item:hover {
+	background-color: rgba(255, 255, 255, .05 );
+	cursor: pointer;
 }
 
 #panel .item span {
@@ -76,12 +99,12 @@ a {
 }
 
 #panel .item svg {
-	width: 20px;
-	height: 20px;
+	width: 18px;
+	height: 18px;
 }
 
 #panel .item.config {
-	bottom: 0;
+	bottom: 5px;
 	position: absolute;
 }
 

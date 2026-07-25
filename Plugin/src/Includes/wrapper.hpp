@@ -75,9 +75,15 @@ namespace luaWrapper {
 
 		local init = 'luaopen_' .. module:gsub( '%.', '_' )
 
-		local loader, err = package.loadlib( file, init )
+
+		local ok, loader, err, when = pcall( package.loadlib, file, init )
+
+		if not ok then
+			error(( 'loadlib crashed for %q (file=%s): %s' ):format( module, tostring( file ), tostring( loader )))
+		end
+
 		if not loader then
-			error( err )
+			error(( 'loadlib failed for %q (file=%s, init=%s): %s [%s]' ):format( module, file, init, err, tostring( when )))
 		end
 
 		local result = loader()

@@ -207,6 +207,7 @@ function M:set(clock)
 	assert(type(clock) == "number", "clock must be number")
 
 	self.clock = math.max(0, math.min(clock, self.duration))
+	self.progress = self.clock / self.duration
 
 	if self.clock == 0 then
 		clone(self.current, self.from)
@@ -334,6 +335,7 @@ return function( duration, from, to, easing )
 	return setmetatable({
 		duration = duration == 0 and 1 or duration,
 		clock    = 0,
+		progress = 0,
 
 		from     = clone({}, fromNorm ),
 		to       = clone({}, toNorm   ),

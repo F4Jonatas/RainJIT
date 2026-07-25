@@ -528,9 +528,7 @@ Path for loading DLLs: `#SKINSPATH#@Vault\lua\bin`<br>
 -- @param (string) moduleName
 -- @return (any) The value returned by the module loader, or `true` if nil
 -- @raise Error if the DLL cannot be loaded or initialized
-
-  local lfs = import("lfs")
-end
+local lfs = import("lfs")
 ```
 
 ---
@@ -713,7 +711,8 @@ If you are contributing documentation or changes to the source code, please ensu
 ### Lua Modules
 
 - [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem) - **_(Lunar Modules) Module_**
-- [**winapi**](https://github.com/stevedonovan/winapi/blob/master/readme.md) - [**_(Steve J Donovan) Module_**](https://github.com/stevedonovan/winapi)
+- [**WinAPI**](https://github.com/stevedonovan/winapi/blob/master/readme.md) - [**_(Steve J Donovan) Module_**](https://github.com/stevedonovan/winapi)
+- **LuaCOM** - [**_(OneLuaPro) Module_**](https://github.com/OneLuaPro/luacom)
 - [**Hotkey**](./assets/doc/HOTKEY-README.md) -  **_RainJIT_** - (_Inspiration_ [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll))
 - [**Fetch**](./assets/doc/FETCH-README.md) - **_RainJIT_**
 - [**Depot**](./assets/doc/DEPOT-README.md) - **_RainJIT_**

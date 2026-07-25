@@ -9,8 +9,7 @@ local meter   = require( 'meter' )
 local hotkey  = require( 'hotkey' )
 local glass   = require( 'glass' )
 local fetch   = require( 'fetch' )
-local trident = require( 'webview.trident' )
-
+local luacom  = import( 'luacom' )
 
 local dp       = depot()
 local body     = meter( 'body' )
@@ -34,55 +33,33 @@ end
 
 
 
--- local play = meter('controls-play_plause')
--- 	:path( 'M 20.003 12.6688 C 20.6708 13.1138 21.0046 13.3364 21.121 13.617 C 21.2226 13.8622 21.2226 14.1378 21.121 14.383 C 21.0046 14.6636 20.6708 14.8862 20.003 15.3312 L 12.4876 20.3416 C 11.6794 20.8804 11.2754 21.1498 10.9404 21.1298 C 10.6486 21.1122 10.3788 20.968 10.2024 20.7348 C 10 20.4672 10 19.9816 10 19.0104 L 10 8.9896 C 10 8.0185 10 7.5329 10.2024 7.2652 C 10.3788 7.032 10.6486 6.8877 10.9404 6.8703 C 11.2754 6.8503 11.6794 7.1196 12.4876 7.6583 L 20.003 12.6688 Z' )
--- 	:strokewidth(0)
--- 	:update()
+-- luacom.config.abort_on_API_error = true
+-- luacom.config.abort_on_error = false
+local player = luacom.CreateObject( 'WMPlayer.OCX' )
+player.uiMode = 'invisible'
 
+
+
+
+
+
+local play = meter( 'controls-play_plause', 2 )
 -- rain:var("path", play.contentPath, rain:var("#CURRENTPATH#skin.ini"))
--- print(play.content)
 
 
-local player = {}
 
 -- @see https://learn.microsoft.com/en-us/previous-versions/windows/desktop/wmp/player-playstate
 player.state = dp:get( 'radio-state', 3 )
+if player.state == 3 then
+	player.settings.autoStart = true
 
-
-
-
-
-
-local browser = trident.create({
-	url      = './index.html',
-	width    = rain:var( 'WIDTH' ),
-	height   = 60,
-	left     = 0,
-	top      = 50,
-	sanitize = { 'allow_local' },
-	hide     = true,
-	silent   = false,
-
-	callback = function( self, event )
-		if event.type == 'documentcomplete' then
-			loadRadio()
-		end
-
-		if event.type == 'playstate' then
-			player.state = event.data.state
-			dp:set( 'radio-state', player.state )
-
-			if event.data.status ~= '' then
-				song:text( event.data.status ):update()
-			end
-		end
-	end
-})
-
-
+	play
+		:path( 'M 13 7 L 9 7 V 21 L 13 21 V 7 M 15 7 L 19 7 V 21 L 15 21 V 7 Z' )
+		:update()
+end
 
 local function loadTitle()
-	-- print(player.state, browser.document.MediaPlayer.playState )
+	-- print( player.state, player.playState )
 	if player.state ~= 3 then return end
 
 	-- Precisa ser o async metodo, caso contrário sempre vai ter um momento de freeze em todo processo do rainmeter
@@ -106,16 +83,16 @@ end
 
 function loadRadio()
 	local request = fetch( 'https://prod.radio-api.net/stations/details?stationIds='.. radio[ iRadio ])
-	-- local request = fetch( 'https://www.youtube.com/watch?v=m52ynxt1mOo')
-	-- print(request.text)
-	local data    = request:json()[1]
-	radioTitle    = data.name
+	-- print( fetch( 'https://www.youtube.com/watch?v=m52ynxt1mOo' ):text() )
 
-	browser.document.MediaPlayer.url = data.streams[1].url
-	browser.document.MediaPlayer.settings.volume = dp:get( 'volume', 100 )
+	local data = request:json()[1]
+	radioTitle = data.name
+
+	player.url = data.streams[1].url
+	player.settings.volume = dp:get( 'volume', 100 )
 
 	if player.state ~= 3 then
-		browser.document.MediaPlayer.controls.stop()
+		player.controls:stop()
 	end
 
 
@@ -158,15 +135,14 @@ hotkey.keyboard({
 
 	callback = function( event )
 		if event.vk == 'VK_MEDIA_STOP' then
-			browser.document.MediaPlayer.controls.stop()
+			player.controls:stop()
 
 
 		elseif event.vk == 'VK_MEDIA_PLAY_PAUSE' then
-			-- print(player.state, browser.document.MediaPlayer.playState ))
 			if player.state == 3 then
-				browser.document.MediaPlayer.controls.pause()
+				player.controls:pause()
 			else
-				browser.document.MediaPlayer.controls.play()
+				player.controls:play()
 			end
 
 
@@ -177,7 +153,7 @@ hotkey.keyboard({
 				and math.max( volume - 1, 0 )
 				or math.min( volume + 1, 100 )
 
-			browser.document.MediaPlayer.settings.volume = volume
+			player.settings.volume = volume
 			dp:set( 'volume', volume )
 
 
@@ -203,5 +179,5 @@ end
 
 
 function rain:init()
-
+	loadRadio()
 end
