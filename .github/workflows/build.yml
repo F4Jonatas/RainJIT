@@ -22,7 +22,10 @@ jobs:
       - name: Install ATL component for Visual Studio
         shell: pwsh
         run: |
-          $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          # Find the path to the latest Visual Studio (the one used by the compiler)
+          $vsPath = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          Write-Host "Visual Studio encontrado em: $vsPath"
+
           $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
           & $installer modify --installPath $vsPath `
             --add Microsoft.VisualStudio.Component.VC.ATL `
