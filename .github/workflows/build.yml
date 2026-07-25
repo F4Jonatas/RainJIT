@@ -11,7 +11,6 @@ on:
       - 'Plugin/**'
       - '.github/workflows/build.yml'
 
-
 jobs:
   build:
     runs-on: windows-latest
@@ -20,9 +19,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install ATL component for Visual Studio
+        shell: pwsh
+        run: |
+          $vsPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+          & $installer modify --installPath $vsPath `
+            --add Microsoft.VisualStudio.Component.VC.ATL `
+            --quiet --norestart
+
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Build (Release)
         run: |
-          msbuild plugin/RainJIT.sln /p:Configuration=Release /p:Platform=x64
+          msbuild Plugin/RainJIT.sln /p:Configuration=Release /p:Platform=x64
