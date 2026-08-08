@@ -50,9 +50,6 @@ local browser = trident.create({
 
 
 
--- local netdown = meter( 'netdown' )
-
-
 function rain:init()
 	-- local title = meter( 'title' )
 	-- title:inline( 5, 'size', rain:formula( title:option( 'fontSize' )) - 2 )
@@ -105,20 +102,22 @@ function upgrade()
 			table.insert( categories, cat:text() )
 		end
 
+
 		inner =
-			'<div id="title">'        ..title..        '</div>' ..
+			'<div id="title">' ..title.. '</div>' ..
 			'<div id="subHead">' ..
 				'<span id="channelTitle">' ..channelTitle.. '</span>' ..
-				'<span id="creator">'      ..creator..      '</span>' ..
+				'<span id="creator">' ..creator.. '</span>' ..
 			'</div>' ..
-			-- '<div id="date">'         ..date..         '</div>' ..
+			-- '<div id="date">' ..date.. '</div>' ..
 			inner
+
 
 		local snippet = html:find( 'p.medium-feed-snippet' )
 		if snippet then
 			local el = browser.document.getElementById( 'main' )
 			el.innerHTML = inner
-			print( browser.window.legacyScroll, browser.legacyScroll )
+			-- print( browser.window.legacyScroll, browser.legacyScroll )
 			browser:execScript(([[
 				var el = document.getElementById('main');
 				if (el)

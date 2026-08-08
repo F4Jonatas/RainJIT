@@ -5,9 +5,6 @@ Shotcut/*.yml
 @Resources
 !@Resources/fonts/rFont.ttf
 
-Music/icons/*
-!Music/icons/radio-net.png
-
 Shortcut/icons/cache
 Shortcut/inspiration
 Shortcut/skin.yml
@@ -17,6 +14,11 @@ Wallhaven/downloadfile
 Weather/images/inspiration
 Weather/*.ps1
 
+
+Radio.net/icons/*
+!Radio.net/icons/radio-net.png
+
+Radio.net/43d2d8be9801d4615b447954c2daa250.webp
 
 AudioWave
 Battery

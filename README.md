@@ -12,7 +12,7 @@
   ![License](https://img.shields.io/badge/license-GPLv2-green)
   ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
   ![Architecture](https://img.shields.io/badge/arch-x86%20%7C%20x64-lightgrey)
-  ![Build](https://github.com/F4Jonatas/RainJIT/actions/workflows/build.yml/badge.svg)
+  <!-- ![Build](https://github.com/F4Jonatas/RainJIT/actions/workflows/build.yml/badge.svg) -->
   ![Visual Studio](https://img.shields.io/badge/Visual%20Studio-2022-purple?logo=visualstudio)
   ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue?logo=c%2B%2B)
   ![LLVM Style](https://img.shields.io/badge/style-LLVM-orange)
@@ -44,7 +44,7 @@
   - [Inline Script](#inline-script)
   - [Command with Inline Script](#command-with-inline-script)
 - [Module `rain`](#book-module-rain)
-  - [Properties read-only](#diamond_shape_with_a_dot_inside-properties-read-only)
+  - [Property read-only](#diamond_shape_with_a_dot_inside-properties-read-only)
   - [Method `rain:absPath()`](#large_orange_diamond-method-rainabspath)
   - [Method `rain:formula()`](#large_orange_diamond-method-rainformula)
   - [Method `rain:var()`](#large_orange_diamond-method-rainvar)
@@ -111,7 +111,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 ## :package: Installation
 
-Install the package [`RainJIT.rmskin`](./dist/RainJIT.rmskin)<br>
+Install the package [`RainJIT.rmskin`](https://github.com/F4Jonatas/RainJIT/releases/latest)<br>
 
 > [!IMPORTANT]
 > After installation, it is highly recommended to move the [**Models folder**](#file-locations) to the Rainmeter [**@Vault folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/); this gives you access to all installed Skins, preventing file duplication.
@@ -165,7 +165,7 @@ Install the package [`RainJIT.rmskin`](./dist/RainJIT.rmskin)<br>
 
 The global `rain` object provides access to **Rainmeter** functionality from Lua.
 
-### :diamond_shape_with_a_dot_inside: Properties _read-only_
+### :diamond_shape_with_a_dot_inside: Property _read-only_
 
 | Property    | Type       | Description               |
 | :--         | :--:       | :--                       |
@@ -181,8 +181,9 @@ Converts relative paths to absolute paths. Accepts variables and [**canonical pa
 Useful for resolving paths relative to the current Skin.
 
 ```lua
--- @usage rain:absPath(filePath) → string
+-- @usage rain:absPath(filePath)
 -- @param (string) filePath
+-- @return (string)
 
 local file = rain:absPath("../script.lua")
 local skin = rain:absPath("#CURRENTPATH#../skin.ini")
@@ -202,9 +203,10 @@ Rainmeter provides a parsing engine that supports various forms of functional an
 > An incorrect formula generates an error log in **Rainmeter**.
 
 ```lua
--- @usage rain:formula(formula [, default]) → number
+-- @usage rain:formula(formula [, default])
 -- @param (string) formula
 -- @param (number) [default=0]
+-- @return (number)
 
 print("2 + 2 * 3 =", rain:formula("2 + 2 * 3"))
 
@@ -229,10 +231,11 @@ Converts the value to the appropriate Lua type (`number`/`boolean`/`string`) or 
 > If you want to obtain a `boolean` value, it must be in lowercase (`true`/`false`), otherwise it will be converted as a string.
 
 ```lua
--- @usage rain:var(name [, value [, filePath]]) → any
--- @param (string) name Variable name
--- @param (any) [value] New value
--- @param (string) [filePath] File to save the variable. It can also be the current skin.
+-- @usage rain:var(name [, value [, filePath]])
+-- @param (string) name - Variable name
+-- @param (any) [value] - New value
+-- @param (string) [filePath] - File to save the variable. It can also be the current skin.
+-- @return (`number`|`boolean`|`string`|`nil`)
 
 -- Getter
 rain:var("CURRENTPATH")
@@ -255,7 +258,8 @@ This function returns `true` if the Skin window is in focus; otherwise, it retur
 
 
 ```lua
--- @usage rain:isFocused() → boolean
+-- @usage rain:isFocused()
+-- @return (boolean)
 
 function rain:update(au, dt)
 
@@ -276,9 +280,9 @@ Get the window identifier (**HWND**). Based on the Skin name of current Skin.
 > functionality similar to [**PluginConfigActive**](https://github.com/jsmorley/ConfigActive)
 
 ```lua
--- @usage rain:getSkin(skin) → userdata
+-- @usage rain:getSkin(skin)
 -- @param (string) skin
--- @return returns nil if the skin is not found
+-- @return (boolean|nil)
 
 rain:getSkin("illustro\\Clock")
 ```
@@ -296,15 +300,15 @@ You can also obtain the rectangle from another **Skin** by specifying **HWND**.
 > You can use it in [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
--- @usage rain:getRect([ hwnd ]) → table
+-- @usage rain:getRect([ hwnd ])
 -- @param hwnd (userdata)
--- @treturn table properties
--- @field (number) x: left position
--- @field (number) y: top position
--- @field (number) r: right position
--- @field (number) w: width size
--- @field (number) b: bottom position
--- @field (number) h: height size
+-- @return (table) properties
+-- @field (number) x - left position
+-- @field (number) y - top position
+-- @field (number) r - right position
+-- @field (number) w - width size
+-- @field (number) b - bottom position
+-- @field (number) h - height size
 
 function rain:init()
   -- Rect of the current Skin
@@ -329,13 +333,14 @@ Get the section option and converts the value to the appropriate Lua type (`bool
 > Whenever you try to get the Rect value from the section, this needs to be done after the Skin has fully loaded, and for that you will need to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
--- @usage rain:option(section, option [, default]) → any
--- @param (string) section Skin section name
--- @param (string) option Meter/Measure option
--- @param (any) [default] Default value if option doesn't exist
+-- @usage rain:option(section, option [, default])
+-- @param (string) section - Skin section name
+-- @param (string) option - Meter/Measure option
+-- @param (any) [default] - Default value if option doesn't exist
+-- @return (`number`|`boolean`|`string`|`nil`)
 
 rain:option("MeterText", "Text", "My content") -- string
-rain:option("MeterText", "FontSize" )          -- number
+rain:option("MeterText", "FontSize")           -- number
 
 -- [MeterText]
 -- X = 10R
@@ -356,7 +361,8 @@ Get the position and size of the current Skin using **Rainmeter** [**Built-in va
 > The correct value will only be displayed after the Skin has fully loaded. Remember to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
--- @usage rain:getX() → number
+-- @usage rain:getX()
+-- @return (number)
 
 function rain:init()
   local x = rain:getX() -- Skin X position
@@ -374,9 +380,10 @@ end
 Executes a **Rainmeter** default [**Bang**](https://docs.rainmeter.net/manual/bangs/).
 
 ```lua
--- @usage rain:bang( bang [, arg1, arg2, ...])
+-- @usage rain:bang(bang [, arg1, arg2, ...])
 -- @param (string) bang
 -- @param (string) arg
+-- @return (nil)
 
 rain:bang("!SetOption", "MeterText", "Text", "Hello")
 
@@ -401,6 +408,7 @@ Moves the Skin window to the specified screen coordinates.
 -- @usage rain:moveSkin(x,y)
 -- @param x (number) X coordinate (screen position)
 -- @param y (number) Y coordinate (screen position)
+-- @return (nil)
 
 -- Move current skin to position (100, 200)
 rain:moveSkin(100, 200)
@@ -501,7 +509,8 @@ This function formats all received arguments into a single string, replaces doub
 > - Double quotes (`"`) are replaced with typographic quotes (`”`)
 
 ```lua
--- @usage print( param [, param2, param3, ...]) → nil
+-- @usage print(param [, param2, param3, ...])
+-- @return (nil)
 
 print("Hello", "Rain JIT", 123, {x = 1})
 ```
@@ -524,7 +533,7 @@ Path for loading DLLs: `#SKINSPATH#@Vault\lua\bin`<br>
 > Some modules depend on other libraries. Make sure you have them installed beforehand to avoid unsuccessful attempts.
 
 ```lua
--- @usage import( moduleName ) → any
+-- @usage import(moduleName)
 -- @param (string) moduleName
 -- @return (any) The value returned by the module loader, or `true` if nil
 -- @raise Error if the DLL cannot be loaded or initialized
@@ -680,6 +689,7 @@ graph TD
 
 
 ## :scroll: License
+
 <a href="./assets/images/logo-gpl-v2.png">
   <img src="./assets/images/logo-gpl-v2.png" alt="LOGO-GPL-V2" width="150" height="150" align="right">
 </a>
@@ -708,19 +718,27 @@ If you are contributing documentation or changes to the source code, please ensu
 
 <br>
 
+
 ### Lua Modules
 
-- [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem) - **_(Lunar Modules) Module_**
-- [**WinAPI**](https://github.com/stevedonovan/winapi/blob/master/readme.md) - [**_(Steve J Donovan) Module_**](https://github.com/stevedonovan/winapi)
-- [**LuaCOM**](./assets/doc/LuaCOM-README.md) - [**_(OneLuaPro) Module_**](https://github.com/OneLuaPro/luacom)
-- [**Hotkey**](./assets/doc/HOTKEY-README.md) -  **_RainJIT_** - (_Inspiration_ [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll))
-- [**Fetch**](./assets/doc/FETCH-README.md) - **_RainJIT_**
-- [**Depot**](./assets/doc/DEPOT-README.md) - **_RainJIT_**
-- [**Trident**](./assets/doc/TRIDENT-README.md) - **_RainJIT_** - (_Inspiration_ [**PluginWebView**](https://github.com/khanhas/PluginWebView))
-- [**XML**](./assets/doc/XML-README.md) - **_RainJIT_**
-- [**HTML**](./assets/doc/HTML-README.md) - **_RainJIT_**
-- [**Glass**](./Lua/glass/README.md) - **_Module_** - (_Inspiration_ [**FrostedGlass**](https://github.com/KazukiGames82/FrostedGlass))
-- [**JSON**](https://github.com/rxi/json.lua) - [**_(rxi) Module_**](https://github.com/rxi/json.lua)
+- [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem) — [**_Lunar Modules_**](https://github.com/lunarmodules)
+- [**WinAPI**](https://github.com/stevedonovan/winapi/blob/master/readme.md) — [**_Steve J Donovan_**](https://github.com/stevedonovan/winapi)
+- [**LuaCOM**](./assets/doc/LuaCOM-README.md) — [**_OneLuaPro_**](https://github.com/OneLuaPro/luacom)
+- [**Hotkey**](./assets/doc/HOTKEY-README.md) —  **_RainJIT_** — (_Inspiration_ [**Plugin HotKey**](https://github.com/brianferguson/HotKey.dll))
+- [**Fetch**](./assets/doc/FETCH-README.md) — **_RainJIT_**
+- [**Depot**](./assets/doc/DEPOT-README.md) — **_RainJIT_**
+- [**Trident**](./assets/doc/TRIDENT-README.md) — **_RainJIT_** — (_Inspiration_ [**PluginWebView**](https://github.com/khanhas/PluginWebView))
+- [**XML**](./assets/doc/XML-README.md) — **_RainJIT_**
+- [**HTML**](./assets/doc/HTML-README.md) — **_RainJIT_**
+
+<br>
+
+### Class Module
+- [**Glass**](./Lua/glass/README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas) — (_Inspiration_ [**FrostedGlass**](https://github.com/KazukiGames82/FrostedGlass))
+- [**JSON**](https://github.com/rxi/json.lua) — [**_rxi_**](https://github.com/rxi)
+- [**Meter**](./Lua/meter/METER-README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas)
+  - [**Animate**](./Lua/meter/ANIMATE-README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas)
+  - [**Shape**](./Lua/meter/SHAPE-README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas)
 
 ---
 
@@ -782,5 +800,3 @@ D --> D1[LuaJIT Compatible Modules]
   #### Made with :heart: for the [_community_](https://forum.rainmeter.net/).
 
 </div>
-
-

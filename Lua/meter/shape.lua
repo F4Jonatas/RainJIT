@@ -46,8 +46,9 @@
 -- `meter` methods such as `update()`, `event()`, and `option()`.
 --
 -- @submodule meter.shape
--- @version: 0.2.2
--- @see meter
+-- @release 0.2.2
+-- @author F4Jonatas
+-- @license GPL v2.0 License
 -- @see https://docs.rainmeter.net/manual/meters/shape/
 -- @see https://docs.rainmeter.net/manual/bangs/#SetOption
 --
@@ -162,9 +163,9 @@ end
 
 
 
-local shape    = {}
-shape.__index  = shape
-shape.paths    = 0
+local shape   = {}
+shape.__index = shape
+shape.paths   = 0
 
 
 
@@ -1108,6 +1109,7 @@ function shape:add()
 end
 
 
+
 --- Retrieve an existing shape by index.
 --
 -- Returns a shape instance corresponding to the given index if it exists.
@@ -1144,12 +1146,6 @@ function shape:shape( index )
 
 	return nil
 end
-
-
-
-
-
-
 
 
 

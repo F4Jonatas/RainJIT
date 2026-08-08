@@ -18,8 +18,9 @@
 -- Additional meter types can be supported through submodules.
 --
 -- @module meter
--- @author
--- @version 2.4.3
+-- @release 2.4.3
+-- @author F4Jonatas
+-- @license GPL v2.0 License
 --
 
 
@@ -355,7 +356,7 @@ end
 
 
 --- Scale uniforme a partir do centro
--- @param value  número (fator de escala) ou nil para consultar
+-- @param value número (fator de escala) ou nil para consultar
 function meter:scale( value )
 	if value == nil then
 		return self._scale

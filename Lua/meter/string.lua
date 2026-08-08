@@ -10,7 +10,9 @@
 -- `meter` factory when the Rainmeter meter type is `"String"`.
 --
 -- @submodule meter.string
--- @see meter
+-- @release 0.2.2
+-- @author F4Jonatas
+-- @license GPL v2.0 License
 -- @see https://docs.rainmeter.net/manual/meters/string/
 
 local M = {}
@@ -57,6 +59,7 @@ M.__index = M
 --
 -- @see https://docs.rainmeter.net/manual/meters/string/
 -- @see https://docs.rainmeter.net/manual/bangs/#SetOption
+--
 function M:text( value )
 	if value ~= nil then
 		rain:bang( '!setOption', self.name, 'text', value )
@@ -68,6 +71,41 @@ function M:text( value )
 
 	return self
 end
+
+
+
+--- !!!TESTING!!!
+-- @raise Se for definido a cor pelo inlineSetting não é suportado.
+--
+function M:fontalpha( value )
+	local color = rain:option( self.name, 'fontColor' )
+	local r, g, b, a
+
+	if color then
+		r, g, b, a = color:match( '%s*([%d%.]+)%s*,%s*([%d%.]+)%s*,%s*([%d%.]+)%s*,?%s*([%d%.]*)' )
+
+	else
+		r, g, b = '0', '0', '0'
+	end
+
+	-- print( value )
+	rain:bang( '!setOption', self.name, 'fontColor', ('%s,%s,%s,%s'):format( r, g, b, value ) )
+
+	return self
+end
+
+
+
+function M:fontcolor( value )
+	if not value then
+		local result = rain:option( self.name, 'fontColor' )
+		return result ~= '' and result or '0,0,0'
+	end
+
+	return self
+end
+
+
 
 
 
@@ -107,6 +145,7 @@ end
 --     :update()
 --
 -- @see https://docs.rainmeter.net/manual/meters/string/
+--
 function M:postfix( value )
 	if value ~= nil then
 		rain:bang( '!setOption', self.name, 'postfix', value )
@@ -156,6 +195,7 @@ end
 --     :update()
 --
 -- @see https://docs.rainmeter.net/manual/meters/string/
+--
 function M:prefix( value )
 	if value then
 		rain:bang( '!setOption', self.name, 'prefix', value )

@@ -43,25 +43,25 @@ end )
 
 
 local function format_size( bytes )
-	local units = {"B", "KB", "MB", "GB", "TB", "PB"}
+	local units = { 'B', 'KB', 'MB', 'GB', 'TB', 'PB' }
 	if bytes <= 0 then
 		return "0 B"
 	end
 
 	-- Calculate the exponent scale using log base 1024
-	local i = math.floor(math.log(bytes) / math.log(1024))
+	local i = math.floor( math.log( bytes ) / math.log( 1024 ))
 
 	-- Keep scale bounded to the size of the units table
-	i = math.min(i, #units - 1)
+	i = math.min( i, #units - 1 )
 
 	-- Convert bytes into the target unit size
-	local value = bytes / (1024 ^ i)
+	local value = bytes / ( 1024 ^ i )
 
 	-- Return formatted string with 2 decimal places (or 0 decimal places for raw bytes)
 	if i == 0 then
-		return string.format("%d B", value)
+		return string.format( '%d B', value)
 	else
-		return string.format("%.2f %s", value, units[i + 1])
+		return string.format( '%.2f %s', value, units[ i + 1 ])
 	end
 end
 

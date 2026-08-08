@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+	<head>
+		<meta http-equiv="Content-Security-Policy">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta http-equiv="content-type" content="text/html;charset=utf-8"/>
+		<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+
+		<script>
+			// https://stackoverflow.com/a/18234317
+			if ( ! String.prototype.format ) {
+				String.prototype.format = function() {
+					var regex = /{(\d+)}/g;
+					var args  = arguments;
+					return this.replace( regex, function( match, number ) {
+						return typeof args[ number ] != 'undefined'
+							? args[ number ]
+							: match;
+					});
+				};
+			}
+		</script>
+	</head>
+
+	<body>
+		<object
+			id="MediaPlayer"
+			width="300"
+			height="45"
+			classid="CLSID:6BF52A52-394A-11d3-B153-00C04F79FAA6">
+
+			<param name="URL" value="">
+			<param name="AutoStart" value="true">
+			<param name="ShowControls" value="false">
+		</object>
+	</body>
+
+	<script language="JScript" type="text/javascript" for="MediaPlayer" event="playStateChange(state)">
+		var json = '{state={0},openState={1},status="{2}",url="{3}",name="{4}",time="{5}"}';
+		var player = document.MediaPlayer;
+
+		// https://learn.microsoft.com/en-us/previous-versions/windows/desktop/wmp/player-playstate
+		// https://learn.microsoft.com/en-us/previous-versions/windows/desktop/wmp/media-object
+		window.external.call( 'playstate', json.format(
+			state,
+			player.openState,
+			player.status,
+			player.url,
+			player.currentMedia ? player.currentMedia.name : "",
+			player.currentMedia ? player.currentMedia.durationString : ""
+		))
+	</script>
+</html>

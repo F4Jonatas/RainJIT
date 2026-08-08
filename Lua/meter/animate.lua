@@ -45,6 +45,9 @@
 -- ```
 --
 -- @submodule meter.animate
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+-- @release 0.0.3
 
 local okTween, tween = pcall( require, 'tween' )
 assert( okTween, 'Missing dependency: tween\n' .. tostring( tween ))
@@ -52,12 +55,24 @@ assert( okTween, 'Missing dependency: tween\n' .. tostring( tween ))
 
 
 
---- List of active animations.
--- @local
+--- List of active animations
 local active = {}
 
 
 
+--- Animation instance.
+-- @table M
+-- @field meter (table) Target meter instance
+-- @field duration (number) Animation duration
+-- @field easing (string|function) Easing function used by the tween
+-- @field playState (string) Current state: `"idle"`, `"running"`, `"paused"` or `"finished"`
+-- @field clock (number) Elapsed time since the animation started (excludes delay)
+-- @field delayTime (number) Configured delay before the animation starts
+-- @field delayClock (number) Elapsed time during the delay phase
+-- @field fromValues (table) Initial property values, set via `:from()`
+-- @field toValues (table) Target property values, set via `:to()`
+-- @field manual (boolean) If true, the animation is not updated by the global scheduler
+-- @field tween (table) Underlying tween instance created in `:create()` / `:restart()`
 local M = {}
 M.__index = M
 
@@ -92,7 +107,7 @@ M.__index = M
 --   using `:create()` or `:restart()` if needed.
 -- - Safe to call multiple times.
 --
--- @treturn self
+-- @return (table) Animation instance
 --
 -- @usage Basic cancel
 -- local a = animate(meter, 1.0)
@@ -104,10 +119,10 @@ M.__index = M
 -- a:cancel()
 --
 -- @usage Cancel inside update loop
--- function Update()
+-- function rain:update(au, dt)
 --   animate.updateAll(dt)
 --
---   if a.x > 50 then
+--   if a.toValues.x > 50 then
 --     a:cancel()
 --   end
 -- end
@@ -144,8 +159,8 @@ end
 -- These values will be used as the starting point when the animation
 -- is created or restarted. They are applied immediately after creation.
 --
--- @param attributes table Table of property names and their starting values
--- @treturn self
+-- @param (table) attributes - Table of property names and their starting values
+-- @return (table) Animation instance
 --
 function M:from( attributes )
 	self.fromValues = attributes
@@ -158,8 +173,8 @@ end
 --
 -- These values are the end state that the animation will interpolate to.
 --
--- @param attributes table Table of property names and their target values
--- @treturn self
+-- @param (table) attributes - Table of property names and their target values
+-- @return (table) Animation instance
 --
 function M:to( attributes )
 	self.toValues = attributes
@@ -176,11 +191,11 @@ end
 -- Delay time is affected by `pause()` and reset by `cancel()`,
 -- `reset()`, and `restart()`.
 --
--- @tparam number seconds Delay duration in seconds
--- @treturn self
+-- @param (number) tick - Delay duration
+-- @return (table) Animation instance
 --
-function M:delay( seconds )
-	self.delayTime = seconds or 0
+function M:delay( tick )
+	self.delayTime = tick or 0
 	return self
 end
 
@@ -191,8 +206,8 @@ end
 -- Advances the animation independently of the global scheduler.
 -- The animation must have been created with `manual = true` in `:create()`.
 --
--- @tparam number dt Delta time (time since last update)
--- @treturn self
+-- @param (number) dt - Delta time (time since last update)
+-- @return (table) Animation instance
 --
 function M:update( dt )
 	if not self.manual then
@@ -210,12 +225,12 @@ end
 -- Initializes the tween and registers the animation into the global scheduler.
 -- If `from` or `to` are missing, the animation is ignored.
 --
--- @param[opt] opts table Optional settings
--- @param[opt] opts.manual boolean If true, the animation will not be added
---   to the global scheduler and must be
---   updated manually via `:update()`.
---   Defaults to false.
--- @treturn self
+-- @param (table) opts - Optional settings
+-- @field (boolean) manual - If true, the animation will not be
+--   added to the global scheduler and must be updated manually via
+--   `:update()`. Defaults to false.
+--
+-- @return (table) Animation instance
 --
 function M:create( opts )
 	opts = opts or {}
@@ -251,7 +266,7 @@ end
 -- Stops updating the animation while preserving current progress.
 -- The animation can be resumed later with `:play()`.
 --
--- @treturn self
+-- @return (table) Animation instance
 --
 function M:pause()
 	if self.playState == 'running' then
@@ -268,7 +283,7 @@ end
 -- Continues updating the animation from where it was paused.
 -- Has no effect if the animation is already running or finished.
 --
--- @treturn self
+-- @return (table) Animation instance
 --
 function M:play()
 	if self.playState == 'paused' then
@@ -288,10 +303,10 @@ end
 -- This method is called automatically by `updateAll`.
 -- It advances time, updates tween values, and applies them.
 --
--- @tparam number dt Delta time
+-- @param (number) dt - Delta time
 -- @local
 --
-function M:_update(dt)
+function M:_update( dt )
 	if self.playState ~= 'running' then
 		return
 	end
@@ -339,9 +354,8 @@ end
 
 
 --- Check if an animation is currently active in the scheduler.
--- @param self table Animation instance
+-- @param (table) Animation instance
 -- @return boolean
--- @local
 --
 local function isActive( self )
 	for _, a in ipairs( active ) do
@@ -360,18 +374,19 @@ end
 -- Prioritizes executing available methods of the method and, if none exist, sets the property value.
 -- Preference is given to methods because they are generally more complete than simply setting values.
 --
--- @param values table Interpolated values
--- @local
+-- @param (table) values - Interpolated values
 --
 function M:_apply( values )
 	for key, value in pairs( values ) do
 		key = key:lower()
+		local val = formatNumber( value )
 
 
 		if type( self.meter[ key ]) == 'function' then
-			self.meter[ key ]( self.meter, formatNumber( value ))
+			self.meter[ key ]( self.meter, val )
+
 		else
-			self.meter:option( key, formatNumber( value ))
+			self.meter:option( key, val )
 		end
 
 	end
@@ -387,7 +402,7 @@ end
 -- in the `"idle"` state and will not be updated until a new call to
 -- `:create()` or `:restart()` is made.
 --
--- @treturn self
+-- @return (table) Animation instance
 --
 function M:reset()
 	if not self.tween then
@@ -416,7 +431,7 @@ end
 -- not affect the active tween. To reverse during playback, cancel
 -- (:cancel()) first, then recreate or restart.
 --
--- @treturn self
+-- @return (table) Animation instance
 --
 -- @usage Setup and later play backwards
 -- local a = animate(meter, 1.0)
@@ -424,7 +439,7 @@ end
 --   :to({ x = 100 })
 --   :create()
 -- -- when finished...
--- a:reverse():restart()  -- now goes from 100 to 0
+-- a:reverse()  -- now goes from 100 to 0
 --
 function M:reverse()
 	self.fromValues, self.toValues = self.toValues, self.fromValues
@@ -455,7 +470,7 @@ end
 -- 3. Sets `playState` to `"running"`
 -- 4. Adds the animation back to the active scheduler list
 --
--- @treturn self
+-- @return (table) Animation instance
 --
 -- @usage
 -- local a = animate(meter, 1.0)
@@ -527,7 +542,7 @@ local module = {}
 --
 -- Finished animations are automatically removed.
 --
--- @tparam number dt Delta time (time since last frame)
+-- @param (number) dt - Delta time (time since last frame)
 --
 -- @usage
 -- function Update()
@@ -550,17 +565,50 @@ end
 
 
 
+--- Check whether all active animations have finished.
+--
+-- Iterates through the active scheduler list and returns `false`
+-- as soon as any non-manual animation is not in the `"finished"`
+-- state. Manual animations (`manual = true`) are ignored in this
+-- check, since they are not advanced by the scheduler.
+--
+-- @return (boolean) `true` if every non-manual animation has finished, `false` otherwise.
+--
+-- @usage
+-- function Update()
+--   animate.updateAll(dt)
+--
+--   if animate.finished() then
+--     print("All animations done")
+--   end
+-- end
+--
+function module.finished()
+	for index = #active, 1, -1 do
+		local a = active[ index ]
+
+		if not a.manual then
+			if a.playState ~= 'finished' then
+				return false
+			end
+		end
+	end
+
+	return true
+end
+
+
 
 
 
 
 --- Create a new animation instance.
 --
--- @tparam meter meter Target meter instance
--- @tparam number duration Animation duration
--- @tparam[opt="linear"] string|function easing Easing function
+-- @param (table) meter - Target meter instance
+-- @param (number) duration - Animation duration
+-- @param (string|function) [easing="linear"] - Easing function
 --
--- @treturn table Animation instance
+-- @return (table) Animation instance
 --
 return setmetatable( module, {
 	__call = function( _, meter, duration, easing )

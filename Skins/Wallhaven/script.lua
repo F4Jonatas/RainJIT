@@ -60,6 +60,12 @@ local animaEffect = {
 			from = { opacity = 150, scale = 1.2 },
 			to   = { opacity = 255, scale = 1 }
 		}
+	},
+
+
+	resolution = {
+		from = { fontalpha = 255 },
+		to   = { fontalpha = 0   }
 	}
 }
 
@@ -67,7 +73,7 @@ local animaEffect = {
 
 -- Forward declarations
 local fetchState
-
+local upgrade
 
 
 -- The entire URL string can be concatenated with the parameters,
@@ -98,6 +104,12 @@ end
 
 local front = meter( 'image-front' )
 local cover = meter( 'image-cover' )
+local restn = meter( 'resolution' )
+
+restn.anima = anima( restn, aDuration / 2, aFunc )
+	:from( animaEffect.resolution.from )
+	:to( animaEffect.resolution.to )
+	:create()
 
 front.anima = anima( front, aDuration, aFunc )
 	:from( animaEffect[ effect ][1].from )
@@ -111,6 +123,7 @@ cover.anima = anima( cover, aDuration, aFunc )
 
 
 
+
 function rain:init()
 	upgrade()
 end
@@ -120,24 +133,23 @@ end
 -- @param (int)   au number accumulated Updates
 -- @param (float) dt number deltaTime
 function rain:update( au, dt )
-	-- Evitar atualizar o meter repetidamente, consumindo hardware.
-	local resChanged = false
 
 	-- make animation
 	if tik >= tok then
 		anima.updateAll( 1000 * dt )
-
-		if not resChanged and math.min( front.anima.tween.progress, 0.5 ) == 0.5 then
-			resChanged = true
-			meter( 'resolution' ):text( thumbs[ actualPic +1 ].resolution:gsub( 'x', '×' ) ):update()
-		end
 	end
 
 
 	tik = tik + 1
 
-	if front.anima.playState == 'finished' then
-		resChanged = false
+	-- if front.anima.playState == 'finished' then
+	-- print(
+	-- 	front.anima.playState,
+	-- 	cover.anima.playState,
+	-- 	restn.anima.playState
+	-- )
+	-- end
+	if anima.finished() then
 		actualPic  = actualPic == totalPic and 1 or actualPic + 1
 		nextPic    = nextPic   == totalPic and 1 or actualPic + 1
 		tik        = 0
@@ -148,6 +160,8 @@ function rain:update( au, dt )
 
 		front.anima:restart()
 		cover.anima:restart()
+		restn.anima:reverse()
+
 
 
 		-- update thumbs
@@ -157,10 +171,17 @@ function rain:update( au, dt )
 			upgradable = false
 			upgrade()
 		end
+
+
+		-- A animação do meter[resolution] finaliza antes e eu altero o fade.
+		-- Em seguinda a animação do meter[image-front] vai finalizar e o outro 'if' vai reverter novamente o fade.
+		elseif restn.anima.playState == 'finished' then
+			restn:text( thumbs[ actualPic +1 ].resolution:gsub( 'x', '×' ) ):update()
+			restn.anima:reverse()
 	end
 
 
-	-- update thumbs
+	-- update database
 	if math.fmod( au, reload ) == 0 then
 		upgradable = true
 	end
@@ -302,8 +323,10 @@ function openMenu()
 			if not thumbs[ actualPic ] then return end
 			rain:bang( '!setClip', thumbs[ actualPic ].url )
 		end)
+
 		:add( '---' )
 		:add( 'Settings' )
+
 		:sub(
 			menu()
 				:sub( menuPurity,   'Purity'    )
@@ -312,6 +335,7 @@ function openMenu()
 				:sub( menuOrder,    'Order'     )
 				:sub( menuTopRange, 'Top Range' )
 		, 'Filters' )
+
 		:add( '---' )
 		:add( 'Restart Skin', function() rain:bang( '!refresh'  ) end )
 		:add( 'Default Menu', function() rain:bang( '!skinMenu' ) end )

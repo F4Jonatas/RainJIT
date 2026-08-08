@@ -74,7 +74,36 @@ local loading     = downGraph:shape(5)
 
 -- Forward declarations
 local addPoint
-local fmt_bytes
+
+
+
+--- Convert a byte count to a human-readable string with binary prefixes (IEC).
+-- @param bytes number The number of bytes to format (must be non-negative).
+-- @return string A formatted string like "12.34 MB" (two decimal places).
+-- @usage local size = fmt_bytes(1234567) -- yields "1.18 MB"
+local fmt_bytes = setmetatable(
+	-- static
+	{ prefixes = { 'B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB' }},
+
+	-- function
+	{ __call = function( self, bytes )
+		if bytes >= 1024 then
+			local index = 0
+
+			while bytes >= 1024 do
+				bytes = bytes / 1024
+				index = index + 1
+			end
+
+			return ('%.2f %s'):format( bytes, self.prefixes[ index + 1 ])
+
+		else
+			return ('%.f B'):format( bytes )
+
+		end
+	end
+	}
+)
 
 
 
@@ -176,32 +205,3 @@ function addPoint( download, upload )
 
 	redrawPath()
 end
-
-
---- Convert a byte count to a human-readable string with binary prefixes (IEC).
--- @param bytes number The number of bytes to format (must be non-negative).
--- @return string A formatted string like "12.34 MB" (two decimal places).
--- @usage local size = fmt_bytes(1234567) -- yields "1.18 MB"
-fmt_bytes = setmetatable(
-	-- static
-	{ prefixes = { 'B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB' }},
-
-	-- function
-	{ __call = function( self, bytes )
-		if bytes >= 1024 then
-			local index = 0
-
-			while bytes >= 1024 do
-				bytes = bytes / 1024
-				index = index + 1
-			end
-
-			return ('%.2f %s'):format( bytes, self.prefixes[ index + 1 ])
-
-		else
-			return ('%.f B'):format( bytes )
-
-		end
-	end
-	}
-)

@@ -6,6 +6,7 @@
 
   <br>
 
+  <img src="../images/fetch-logo.png" alt="LOGO" height="200">
 </div>
 
 
@@ -24,11 +25,13 @@
 - [Request Methods - _async_](#diamond_shape_with_a_dot_inside-request-object-methods---async)
   - [`:send()`](#large_orange_diamond-method-requestsend)
   - [`:callback()`](#large_orange_diamond-method-requestcallback)
-  - [`:save()`](#large_orange_diamond-method-requestsave)
   - [`:hasCompleted()`](#large_orange_diamond-method-requesthascompleted)
-  - [`:getResponse()`](#large_orange_diamond-method-requestgetresponse)
   - [`:cancel()`](#large_orange_diamond-method-requestcancel)
 - [Response Object](#diamond_shape_with_a_dot_inside-response-object)
+  - [`:text()` / `:bytes()`](#large_orange_diamond-methods-responsetext--responsebytes)
+  - [`:headers()` / `:cookies()`](#large_orange_diamond-methods-responseheaders--responsecookies)
+  - [`:xml()` / `:html()` / `:json()`](#large_orange_diamond-methods-responsexml--responsehtml--responsejson)
+  - [`:save()`](#large_orange_diamond-method-responsesave)
 - [Examples](#jigsaw-examples)
 - [Performance](#zap-performance-tips)
 - [Limitations](#warning-limitations)
@@ -54,9 +57,10 @@ A powerful HTTP/HTTPS client module for **RainJIT** with both **synchronous** an
 - **Auto-Dispatch**: Integrated automatic callback processing via [**PostMessage**](https://learn.microsoft.com/pt-br/windows/win32/api/winuser/nf-winuser-postmessagea) (hidden window)
 - **Binary Support**: Perfect for images, files, and any binary data
 - **Flexible Timeouts**: Phase-specific timeouts (DNS, connect, send, receive)
-- **Modern TLS**: Support for TLS 1.2 and 1.3
-- **Automatic Compression**: Gzip/deflate handling
+- **Modern TLS**: TLS 1.0 through 1.3 negotiation flags enabled
+- **Identity Encoding by Default**: requests uncompressed responses (`Accept-Encoding: identity`) unless you set your own `Accept-Encoding` header — this avoids a known WinHTTP issue where automatic gzip/deflate decompression breaks chunked responses
 - **Cookie Management**: Automatic cookie extraction from responses
+- **Dual Driver**: WinHTTP (default) or WinINet (`driver = "wininet"`) — see [Request Options](#diamond_shape_with_a_dot_inside-request-options-object)
 
 ---
 
@@ -97,7 +101,6 @@ Before we delve deeper into the subject, let's understand the main difference.
 ## Basic Usage
 
 ```lua
--- load module
 local fetch = require("fetch")
 
 -- Sync request equivalent to fetch.get()
@@ -105,7 +108,7 @@ local response = fetch("https://api.github.com/users/octocat")
 
 if response.ok then
     print("Status:", response.status)
-    print("Data:", response.text)
+    print("Data:", response:text())
 else
     print("Error:", response.error)
 end
@@ -160,11 +163,14 @@ Returns a request object for control and monitoring. The request starts immediat
 local request = fetch.async("https://api.example.com/data")
 request:callback(function(self, response)
   -- Called AUTOMATICALLY when the response is ready
-  print("Automatic response:", response.text)
+  print("Automatic response:", response:text())
 end)
 
 request:send()
 ```
+
+> [!NOTE]
+> Dispatch is always automatic — there is no option to disable it. The callback fires as soon as the hidden notify window processes the completion message, on the next message loop iteration after the request finishes.
 
 ---
 
@@ -351,6 +357,30 @@ The options table can be passed to any fetch function (`fetch.get`, `fetch.post`
 
   <tr>
     <td align="center" nowrap="nowrap">
+      <h5><code>driver</code></h5>
+    </td>
+    <td rowspan="2">
+      <p>Selects the underlying HTTP stack for this request. <code>"wininet"</code> inherits the IE/Edge session context (cookies, proxy, cached credentials) from the current Windows user profile, which some sites (e.g. Cloudflare‑protected endpoints) accept more readily than a plain WinHTTP client.</p>
+      <p><strong>WinINet caveats:</strong> only <code>GET</code> is supported (other methods log a warning and are attempted anyway); phase‑specific timeouts (<code>dnsTimeout</code>, <code>connectTimeout</code>, <code>sendTimeout</code>, <code>receiveTimeout</code>) are not supported and are ignored with a warning — only <code>timeout</code> is honoured.</p>
+      <p>An unrecognized value logs a warning and falls back to <code>"winhttp"</code>. The driver is fixed for the lifetime of a single request — it is <u>not</u> switched automatically at runtime.</p>
+    </td>
+  </tr>
+  <tr>
+    <td nowrap="nowrap">
+      <b>Type:</b> <code>string</code>
+      <br>
+      <b>Default:</b> <code>"winhttp"</code>
+      <br>
+      <b>Allowed Values:</b>
+      <ul>
+        <li><code>winhttp</code></li>
+        <li><code>wininet</code></li>
+      </ul>
+    </td>
+  </tr>
+
+  <tr>
+    <td align="center" nowrap="nowrap">
       <h5><code>httpVersion</code></h5>
     </td>
     <td rowspan="2">
@@ -414,7 +444,7 @@ request:send()
 fetch.async("https://api.example.com/data")
   :callback(function(self, response)
     if response.ok then
-      print("Received:", response.text)
+      print("Received:", response:text())
     else
       print("Error:", response.error)
     end
@@ -425,77 +455,24 @@ fetch.async("https://api.example.com/data")
 <br>
 
 
-## :large_orange_diamond: Method `request:save()`
-
-**Saves the raw response body to a file.** This is particularly useful for binary data (images, archives, PDFs) or when you need to persist the downloaded content.
-
-> [!NOTE]
-> The method creates any missing directories in the path automatically.<br>
-> The file is written in binary mode – the exact bytes received from the server are stored.<br>
-> If the response body is empty, the method returns `false` with an appropriate error message.
-
-```lua
--- @param (string) filePath: Full filesystem path where the file should be saved
--- @return (boolean) success: true if saved successfully, false otherwise
--- @return (string|nil) error: Error message if saving failed, nil otherwise
-local success, err = response:save("#@#image.jpg")
-
-if success then
-  print("File saved!")
-else
-  print("Save failed:", err)
-end
-```
-
-<br>
-
-
 ## :large_orange_diamond: Method `request:hasCompleted()`
 
-**Checks whether the request has finished** (either successfully or with an error). This is useful when `autoDispatch is disabled, or when you need to poll for completion.
+**Checks whether the request has finished** (either successfully or with an error).
 
 > [!NOTE]
-> After completion, the response data is available via `:getResponse()`.<br>
-> The callback (if set) will not fire until you call `:dispatch()` (or until auto‑dispatch triggers it).
+> This only tells you *whether* the request is done — it does not return the response data itself.<br>
+> The response table is only obtained through the callback registered via `:callback()`; there is no separate "get response" or manual dispatch method. Dispatch always happens automatically once the request completes.
 
 ```lua
--- Manual polling (autoDispatch = false)
-local req = fetch.async("https://api.example.com/data", { autoDispatch = false })
-req:callback(function(self, resp) print("Done!") end)
+local req = fetch.async("https://api.example.com/data")
+req:callback(function(self, resp) print("Done!", resp.status) end)
 req:send()
 
---- In your update loop
+-- Elsewhere, e.g. inside Update()
 -- @param None
 -- @return true if the request is complete, false otherwise
 if req:hasCompleted() then
-  req:dispatch()
-end
-```
-
-<br>
-
-
-## :large_orange_diamond: Method `request:getResponse()`
-
-**Returns the response table** for the completed request. If the request has not yet finished, the returned table may contain incomplete or default values (e.g., `status = -1`, `error = "Request pending"`).<br>
-It is safe to call this method at any time.
-
-> [!NOTE]
-> The returned table is a snapshot; it does not update automatically as the request progresses.<br>
-> After completion, the same response is passed to the callback.
-
-```lua
--- Retrieve response without using callback
-local req = fetch.async("https://api.example.com/data")
-req:send()
-
--- Later, after checking hasCompleted()
-if req:hasCompleted() then
-
-  -- @param None
-  -- @return A table with the same structure as the synchronous response (see Response Object in the main documentation)
-  local resp = req:getResponse()
-  print("Status:", resp.status)
+  print("Request finished")
 end
 ```
 
@@ -504,12 +481,11 @@ end
 
 ## :large_orange_diamond: Method `request:cancel()`
 
-**Cancels an ongoing request** if it is still in progress. If the request has already completed, this method has no effect.
+**Signals an ongoing request to stop** as soon as the worker thread notices it.
 
 > [!NOTE]
-> Cancellation sets the response status to `-2` and the error message to `"Request cancelled"`.<br>
-> The callback (if any) will still be invoked (or can be dispatched) with the cancelled response.<br>
-> Any resources used by the request are cleaned up as soon as possible.
+> Cancellation is cooperative, not immediate — the worker thread only checks for it at specific points (before connecting, before sending, between read chunks). If it hasn't reached one of those checkpoints yet, the request keeps running until it does.<br>
+> The response status is set to `-2` (`Cancelled`) as soon as `:cancel()` is called; if the worker thread manages to finish anyway before noticing the cancellation, its own result is what ultimately reaches the callback.
 
 ```lua
 local req = fetch.async("https://slow.example.com/bigfile")
@@ -554,8 +530,8 @@ When a request completes (synchronously or asynchronously), the result is return
 > [!NOTE]
 > The `ok` field is simply a shorthand for `status >= 200 and status < 300`.<br><br>
 > For successful responses, `error` will be an empty string.<br><br>
-> The `body` field always contains the raw bytes; the `text` field is derived from `body` by interpreting it as a UTF‑8 string. If the response is binary (e.g., an image), `text` may contain invalid data.<br><br>
-> Headers are returned exactly as received from the server; duplicate header names are combined according to HTTP rules (comma‑separated values) and appear as a single entry.<br><br>
+> `ok`, `status`, and `error` are plain fields — everything else described below (`:text()`, `:bytes()`, `:headers()`, `:cookies()`, `:xml()`, `:html()`, `:json()`, `:save()`) is a **method** and must be called with `:`, e.g. `response:text()`, not `response.text`.<br><br>
+> Header and cookie names are normalized to lowercase internally. Lookups on the tables returned by `:headers()`/`:cookies()` are case-insensitive (`t["Content-Type"]` and `t["content-type"]` both work), but iterating with `pairs()` yields lowercase keys. If a header name appears more than once in the response, only the last occurrence is kept — duplicates are **not** combined into a single comma-separated value.<br><br>
 > Cookies are parsed from `Set-Cookie` headers. Only the cookie name and value are stored; attributes like `Path`, `Expires`, etc. are ignored.
 
 
@@ -600,34 +576,6 @@ When a request completes (synchronously or asynchronously), the result is return
 
   <tr>
     <td align="center" nowrap="nowrap">
-      <h5><code>body</code></h5>
-    </td>
-    <td rowspan="2">
-      <p>The raw response body as a Lua string. This field is always present and contains the exact bytes received from the server.</p>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>string</code>
-    </td>
-  </tr>
-
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>text</code></h5>
-    </td>
-    <td rowspan="2">
-      <p>A convenience field that attempts to interpret the <code>body</code> as text. For textual responses (e.g., HTML, JSON, plain text), this contains the decoded string. For binary data, the content may be garbled – use <code>body</code> instead.</p>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>string</code>
-    </td>
-  </tr>
-
-  <tr>
-    <td align="center" nowrap="nowrap">
       <h5><code>error</code></h5>
     </td>
     <td rowspan="2">
@@ -640,35 +588,77 @@ When a request completes (synchronously or asynchronously), the result is return
     </td>
   </tr>
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>headers</code></h5>
-    </td>
-    <td rowspan="2">
-      <p>Function that returns a key-value table of response headers. The header names are provided as they appear in the response. Example:<br><code>{ ["content-type"] = "application/json" }</code>.</p>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>function</code>
-    </td>
-  </tr>
-
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>cookies</code></h5>
-    </td>
-    <td rowspan="2">
-      <p>Function that returns a key-value table of cookies extracted from any Set-Cookie headers in the response. Each cookie name corresponds to its value. Example:<br><code>{ session = "abc123", user = "john" }</code>.</p>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>function</code>
-    </td>
-  </tr>
-
 </table>
+
+<br>
+
+
+### :large_orange_diamond: Methods `response:text()` / `response:bytes()`
+
+Both return the raw response body as a Lua string (Lua strings are byte arrays, so no encoding conversion actually happens between the two — use whichever name reads better for your use case: `:text()` for textual content, `:bytes()` for binary content).
+
+```lua
+-- @return (string) the raw response body
+local body = response:text()
+-- local body = response:bytes()  -- identical result
+```
+
+<br>
+
+
+### :large_orange_diamond: Methods `response:headers()` / `response:cookies()`
+
+Return a key‑value Lua table — headers or cookies parsed from the response. Keys are lowercase and lookups are case‑insensitive.
+
+```lua
+-- @return (table) key-value pairs
+local h = response:headers()
+print(h["content-type"])
+
+local c = response:cookies()
+print(c.session)
+```
+
+<br>
+
+
+### :large_orange_diamond: Methods `response:xml()` / `response:html()` / `response:json()`
+
+Parse the response body using the corresponding `xml`, `html`, or `json` module (equivalent to calling e.g. `xml.parse(response:bytes())`). Requires the relevant module to be available via `require()`.
+
+```lua
+-- @return the parsed value, or (nil, errorMessage) on failure
+local data, err = response:json()
+if not data then
+  print("Parse failed:", err)
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `response:save()`
+
+**Saves the raw response body to a file.** Particularly useful for binary data (images, archives, PDFs) or when you need to persist the downloaded content.
+
+> [!NOTE]
+> The method creates any missing directories in the path automatically.<br>
+> The file is written in binary mode – the exact bytes received from the server are stored.<br>
+> If the response body is empty, the method returns `false` with an appropriate error message.<br>
+> The path is resolved through Rainmeter's variable/relative-path handling (`#@#`, `#CURRENTPATH#`, etc.).
+
+```lua
+-- @param (string) filePath: Filesystem path where the file should be saved
+-- @return (boolean) success: true if saved successfully, false otherwise
+-- @return (string|nil) error: Error message if saving failed, nil otherwise
+local success, err = response:save("#@#image.jpg")
+
+if success then
+  print("File saved!")
+else
+  print("Save failed:", err)
+end
+```
 
 ---
 
@@ -693,7 +683,7 @@ for name, url in pairs(urls) do
   fetch.async(url)
   :callback(function(self, response)
     if response.ok then
-      print(string.format("%s: %d bytes", name, #response.body))
+      print(string.format("%s: %d bytes", name, #response:bytes()))
     else
       print(string.format("%s failed: %s", name, response.error))
     end
@@ -830,7 +820,7 @@ local function apiRequest(endpoint)
   end
 
   -- Session cookie is automatically extracted!
-  local sessionId = loginResp.cookies.session
+  local sessionId = loginResp:cookies().session
 
   -- Use session for authenticated request
   return fetch.get("https://api.example.com/" .. endpoint, {
@@ -867,8 +857,8 @@ end
 - **No Streaming**: All data must be received before processing
 - **HTTP/1.1 & HTTP/2 Only**: HTTP/3 not supported by WinHTTP
 - **No WebSockets**: Not implemented
-- **Windows Only**: Relies on WinHTTP API
-- **Fsallback Transparency**: WinINet fallback uses system proxy settings (Internet Explorer configuration)
+- **Windows Only**: Relies on WinHTTP/WinINet APIs
+- **No Automatic Driver Fallback**: WinHTTP (default) and WinINet (`driver = "wininet"`) are two independent, explicitly-selected drivers — a request never switches drivers mid-flight on failure. WinINet uses the system's IE/Edge proxy configuration and only supports `GET`.
 
 ---
 
@@ -883,69 +873,47 @@ sequenceDiagram
     participant Lua as Lua Script
     participant Fetch as Fetch Module (C++)
     participant Worker as Worker Thread
-    participant WinHTTP as WinHTTP API
-    participant WinINet as WinINet API (Fallback)
+    participant Driver as WinHTTP / WinINet API
     participant Rainmeter as Rainmeter (main thread)
     participant WndProc as Hidden Window (WndProc)
 
-    Note over Lua,Fetch: Synchronous Request (fetch.get)
+    Note over Lua,Fetch: Synchronous Request (fetch.get / fetch.post / ...)
     Lua->>Fetch: fetch.get(url, options)
-    Fetch->>Fetch: Creates temporary context
-    Fetch->>Worker: Starts thread
-    Worker->>WinHTTP: Executes HTTP request
-
-    alt WinHTTP Success
-        WinHTTP-->>Worker: Response received
-    else WinHTTP Fails with E_ABORT & No Data
-        Worker->>WinINet: 🔄 Automatic Fallback
-        WinINet-->>Worker: Response received
-        Note over Worker: Status preserved,<br/>error mapped to -6 to -14
-    end
-
-    Worker-->>Fetch: Fills context with result
-    Fetch->>Lua: Returns response (blocking)
+    Fetch->>Fetch: Parses options (incl. driver = "winhttp" | "wininet")
+    Fetch->>Fetch: Registers temporary context
+    Fetch->>Driver: Executes request on the CALLING thread (no worker thread)
+    Driver-->>Fetch: Response received
+    Fetch->>Fetch: Removes context from registry
+    Fetch->>Lua: Returns response table (blocking)
     Note over Lua: Script continues
 
     Note over Lua,Fetch: Asynchronous Request (fetch.async)
     Lua->>Fetch: fetch.async(url, options)
-    Fetch->>Fetch: Creates persistent context
-    Fetch->>Fetch: Registers in ContextRegistry
+    Fetch->>Fetch: Creates context, registers in ContextRegistry
     Fetch->>Lua: Returns fetch object immediately
 
     Lua->>Fetch: :callback(handler)
     Lua->>Fetch: :send()
-    Fetch->>Worker: Starts thread
+    Fetch->>Worker: Spawns detached worker thread
 
-    par HTTP Request Execution
-        Worker->>WinHTTP: Executes HTTP request
-
-        alt WinHTTP Success
-            WinHTTP-->>Worker: Response received
-        else WinHTTP Fails with E_ABORT & No Data
-            Worker->>WinINet: 🔄 Automatic Fallback
-            WinINet-->>Worker: Response received
-            Note over Worker: Status code mapped<br/>to appropriate error
-        end
-
-        Worker-->>Fetch: Fills context with result
-    end
+    Worker->>Driver: Executes request using the configured driver
+    Driver-->>Worker: Response received (or error)
+    Worker->>Worker: Stores result in the context
 
     Worker->>WndProc: PostMessage(WM_FETCH_COMPLETE, ctxId)
     Note over WndProc: Message enters Windows queue
 
     Rainmeter->>Rainmeter: Processes message loop
     Rainmeter->>WndProc: DispatchMessage() calls WndProc
-    WndProc->>Fetch: Obtains context by ctxId
+    WndProc->>Fetch: Looks up context by ctxId
 
-    Fetch->>Lua: Executes fetch_dispatch(user's callback)
+    Fetch->>Lua: Invokes the callback registered via :callback()
 
     alt Response Successful
         Lua-->>Fetch: Processes data
     else Error Occurred
-        Note over Lua: Check response.status:<br/>-6 (ABORTED)<br/>-7 (CONNECTION_LOST)<br/>-8 (SSL_ERROR)<br/>-9 (PROXY_ERROR)<br/>-10 to -13 (TIMEOUTS)<br/>-14 (CHUNKED_ERROR)
+        Note over Lua: Check response.status:<br/>-1 to -5 (generic/setup errors)<br/>-6 (ABORTED)<br/>-7 (CONNECTION_LOST)<br/>-8 (SSL_ERROR)<br/>-9 (PROXY_ERROR)<br/>-10 to -13 (TIMEOUTS)<br/>-14 (CHUNKED_ERROR)
     end
-
-    Fetch->>Fetch: Removes context from registry
 ```
 
 ---
@@ -1036,4 +1004,3 @@ This section summarizes the intended semantics of standard HTTP methods to help 
 
 <br>
 <br>
-

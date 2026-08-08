@@ -1,5 +1,5 @@
 --- Tweening module for Lua.
--- 
+--
 -- A minimal and flexible interpolation engine focused on **data transformation over time**.
 --
 -- ## Concept
@@ -96,12 +96,13 @@ M.__index = M
 
 
 --- Check if value is a number.
--- @tparam any v
+-- @tparam any value
 -- @treturn boolean
 --
-local function isNumber(v)
-	return type(v) == "number"
+local function isNumber( value )
+	return type( value ) == 'number'
 end
+
 
 
 --- Normalize input into table form.
@@ -111,12 +112,14 @@ end
 -- @treturn table normalized value
 -- @treturn boolean isNumber original type flag
 --
-local function normalize(v)
-	if isNumber(v) then
+local function normalize( v )
+	if isNumber( v ) then
 		return { v }, true
 	end
+
 	return v, false
 end
+
 
 
 --- Deep clone a table.
@@ -125,14 +128,16 @@ end
 -- @tparam table src source table
 -- @treturn table cloned table
 --
-local function clone(dest, src)
-	for k, v in pairs(src) do
-		if type(v) == "table" then
-			dest[k] = clone({}, v)
+local function clone( dest, src )
+	for k, v in pairs( src ) do
+		if type( v ) == 'table' then
+			dest[k] = clone({}, v )
+
 		else
 			dest[k] = v
 		end
 	end
+
 	return dest
 end
 
@@ -145,31 +150,27 @@ end
 -- @tparam table to
 -- @tparam[opt=""] string path
 --
-local function checkSubject(from, to, path)
-	path = path or ""
+local function checkSubject( from, to, path )
+	path = path or ''
 
-	for k, v in pairs(to) do
-		local t = type(v)
+	for k, v in pairs( to ) do
+		local t = type( v )
 
-		if t == "number" then
-			if type(from[k]) ~= "number" then
-				error("Invalid field: " .. path .. "/" .. tostring(k))
+		if t == 'number' then
+			if type( from[k]) ~= 'number' then
+				error( 'Invalid field: ' .. path ..'/'.. tostring( k ))
 			end
 
-		elseif t == "table" then
-			checkSubject(from[k], v, path .. "/" .. tostring(k))
+		elseif t == 'table' then
+			checkSubject( from[k], v, path ..'/'.. tostring( k ))
 
 		else
-			error("Unsupported type at: " .. path .. "/" .. tostring(k))
+			error( 'Unsupported type at: ' .. path ..'/'.. tostring( k ))
 		end
 	end
 end
 
 
-
---==================================================
--- Core interpolation
---==================================================
 
 --- Internal recursive interpolation function.
 --
@@ -181,14 +182,16 @@ end
 -- @tparam function easing easing function
 -- @treturn table current
 --
-local function calc(current, to, from, t, d, easing)
-	for k, v in pairs(to) do
-		if type(v) == "table" then
-			calc(current[k], v, from[k], t, d, easing)
+local function calc( current, to, from, t, d, easing )
+	for k, v in pairs( to ) do
+		if type( v ) == 'table' then
+			calc( current[k], v, from[k], t, d, easing )
+
 		else
-			current[k] = easing(t, from[k], v - from[k], d)
+			current[k] = easing( t, from[k], v - from[k], d )
 		end
 	end
+
 	return current
 end
 
@@ -203,20 +206,20 @@ end
 -- @tparam number clock time position
 -- @treturn number|table interpolated value
 --
-function M:set(clock)
-	assert(type(clock) == "number", "clock must be number")
+function M:set( clock )
+	assert( type( clock ) == 'number', 'clock must be number' )
 
-	self.clock = math.max(0, math.min(clock, self.duration))
+	self.clock = math.max( 0, math.min( clock, self.duration ))
 	self.progress = self.clock / self.duration
 
 	if self.clock == 0 then
-		clone(self.current, self.from)
+		clone( self.current, self.from )
 
 	elseif self.clock == self.duration then
-		clone(self.current, self.to)
+		clone( self.current, self.to )
 
 	else
-		calc(self.current, self.to, self.from, self.clock, self.duration, self.easing)
+		calc( self.current, self.to, self.from, self.clock, self.duration, self.easing )
 	end
 
 	if self.isNumber then
@@ -236,8 +239,8 @@ end
 -- @usage
 -- t:update(1/60)
 --
-function M:update(dt)
-	return self:set(self.clock + dt)
+function M:update( dt )
+	return self:set( self.clock + dt )
 end
 
 
@@ -327,7 +330,7 @@ return function( duration, from, to, easing )
 	local toNorm = normalize( to )
 
 	assert( type( fromNorm ) == 'table', 'from must be table/number' )
-	assert( type( toNorm )   == 'table', 'to must be table/number'   )
+	assert( type( toNorm   ) == 'table', 'to must be table/number'   )
 
 	-- validate structure
 	checkSubject( fromNorm, toNorm )
