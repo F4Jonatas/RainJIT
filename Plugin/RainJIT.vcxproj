@@ -234,7 +234,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-debug.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -266,7 +266,7 @@
       </Message>
     </PreBuildEvent>
     <PostBuildEvent>
-      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-debug.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -291,8 +291,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-release.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -320,8 +319,7 @@
       <PreprocessorDefinitions>_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <PostBuildEvent>
-      <Command>
-      </Command>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-release.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

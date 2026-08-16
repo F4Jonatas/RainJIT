@@ -96,7 +96,7 @@ Before we delve deeper into the subject, let's understand the main difference.
 <br>
 
 
-# :book: Usage
+# :jigsaw: Usage
 
 ## Basic Usage
 
@@ -161,6 +161,7 @@ Returns a request object for control and monitoring. The request starts immediat
 
 ```lua
 local request = fetch.async("https://api.example.com/data")
+
 request:callback(function(self, response)
   -- Called AUTOMATICALLY when the response is ready
   print("Automatic response:", response:text())
@@ -422,8 +423,8 @@ The options table can be passed to any fetch function (`fetch.get`, `fetch.post`
 ```lua
 local request = fetch.async("https://api.example.com/data")
 
--- @param None
--- @return The request object (for chaining)
+-- @return (table) The request object (for chaining)
+
 request:send()
 ```
 
@@ -440,7 +441,8 @@ request:send()
 
 ```lua
 -- @param (function) handler: A Lua function with signature
--- @return The request object (for chaining)
+-- @return (table) The request object (for chaining)
+
 fetch.async("https://api.example.com/data")
   :callback(function(self, response)
     if response.ok then
@@ -468,9 +470,9 @@ local req = fetch.async("https://api.example.com/data")
 req:callback(function(self, resp) print("Done!", resp.status) end)
 req:send()
 
--- Elsewhere, e.g. inside Update()
--- @param None
--- @return true if the request is complete, false otherwise
+--- Elsewhere, e.g. inside Update()
+-- @return (boolean) true if the request is complete, false otherwise
+
 if req:hasCompleted() then
   print("Request finished")
 end
@@ -491,8 +493,8 @@ end
 local req = fetch.async("https://slow.example.com/bigfile")
 req:send()
 
--- @param None
--- @return The request object (for chaining)
+-- @return (table) The request object (for chaining)
+
 req:cancel()
 ```
 
@@ -599,6 +601,7 @@ Both return the raw response body as a Lua string (Lua strings are byte arrays, 
 
 ```lua
 -- @return (string) the raw response body
+
 local body = response:text()
 -- local body = response:bytes()  -- identical result
 ```
@@ -612,6 +615,7 @@ Return a key‑value Lua table — headers or cookies parsed from the response. 
 
 ```lua
 -- @return (table) key-value pairs
+
 local h = response:headers()
 print(h["content-type"])
 
@@ -627,7 +631,8 @@ print(c.session)
 Parse the response body using the corresponding `xml`, `html`, or `json` module (equivalent to calling e.g. `xml.parse(response:bytes())`). Requires the relevant module to be available via `require()`.
 
 ```lua
--- @return the parsed value, or (nil, errorMessage) on failure
+-- @return (table|nil) the parsed value, or (nil, errorMessage) on failure
+
 local data, err = response:json()
 if not data then
   print("Parse failed:", err)
@@ -651,6 +656,7 @@ end
 -- @param (string) filePath: Filesystem path where the file should be saved
 -- @return (boolean) success: true if saved successfully, false otherwise
 -- @return (string|nil) error: Error message if saving failed, nil otherwise
+
 local success, err = response:save("#@#image.jpg")
 
 if success then
@@ -699,6 +705,7 @@ end
 
 ```lua
 -- Fine-tuned timeouts for a slow API
+
 local response = fetch.get("https://slow-api.example.com/data", {
   dnsTimeout = 3000,        -- 3s for DNS
   connectTimeout = 5000,    -- 5s for connection

@@ -301,7 +301,7 @@ You can also obtain the rectangle from another **Skin** by specifying **HWND**.
 
 ```lua
 -- @usage rain:getRect([ hwnd ])
--- @param hwnd (userdata)
+-- @param (userdata) hwnd
 -- @return (table) properties
 -- @field (number) x - left position
 -- @field (number) y - top position
@@ -537,6 +537,7 @@ Path for loading DLLs: `#SKINSPATH#@Vault\lua\bin`<br>
 -- @param (string) moduleName
 -- @return (any) The value returned by the module loader, or `true` if nil
 -- @raise Error if the DLL cannot be loaded or initialized
+
 local lfs = import("lfs")
 ```
 

@@ -179,6 +179,9 @@
       <AdditionalDependencies>../luajit/lib/$(PlatformShortName)/lua51_static.lib;htmlhelp.lib;shlwapi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>src/dll/luacom_dll.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../../../assets/scripts/post-building-release.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)" -buildArch "$(LibrariesArchitecture)" -projec "$(MSBuildProjectName)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -220,6 +223,9 @@
       <AdditionalDependencies>../luajit/lib/$(PlatformShortName)/lua51_static.lib;htmlhelp.lib;shlwapi.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
       <ModuleDefinitionFile>src/dll/luacom_dll.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../../../assets/scripts/post-building-release.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)" -buildArch "$(LibrariesArchitecture)" -projec "$(MSBuildProjectName)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

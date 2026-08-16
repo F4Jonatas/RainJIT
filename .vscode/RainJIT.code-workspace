@@ -82,8 +82,6 @@
 			"**/.git"        : true,
 			"**/.obsidian"   : true,
 			"**/Plugin/build": true,
-			"**/x64"         : true,
-			"**/x86"         : true,
 			"**/.qodo"       : true,
 			"**/.vs"         : true,
 			"thumbs.db"      : true,

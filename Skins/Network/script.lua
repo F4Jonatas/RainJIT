@@ -28,7 +28,7 @@ for index = 1, MAX_POINTS do
 end
 
 
-local dp = depot()
+local dp           = depot()
 local downMaxValue = math.max( dp:get( 'download-max-value', 0 ), 0 )
 local upMaxValue   = math.max( dp:get( 'upload-max-value'  , 0 ), 0 )
 
@@ -39,37 +39,32 @@ local valueMax    = meter( 'value.max' )
 local downGraph   = meter( 'graphic' )
 local downGraphBG = downGraph:shape(2)
 local upGraph     = downGraph:shape(3)
-local loading     = downGraph:shape(5)
 
 
--- local grapth = chart({
--- 	meter         = downGraph,
--- 	points        = MAX_POINTS,
--- 	paddingTop    = PADDING_TOP,
--- 	paddingBottom = PADDING_BOTTOM,
--- 	paddingLeft   = PADDING_LEFT,
--- 	paddingRight  = PADDING_RIGHT,
--- 	height        = HEIGHT,
--- 	width         = WIDTH,
+local grapth = chart({
+	meter         = downGraph,
+	points        = MAX_POINTS,
+	paddingTop    = 50,
+	paddingBottom = PADDING_BOTTOM,
+	paddingLeft   = PADDING_LEFT,
+	paddingRight  = PADDING_RIGHT,
+	height        = rain:var( 'HEIGHT' ),
+	width         = rain:var( 'WIDTH' ),
 
--- 	lines         = {
--- 		{
--- 			strokecolor = '102,219,252',
--- 			fill = '102,219,252',
--- 			data = { 0 }
--- 		},
--- 		{
--- 			strokecolor = '255,80,220',
--- 			fill = 'transparent',
--- 			data = { 0 }
--- 		}
--- 	}
--- })
-
-
--- yAxis
--- downGraph:shape(4)
--- 	:polyline('380,9 l 392,9 l 392,97 l 380,97')
+	lines         = {
+		{
+			strokewidth = 1,
+			strokecolor = '102,219,252',
+			fill = '102,219,252',
+			data = { 0 }
+		},
+		{
+			strokecolor = '255,80,220',
+			fill = false,
+			data = { 0 }
+		}
+	}
+})
 
 
 -- Forward declarations

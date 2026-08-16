@@ -80,6 +80,16 @@ function upgrade()
 	local title = meter( 'symbolName' )
 		:text( data.chart.result[1].meta.longName )
 		:update()
+
+	print( data.chart.result[1].regularMarketPrice )
+
+	-- local file = io.open( rain:absPath( 'example.json' ), 'w' )
+	-- if file then
+	-- 	file:write( response:text() )
+	-- 	file:close()
+	-- else
+	-- 	print( 'Could not create file.' )
+	-- end
 end
 
 upgrade()

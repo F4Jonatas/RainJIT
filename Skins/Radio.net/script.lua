@@ -56,7 +56,11 @@ end
 
 local function loadTitle()
 	-- print( player.state, player.playState )
-	if player.state ~= 3 then return end
+	if player.state == 2 then
+		song:text( 'Paused\n'.. radioTitle ):update()
+	else
+		return
+	end
 
 	-- Precisa ser o async metodo, caso contrário sempre vai ter um momento de freeze em todo processo do rainmeter
 	fetch.async( 'https://api.radio.de/stations/now-playing?stationIds='.. radio[ iRadio ])
@@ -144,8 +148,12 @@ hotkey.keyboard({
 		elseif event.vk == 'VK_MEDIA_PLAY_PAUSE' then
 			if player.state == 3 then
 				player.controls:pause()
+				player.state = 2
+				dp:set( 'radio-state', 2 )
+
 			else
 				player.controls:play()
+
 			end
 
 

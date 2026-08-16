@@ -2,8 +2,9 @@
 private.md
 Shotcut/*.yml
 
-@Resources
+@Resources/*
 !@Resources/fonts/rFont.ttf
+!@Resources/globals.inc
 
 Shortcut/icons/cache
 Shortcut/inspiration

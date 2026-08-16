@@ -27,7 +27,7 @@ end
 return setmetatable( {}, {
 	__call = function( _, opts )
 		local meta = {
-			line    = {},
+			lines   = opts.lines or {},
 			options = {
 				maxPoints     = opts.maxPoints     and opts.maxPoints                     or 0,
 				maxDownload   = opts.maxDownload   and opts.maxDownload                   or 0,
@@ -41,6 +41,13 @@ return setmetatable( {}, {
 				spacing       = opts.spacing       and opts.spacing                       or (( opts.width - opts.paddingLeft ) / opts.maxPoints )
 			}
 		}
+
+
+		for index = 1, meta.lines do
+			print( index )
+			-- table.insert( DOWNLOAD_ARRAY, 0 )
+			-- table.insert( UPLOAD_ARRAY  , 0 )
+		end
 
 
 		return setmetatable( meta, M )

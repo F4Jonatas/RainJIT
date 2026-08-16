@@ -46,7 +46,7 @@
 -- `meter` methods such as `update()`, `event()`, and `option()`.
 --
 -- @submodule meter.shape
--- @release 0.2.2
+-- @release 0.2.3
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 -- @see https://docs.rainmeter.net/manual/meters/shape/
@@ -62,14 +62,14 @@
 -- shape2:ellipse(100,25,30,30):fill(255,0,0)
 --
 
-local PATHS = 0
+local PATHS    = 0
 local GRADIENT = 0
 
 
 -- Lua Regex
 local REGEX = {
-	rectangle = 'rectangle%s*[%s,%d]+',
-	ellipse   = 'ellipse%s*[%s,%d]+',
+	rectangle = 'rectangle[%s,%.%d]+',
+	ellipse   = 'ellipse[%s,%.%d]+',
 	curve     = '',
 	line      = '',
 	arc       = '',
@@ -94,8 +94,8 @@ local function clone( class, super )
 		if type( value ) == 'function' then
 			-- wrapper ignora o primeiro argumento (class) e chama super:method(...)
 			class[ key ] = function( _, ... )
-				local ok, result = pcall( super[ key ], super, ...)
-				return result
+				local ok, result = pcall( super[ key ], super, ... )
+				return ok and class or result
 			end
 
 		-- else
@@ -200,14 +200,13 @@ end
 -- Percentage values (e.g. `"50%"`) are automatically resolved
 -- relative to the parent meter dimensions.
 --
--- @tparam shape self Shape instance.
--- @tparam (number|string) x Left coordinate.
--- @tparam (number|string) y Top coordinate.
--- @tparam (number|string) width Rectangle width.
--- @tparam (number|string) height Rectangle height.
+-- @param (number|string) left   - Left coordinate
+-- @param (number|string) top    - Top coordinate
+-- @param (number|string) width  - Rectangle width
+-- @param (number|string) height - Rectangle height
 --
--- @treturn shape When used as setter.
--- @treturn[2] (string|nil) When used as getter.
+-- @return (table) Shape instance
+-- @return[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:rectangle(0,0,200,100)
@@ -261,14 +260,13 @@ end
 -- If called without parameters the current ellipse
 -- definition is returned.
 --
--- @tparam shape self Shape instance.
--- @tparam (number|string) x Center X coordinate.
--- @tparam (number|string) y Center Y coordinate.
--- @tparam (number|string) radiusX Horizontal radius.
--- @tparam (number|string) radiusY Vertical radius.
+-- @param (number|string) x Center X coordinate.
+-- @param (number|string) y Center Y coordinate.
+-- @param (number|string) radiusX Horizontal radius.
+-- @param (number|string) radiusY Vertical radius.
 --
--- @treturn shape When used as setter.
--- @treturn[2] (string|nil) When used as getter.
+-- @return (table) Shape instance
+-- @return[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:ellipse(100,50,40,40)
@@ -319,11 +317,10 @@ end
 --   `A` → Arc
 --   `Z` → Close path
 --
--- @tparam shape self Shape instance.
--- @tparam[opt] string path Path definition string.
+-- @param[opt] string path Path definition string.
 --
--- @treturn shape When used as setter.
--- @treturn[2] (string|nil) When used as getter.
+-- @return (table) Shape instance
+-- @return[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:path("0,0 L 100,0 L 100,50 Z")
@@ -362,8 +359,9 @@ function shape:path( inner )
 
 	else
 		PATHS = PATHS + 1
-		self:changeType( 'Path Paths' .. PATHS )
-		self.meter:option( 'Paths' .. PATHS, inner )
+		self:changeType( 'path paths' .. PATHS )
+		self.meter:option( 'paths' .. PATHS, inner )
+		self.meter:option( self.name, self.content )
 	end
 
 	self.type = 'path'
@@ -377,10 +375,9 @@ end
 --
 -- Creates a sequence of connected line segments.
 --
--- @tparam shape self Shape instance.
--- @tparam[opt] (string) points List of points `"x1,y1 x2,y2 x3,y3"`.
+-- @param[opt] (string) points List of points `"x1,y1 x2,y2 x3,y3"`.
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:polyline("0,0 50,20 100,0")
@@ -399,11 +396,10 @@ end
 --
 -- Similar to `polygon`, but does not automatically close the path.
 --
--- @tparam shape self Shape instance.
--- @tparam table points Flat coordinate array.
--- @tparam[opt=false] boolean close Close the path automatically.
+-- @param table points Flat coordinate array.
+-- @param[opt=false] boolean close Close the path automatically.
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:polyline({0,0, 50,50, 100,0})
@@ -426,7 +422,7 @@ function shape:polyline( points, close )
 		out[ index ] = 'closePath 1'
 		self.type = 'polygon'
 	else
-			self.type = "polyline"
+		self.type = "polyline"
 	end
 
 	local inner = table.concat( out, '|' )
@@ -448,10 +444,25 @@ end
 
 
 
---[[
-	https://docs.rainmeter.net/manual/meters/shape/#Line
---]]
--- shape:line
+--- Create or modify an line shape.
+--
+-- Basic shape used to create a line connecting two points.
+--
+-- @param (number) startx - Coordinate of the starting point of the line.
+-- @param (number) starty - Coordinate of the starting point of the line.
+-- @param (number) endx - Coordinate of the ending point of the line.
+-- @param (number) Y - Coordinate of the ending point of the line.
+--
+-- @return (table) Shape instance
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Line
+--
+function shape:line( startx, starty, endx, endy )
+	local value = self.content:lower():match( 'line%s*'.. SHAPE_PARAM )
+
+	print( value )
+	return self
+end
 
 
 
@@ -478,14 +489,13 @@ end
 --   Short hex   → fill("f00")
 --   Transparent → fill("transparent")
 --
--- @tparam shape self Shape instance.
--- @tparam (number|string) r Red value or hex string.
--- @tparam (number) g Green value.
--- @tparam (number) b Blue value.
--- @tparam (number) a Alpha value (0-255).
+-- @param (number|string) r Red value or hex string.
+-- @param (number) g Green value.
+-- @param (number) b Blue value.
+-- @param (number) a Alpha value (0-255).
 --
--- @treturn shape When used as setter.
--- @treturn[2] (string|nil) When used as getter.
+-- @return (table) Shape instance
+-- @return[2] (string|nil) When used as getter.
 --
 -- @usage
 -- shape:fill(255,0,0)
@@ -536,13 +546,12 @@ end
 --
 -- Defines the outline color of the shape.
 --
--- @tparam shape self Shape instance.
--- @tparam (number) r Red component.
--- @tparam (number) g Green component.
--- @tparam (number) b Blue component.
--- @tparam (number) a Alpha component.
+-- @param (number) r Red component.
+-- @param (number) g Green component.
+-- @param (number) b Blue component.
+-- @param (number) a Alpha component.
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:strokecolor(255,255,255)
@@ -591,10 +600,9 @@ end
 --
 -- Defines the thickness of the shape outline.
 --
--- @tparam shape self Shape instance.
--- @tparam[opt] (number) width Stroke width in pixels.
+-- @param[opt] (number) width Stroke width in pixels.
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:strokewidth(2)
@@ -611,12 +619,12 @@ function shape:strokewidth( width )
 
 	if value then
 		self.content = self.content:lower():gsub( '%s*strokewidth%s*(%d+)%s*',
-			'strokewidth '.. width )
+			'StrokeWidth '.. width )
 
 	else
 		self.content = self.content ..
 		( self.content:find( '|$' ) and '' or '|' ) ..
-		'strokewidth '.. width
+		'StrokeWidth '.. width
 
 	end
 
@@ -636,10 +644,10 @@ end
 --   "bevel"
 --   "round"
 --
--- @tparam shape self Shape instance.
--- @tparam (string) join Join style.
+-- @param (string) join Join style.
+-- @param limit
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:strokelinejoin("round")
@@ -684,10 +692,9 @@ end
 --
 -- Defines the cap applied to the beginning of stroke segments.
 --
--- @tparam shape self Shape instance.
--- @tparam (string) cap Cap style (`"round"`, `"square"`, `"butt"`).
+-- @param (string) cap Cap style (`"round"`, `"square"`, `"butt"`).
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:strokestartcap("round")
@@ -715,6 +722,7 @@ end
 
 
 
+---
 -- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashOffset
 --
 function shape:strokedashoffset( offset )
@@ -770,13 +778,12 @@ end
 --
 -- Scales the shape relative to an anchor point.
 --
--- @tparam shape self Shape instance.
--- @tparam (number) scaleX Horizontal scale factor.
--- @tparam (number) scaleY Vertical scale factor.
--- @tparam (number) anchorX Anchor X coordinate.
--- @tparam (number) anchorY Anchor Y coordinate.
+-- @param (number) scaleX Horizontal scale factor.
+-- @param (number) scaleY Vertical scale factor.
+-- @param (number) anchorX Anchor X coordinate.
+-- @param (number) anchorY Anchor Y coordinate.
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:scale(1.5)
@@ -818,13 +825,13 @@ end
 -- Defines a Rainmeter gradient option and applies it
 -- to the current shape fill.
 --
--- @tparam shape self Shape instance.
--- @tparam (number) x1 Start X.
--- @tparam (number) y1 Start Y.
--- @tparam (number) x2 End X.
--- @tparam (number) y2 End Y.
--- @tparam (string) ... Gradient color stops.
--- @treturn shape
+-- @param (number) x1 Start X.
+-- @param (number) y1 Start Y.
+-- @param (number) x2 End X.
+-- @param (number) y2 End Y.
+-- @param (string) ... Gradient color stops.
+--
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:lgradient(0,0,100,0,"255,0,0;0","0,0,255;1")
@@ -849,13 +856,13 @@ end
 -- Defines a Rainmeter gradient option and applies it
 -- to the current shape fill.
 --
--- @tparam shape self Shape instance.
--- @tparam (number) x1 Start X.
--- @tparam (number) y1 Start Y.
--- @tparam (number) x2 End X.
--- @tparam (number) y2 End Y.
--- @tparam (string) ... Gradient color stops.
--- @treturn shape
+-- @param (number) x1 Start X.
+-- @param (number) y1 Start Y.
+-- @param (number) x2 End X.
+-- @param (number) y2 End Y.
+-- @param (string) ... Gradient color stops.
+--
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:lgradient( 90, "0 255, 10, 10", ".9 20, 20, 255, 250" )
@@ -920,13 +927,12 @@ end
 --
 -- Similar to `lgradient` but produces a radial gradient.
 --
--- @tparam shape self Shape instance.
--- @tparam (number) x Center X.
--- @tparam (number) y Center Y.
--- @tparam (number) radius Gradient radius.
--- @tparam (string) ... Gradient stops.
+-- @param (number) x Center X.
+-- @param (number) y Center Y.
+-- @param (number) radius Gradient radius.
+-- @param (string) ... Gradient stops.
 --
--- @treturn shape
+-- @return (table) Shape instance
 --
 -- @usage
 -- shape:rgradient(50,50,40,"255,0,0;0","0,0,255;1")
@@ -1004,6 +1010,8 @@ function shape:rgradient( ... )
 
 		self.meter:option( self.name, self.content )
 	end
+
+	return self
 end
 
 
@@ -1052,14 +1060,12 @@ end
 -- into another type such as `path` or `ellipse` while preserving
 -- the remaining parameters.
 --
--- @tparam shape self Shape instance.
--- @tparam (string) newtype New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
--- @treturn shape Returns the shape instance for chaining.
+-- @param (string) newtype New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
+--
+-- @return shape Returns the shape instance for chaining.
 --
 -- @usage
 -- shape:changeType("ellipse")
---
--- @see https://docs.rainmeter.net/manual/meters/shape/
 --
 function shape:changeType( newType )
 	local shapeType = self.content:lower():match( REGEX_SHAPE ):gsub( '%s*$', '' )
@@ -1079,8 +1085,7 @@ end
 -- If no shapes exist yet, this will create and return the base `Shape`.
 -- Otherwise, it will create the next available indexed shape.
 --
--- @tparam shape self Shape instance.
--- @treturn shape New shape instance.
+-- @return (table) New Shape instance
 --
 -- @usage
 -- local shape1 = meter("Graph"):rectangle(0,0,100,50) -- creates Shape
@@ -1090,21 +1095,7 @@ end
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
 --
 function shape:add()
-	local index = 1
-
-	while true do
-		local key =
-			index == 1
-			and 'shape'
-			or 'shape'.. index
-
-		if self.meter:option( key ) then
-			index = index + 1
-		else
-			break
-		end
-	end
-
+	local index = self:length() +1
 	return construct( self.meter, self.meter.name, index ~= 1 and index or '' )
 end
 
@@ -1118,9 +1109,9 @@ end
 -- This method does not create new shapes. If the requested shape does not
 -- exist, it returns `nil`.
 --
--- @tparam shape self Shape instance.
--- @tparam[opt=1] number index Shape index (`1` for base `Shape`, `2+` for `Shape2`, etc.).
--- @treturn shape|nil Existing shape instance, or `nil` if not found.
+-- @param[opt=1] number index Shape index (`1` for base `Shape`, `2+` for `Shape2`, etc.).
+--
+-- @return (table|nil) Existing shape instance, or `nil` if not found.
 --
 -- @usage
 -- local base = shape:shape()     -- retrieves Shape
@@ -1145,6 +1136,31 @@ function shape:shape( index )
 	end
 
 	return nil
+end
+
+
+
+
+function shape:length()
+	local index = 1
+
+	while true do
+		local key = (
+			index == 1
+			and 'shape'
+			or 'shape'.. index
+		)
+
+		if self.meter:option( key ) then
+			index = index + 1
+		else
+			break
+		end
+	end
+
+	self.paths = index -1
+
+	return self.paths
 end
 
 

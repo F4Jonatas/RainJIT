@@ -1,0 +1,4 @@
+
+[variables]
+	GLOBALS_THEME           = DARK
+	GLOBALS_DARK_BACKGROUND = 0,0,0,130
