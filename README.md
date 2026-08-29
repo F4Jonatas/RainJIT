@@ -235,7 +235,7 @@ Converts the value to the appropriate Lua type (`number`/`boolean`/`string`) or 
 -- @param (string) name - Variable name
 -- @param (any) [value] - New value
 -- @param (string) [filePath] - File to save the variable. It can also be the current skin.
--- @return (`number`|`boolean`|`string`|`nil`)
+-- @return (number|boolean|string|nil)
 
 -- Getter
 rain:var("CURRENTPATH")
@@ -337,7 +337,7 @@ Get the section option and converts the value to the appropriate Lua type (`bool
 -- @param (string) section - Skin section name
 -- @param (string) option - Meter/Measure option
 -- @param (any) [default] - Default value if option doesn't exist
--- @return (`number`|`boolean`|`string`|`nil`)
+-- @return (number|boolean|string|nil)
 
 rain:option("MeterText", "Text", "My content") -- string
 rain:option("MeterText", "FontSize")           -- number
@@ -406,8 +406,8 @@ Moves the Skin window to the specified screen coordinates.
 
 ```lua
 -- @usage rain:moveSkin(x,y)
--- @param x (number) X coordinate (screen position)
--- @param y (number) Y coordinate (screen position)
+-- @param (number) X - Coordinate (screen position)
+-- @param (number) Y - Coordinate (screen position)
 -- @return (nil)
 
 -- Move current skin to position (100, 200)
@@ -481,8 +481,8 @@ If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defi
 
 ```lua
 -- Called every frame
--- @param au: accumulated updates (resets every ~9 quadrillion seconds)
--- @param dt: delta time in seconds (clamped to 0.0-1.0)
+-- @param (number) au - accumulated updates (resets every ~9 quadrillion seconds)
+-- @param (number) dt - delta time in seconds (clamped to 0.0-1.0)
 
 function rain:update(au, dt)
   -- Example: Rotating animation

@@ -1,18 +1,30 @@
-# LuaCOM User Manual
-### (Version 1.3b2)
-
-**Vinicius Almendra · Renato Cerqueira · Fabio Mascarenhas**
-
 <!-- https://web.tecgraf.puc-rio.br/~rcerq/luacom/pub/1.3/luacom-htmldoc/ -->
+<!-- https://web.tecgraf.puc-rio.br/~rcerq/luacom/ -->
 
-11th February 2005
+<div align="center">
 
----
+  # LuaCOM
 
-## Contents
+  ### Microsoft Component Object Model (COM) binding for Lua.
 
-1. [Introduction](#chapter-1-introduction)
-   1. [Features](#11-features)
+  <br>
+  <br>
+
+
+  <img src="./assets/images/com-logo.png" alt="LOGO" width="200" height="200">
+
+</div>
+
+
+
+
+## Summary
+
+<details>
+
+<summary><ins>Table of contents</ins></summary>
+
+- [Features](#features)
    2. [Who Should Read What (or About the Manual)](#12-who-should-read-what-or-about-the-manual)
 2. [Tutorial](#chapter-2-tutorial)
    1. [Using The LuaCOM library](#21-using-the-luacom-library)
@@ -80,87 +92,38 @@
    6. [Type Information Object](#66-type-information-object)
 7. [Credits](#chapter-7-credits)
 
----
+</details>
 
-## Chapter 1 Introduction
+<br>
+<br>
 
-LuaCOM is an add-on library to the Lua language that allows Lua programs to use and implement objects that follow Microsoft's Component Object Model (COM) specification and use the Automation technology for property access and method calls.
 
-### 1.1 Features
+## Overview
 
-Currently, the LuaCOM library supports the following features:
+LuaCOM is an add-on library to the [**Lua language**](http://www.lua.org/) that allows Lua programs to use and implement objects that follow Microsoft's **Component Object Model (COM)** specification and use the **ActiveX technology** for property access and method calls. LuaCOM is implemented as a C++ library and runs either stand-alone or enbedded in another application. LuaCOM is provided with its source code and the makefiles required to build it.
 
-- dynamic instantiation of COM objects registered in the system registry, via the `CreateObject` method;
-- dynamic access to running COM objects via `GetObject`;
-- COM method calls as normal Lua function calls and property accesses as normal table field accesses;
-- ability to read type libraries and to generate HTML documentation on-the-fly for COM objects;
-- use of COM objects without type information;
-- type conversion between OLE Automation types and Lua types;
-- object disposal using Lua garbage collection mechanism;
-- implementation of COM interfaces and objects using Lua tables;
-- implementation of OLE controls using Lua tables (needs a Lua GUI toolkit that can create in-place windows, like IUP);
-- use of COM connection point mechanism for bidirectional communication and event handling;
-- fully compatible with Lua 5 and with Lua 4;
-- log mechanism to ease the debugging of applications.
+LuaCOM has been designed and implemented by [**Vinicius Almendra**](almendra@tecgraf.puc-rio.br) and [**Renato Cerqueira**](http://www.tecgraf.puc-rio.br/~rcerq), and is maintained by [**Fabio Mascarenhas**](fqueiroz@tecgraf.puc-rio.br), at [**TeCGraf**](http://www.tecgraf.puc-rio.br/), the Computer Graphics Technology Group of [**PUC-Rio**](http://www.puc-rio.br/) (the Pontifical Catholic University of Rio de Janeiro in Brazil). TeCGraf is a laboratory of the [**Department of Computer Science**](http://www.inf.puc-rio.br/).
 
-### 1.2 Who Should Read What (or About the Manual)
+<br>
 
-This manual is mostly a reference manual. Here we document the behavior of LuaCOM in a variety of situations, some implementation decisions that affect the end-user of the library and its limitations. When facing some strange behavior in an application built using LuaCOM, the first step is to read all the chapter 5, where the majority of possible problems are documented. There can be found references to other sections of the manual, where more detailed information is provided.
 
-**Newbies** For those who are newcomers, we provide a tutorial section (chapter 2) with a step-by-step guide to start using LuaCOM. More help and samples can be found in LuaCOM's home page. Notice that VBScript code can be easily converted to Lua with LuaCOM.
+## :green_book: Features
 
-This manual does not provide information for developers who need deeper technical information about LuaCOM or who are willing to modify it for some reason. For this kind of information, please contact the authors.
+- Dynamic instantiation of COM objects registered in the system registry, via the `CreateObject` method
+- Dynamic access to running COM objects via `GetObject`
+- COM method calls as normal Lua function calls and property accesses as normal table field accesses
+- Ability to read type libraries and to generate HTML documentation on-the-fly for COM objects
+- Use of COM objects without type information
+- Type conversion between OLE Automation types and Lua types
+- Object disposal using Lua garbage collection mechanism
+- Implementation of COM interfaces and objects using Lua tables
+- ~Implementation of OLE controls using Lua tables (needs a Lua GUI toolkit that can create in-place windows, like IUP)~
+- Use of COM connection point mechanism for bidirectional communication and event handling
+- Fully compatible with Lua 5 and with [**LuaJIT**](https://luajit.org/)
+- Log mechanism to ease the debugging of applications
 
-**Knowledge required** This manual presumes some knowledge of COM and Automation. We don't intend to explain in detail how these technologies work or how they can be used to solve particular problems. This information can be found easily in the web or in good books.
+<br>
 
-**Some information about samples**
-
-The sample codes shown in this documentation are all for Lua 5, although most of them should also run in Lua 4. Anyway, Lua 4 specific samples can be found in the documentation for the previous version of LuaCOM.
-
----
-
-## Chapter 2 Tutorial
-
-### 2.1 Using The LuaCOM library
-
-LuaCOM is an add-on to the Lua language. To be used, either the binary library of LuaCOM must be linked with the host program, just like the Lua library and other add-ons, or you should load a LuaCOM dynamic library through Lua 5's require/loadlib mechanism. To use dynamic loading in Lua 4 you should implement a similar mechanism. There are different versions of the LuaCOM binary for the different versions of the Lua library, so pay attention to link the right one.
-
-If you are linking LuaCOM to your program, the next step is to modify the source code of the host program to call LuaCOM's and COM initialization and termination functions, which are part of the C/C++ API. To do so, include the LuaCOM's header — `luacom.h` — and call these functions in the proper order: LuaCOM must be initialize after COM and after Lua; it must be terminated before Lua; COM must be terminated AFTER Lua[^1]. Here is an example of a simple C host program program using LuaCOM.
-
-```c
-/*
- * Sample C program using luacom
- */
-#include <stdio.h>
-#include <ole2.h> // needed for CoInitialize and CoUninitialize
-#include <lua.h>
-#include "luacom.h"
-
-int main (int argc, char *argv[]) {
-    /* COM initialization */
-    CoInitialize(NULL);
-
-    /* library initialization */
-    lua_State *L = lua_open();
-    luacom_open(L);
-
-    if(lua_dofile("luacom_sample.lua") != 0) {
-        puts("Error running sample!");
-        exit(1);
-    }
-
-    luacom_close(L);
-    lua_close(L);
-    CoUninitialize(NULL);
-    return 0;
-}
-```
-
-[^1]: Notice that COM must be initialized in each thread that will use it. To use LuaCOM in this situation, it's not safe to share a single Lua state among several threads; one should create a new Lua state for each thread and then initialize LuaCOM with this state.
-
-Notice that it's necessary to initialize COM before `lua_open` and to terminate it only after the last `lua_close`, otherwise fatal errors may occur.
-
-Using Lua 5 to dynamically load LuaCOM is simpler. Just call `require("luacom")` in your Lua script, and make sure the file `luacom.lua` is in your `LUA_PATH` environment variable, and the Lua and LuaCOM DLLs (`lua-5.0.dll`, `lualib-5.0.dll` and `luacom-lua5-1.3b2.dll`, respectively) are in your `PATH`. Then run your script with the Lua standalone interpreter.
 
 ### 2.2 Locating COM Objects
 

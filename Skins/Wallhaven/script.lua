@@ -130,9 +130,11 @@ end
 
 
 
--- @param (int)   au number accumulated Updates
--- @param (float) dt number deltaTime
+-- @param (number) au - Accumulated Updates
+-- @param (number) dt - Delta Time
 function rain:update( au, dt )
+	if fetching ~= 'done' then return end
+
 
 	-- make animation
 	if tik >= tok then
@@ -142,13 +144,6 @@ function rain:update( au, dt )
 
 	tik = tik + 1
 
-	-- if front.anima.playState == 'finished' then
-	-- print(
-	-- 	front.anima.playState,
-	-- 	cover.anima.playState,
-	-- 	restn.anima.playState
-	-- )
-	-- end
 	if anima.finished() then
 		actualPic  = actualPic == totalPic and 1 or actualPic + 1
 		nextPic    = nextPic   == totalPic and 1 or actualPic + 1
@@ -173,8 +168,8 @@ function rain:update( au, dt )
 		end
 
 
-		-- A animação do meter[resolution] finaliza antes e eu altero o fade.
-		-- Em seguinda a animação do meter[image-front] vai finalizar e o outro 'if' vai reverter novamente o fade.
+		-- The animation for meter[resolution] finishes first, and I change the fade.
+		-- Then, the animation for meter[image-front] will finish, and the other 'if' will reverse the fade again.
 		elseif restn.anima.playState == 'finished' then
 			restn:text( thumbs[ actualPic +1 ].resolution:gsub( 'x', '×' ) ):update()
 			restn.anima:reverse()
@@ -197,6 +192,12 @@ local promise = fetch.promiseAll( function( list )
 	for index, response in ipairs( list ) do
 		local filePath = '#CURRENTPATH#/downloadfile/thumb%02d.png'
 		response:save( filePath:format( index ))
+
+		if index == 1 then
+			front:image( 'thumb0'.. index )
+		elseif index == 2 then
+			cover:image( 'thumb0'.. index )
+		end
 	end
 
 	fetching = 'done'

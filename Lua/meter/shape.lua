@@ -62,7 +62,7 @@
 -- shape2:ellipse(100,25,30,30):fill(255,0,0)
 --
 
-local PATHS    = 0
+local DRAWS    = 0
 local GRADIENT = 0
 
 
@@ -178,7 +178,7 @@ local function construct( super, name, index )
 	class.content = class.meter:option( class.name )
 	if not class.content then
 		class.content = 'rectangle 0,0,0,0|strokeWidth 0'
-		class.meter:option( class.name, class.content )
+		class.meter:option( class.name, 'none' )
 		class.type = 'rectangle'
 
 	else
@@ -313,8 +313,8 @@ end
 --   `H` → Horizontal Line to. Set X and use last Y
 --   `C` → Cubic bezier
 --   `S` → Cubic bezier using last X Y.
---   `Q` → Quadratic
---   `A` → Arc
+--   `Q` → Quadratic bezier curve
+--   `A` → Elliptical arc
 --   `Z` → Close path
 --
 -- @param[opt] string path Path definition string.
@@ -358,9 +358,9 @@ function shape:path( inner )
 		self.meter:option( Name, inner )
 
 	else
-		PATHS = PATHS + 1
-		self:changeType( 'path paths' .. PATHS )
-		self.meter:option( 'paths' .. PATHS, inner )
+		DRAWS = DRAWS + 1
+		self:changeType( 'path paths' .. DRAWS )
+		self.meter:option( 'paths' .. DRAWS, inner )
 		self.meter:option( self.name, self.content )
 	end
 
@@ -375,7 +375,7 @@ end
 --
 -- Creates a sequence of connected line segments.
 --
--- @param[opt] (string) points List of points `"x1,y1 x2,y2 x3,y3"`.
+-- @param (string) points - List of points `"x1,y1 x2,y2 x3,y3"`.
 --
 -- @return (table) Shape instance
 --
@@ -396,8 +396,8 @@ end
 --
 -- Similar to `polygon`, but does not automatically close the path.
 --
--- @param table points Flat coordinate array.
--- @param[opt=false] boolean close Close the path automatically.
+-- @param (table) points - Flat coordinate array.
+-- @param (boolean) [close=false] - Close the path automatically.
 --
 -- @return (table) Shape instance
 --
@@ -425,14 +425,16 @@ function shape:polyline( points, close )
 		self.type = "polyline"
 	end
 
+
 	local inner = table.concat( out, '|' )
+	self.contentPath = inner
 
 	if name then
 		self.meter:option( name, inner )
 
 	else
-		self.paths = self.paths + 1
-		local pathName = 'paths'.. self.paths
+		DRAWS = DRAWS + 1
+		local pathName = 'paths'.. DRAWS
 
 		self:changeType( 'path ' .. pathName )
 		self.meter:option( pathName, inner )
@@ -612,7 +614,7 @@ end
 function shape:strokewidth( width )
 	local value = self.content:lower():match( 'strokewidth%s*(%d+)' )
 
-	if not width then
+	if width == nil then
 		return value
 	end
 
@@ -746,6 +748,31 @@ end
 
 
 
+---
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashCap
+--
+function shape:strokedashcap( dashType )
+	local value = self.content:lower():match( 'strokedashcap%s*(%w+)' )
+
+	if value then
+		self.content = self.content:lower():gsub( '%s*strokedashcap%s*(%w+)%s*',
+			'strokedashcap '.. dashType )
+
+	else
+		self.content = self.content ..
+		( self.content:find( '|$' ) and '' or '|' ) ..
+		'strokedashcap '.. dashType
+
+	end
+
+
+	self.meter:option( self.name, self.content )
+	return self
+end
+
+
+
+---
 -- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashes
 --
 function shape:strokedashes( dashSize, gapSize )
@@ -1158,9 +1185,8 @@ function shape:length()
 		end
 	end
 
-	self.paths = index -1
 
-	return self.paths
+	return index -1
 end
 
 

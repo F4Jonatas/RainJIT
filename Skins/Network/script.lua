@@ -59,7 +59,10 @@ local grapth = chart({
 			data = { 0 }
 		},
 		{
+			strokewidth = 1,
 			strokecolor = '255,80,220',
+			strokedashes = { 5, 3 },
+			strokedashcap = 'round',
 			fill = false,
 			data = { 0 }
 		}
@@ -190,13 +193,20 @@ function addPoint( download, upload )
 	table.insert( DOWNLOAD_ARRAY, download )
 	table.insert( UPLOAD_ARRAY  , upload   )
 
+	table.insert( grapth.lines[1].data, download )
+	table.insert( grapth.lines[2].data, upload )
+
 	if #DOWNLOAD_ARRAY > MAX_POINTS then
 		table.remove( DOWNLOAD_ARRAY, 1 )
 		table.remove( UPLOAD_ARRAY  , 1 )
+
+		table.remove( grapth.lines[1].data, 1 )
+		table.remove( grapth.lines[2].data, 1 )
 	end
 
 	MAX_DOWNLOAD = math.maximo( DOWNLOAD_ARRAY )
 	MAX_UPLOAD   = math.maximo( UPLOAD_ARRAY )
 
 	redrawPath()
+	grapth:update()
 end

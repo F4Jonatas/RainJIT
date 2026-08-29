@@ -96,9 +96,9 @@ Before we delve deeper into the subject, let's understand the main difference.
 <br>
 
 
-# :jigsaw: Usage
+# :jigsaw: Quick Example
 
-## Basic Usage
+### Basic Usage
 
 ```lua
 local fetch = require("fetch")
@@ -119,69 +119,21 @@ end
 <br>
 <br>
 
+## :book: Module `fetch`
 
-## :large_orange_diamond: API `fetch` - _**sync**_
-
-Performs a blocking HTTP request and returns the response table directly.
-
-- Executes on the main Lua thread
-- Blocks until completion
-- Returns a response object
-- Simpler control flow
-
-#### Signature
-
-```lua
--- Equivalent to fetch.get()
-fetch(url [, options]) → response
-
--- HTTP Methods
-fetch.get(url [, options]) → response
-fetch.post(url [, options]) → response
-fetch.put(url [, options]) → response
-fetch.patch(url [, options]) → response
-fetch.delete(url [, options]) → response
-fetch.head(url [, options]) → response
-fetch.options(url [, options]) → response
-```
-
-<br>
-<br>
-
-
-## :large_orange_diamond: API `fetch.async`
-
-**Automatic Dispatch System**<br>
-By default, all asynchronous requests are processed automatically. When a response is ready, the callback will be executed automatically in the next Update cycle.
-
-Returns a request object for control and monitoring. The request starts immediately when `:send()` is called.
-
-
-### Default Behavior
-
-```lua
-local request = fetch.async("https://api.example.com/data")
-
-request:callback(function(self, response)
-  -- Called AUTOMATICALLY when the response is ready
-  print("Automatic response:", response:text())
-end)
-
-request:send()
-```
-
-> [!NOTE]
-> Dispatch is always automatic — there is no option to disable it. The callback fires as soon as the hidden notify window processes the completion message, on the next message loop iteration after the request finishes.
-
----
-
-<br>
-<br>
-
-
-## :diamond_shape_with_a_dot_inside: Request Options Object
+### Request Options Object
 
 The options table can be passed to any fetch function (`fetch.get`, `fetch.post`, `fetch.async`, etc.) to configure the HTTP request. Below is a detailed description of each available field.
+
+<br>
+
+
+### :diamond_shape_with_a_dot_inside: Property `method`
+
+The HTTP method to use **for** `fetch.async`. [**You can specify any allowed method**](#globe_with_meridians-http-method-semantics).<br>
+Values: (`"GET"`|`"POST"`|`"PUT"`|`"DELETE"`|`"HEAD"`|`"OPTIONS"`)<br>
+Default: `"GET"`.
+
 
 > [!NOTE]
 > All timeout values are in milliseconds. The underlying WinHTTP implementation enforces minimum reasonable values (e.g., DNS timeout at least 5000 ms, connect timeout at least 10000 ms) to ensure reliable operation.<br><br>
@@ -196,33 +148,6 @@ The options table can be passed to any fetch function (`fetch.get`, `fetch.post`
     <td align="center" nowrap="nowrap">
       <h4>Description</h4>
       <img width="900" height="1" alt="">
-    </td>
-  </tr>
-
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>method</code></h5>
-    </td>
-    <td rowspan="2">
-      <p>The HTTP method to use <b>for</b> <code>fetch.async</code>. You can specify any allowed method.</p>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>string</code>
-      <br>
-      <b>Default:</b> <code>"GET"</code>
-      <br>
-      <b>Allowed Values:</b>
-      <ul>
-        <li><code>GET</code></li>
-        <li><code>POST</code></li>
-        <li><code>PUT</code></li>
-        <li><code>PATCH</code></li>
-        <li><code>DELETE</code></li>
-        <li><code>HEAD</code></li>
-        <li><code>OPTIONS</code></li>
-      </ul>
     </td>
   </tr>
 
@@ -403,6 +328,64 @@ The options table can be passed to any fetch function (`fetch.get`, `fetch.post`
     </td>
   </tr>
 </table>
+
+---
+
+<br>
+<br>
+
+## :large_orange_diamond: API `fetch` - _**sync**_
+
+Performs a blocking HTTP request and returns the response table directly.
+
+- Executes on the main Lua thread
+- Blocks until completion
+- Returns a response object
+- Simpler control flow
+
+#### Signature
+
+```lua
+-- Equivalent to fetch.get()
+fetch(url [, options]) → response
+
+-- HTTP Methods
+fetch.get(url [, options]) → response
+fetch.post(url [, options]) → response
+fetch.put(url [, options]) → response
+fetch.patch(url [, options]) → response
+fetch.delete(url [, options]) → response
+fetch.head(url [, options]) → response
+fetch.options(url [, options]) → response
+```
+
+<br>
+<br>
+
+
+## :large_orange_diamond: API `fetch.async`
+
+**Automatic Dispatch System**<br>
+By default, all asynchronous requests are processed automatically. When a response is ready, the callback will be executed automatically in the next Update cycle.
+
+Returns a request object for control and monitoring. The request starts immediately when `:send()` is called.
+
+
+### Default Behavior
+
+```lua
+local request = fetch.async("https://api.example.com/data")
+
+request:callback(function(self, response)
+  -- Called AUTOMATICALLY when the response is ready
+  print("Automatic response:", response:text())
+end)
+
+request:send()
+```
+
+> [!NOTE]
+> Dispatch is always automatic — there is no option to disable it. The callback fires as soon as the hidden notify window processes the completion message, on the next message loop iteration after the request finishes.
 
 ---
 

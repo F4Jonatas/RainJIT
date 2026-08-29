@@ -10,7 +10,7 @@ Shortcut/icons/cache
 Shortcut/inspiration
 Shortcut/skin.yml
 
-Wallhaven/downloadfile
+Wallhaven/downloadfile/*
 
 Weather/images/inspiration
 Weather/*.ps1
