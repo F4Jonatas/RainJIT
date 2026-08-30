@@ -37,7 +37,7 @@ namespace html {
 
 
 	/* ============================================================
-		TEXT EXTRACTION  (shared — used by html_nodelist.cpp too)
+		TEXT EXTRACTION  (shared - used by html_nodelist.cpp too)
 	============================================================ */
 
 	void ExtractText( GumboNode *node, std::string &out ) {
@@ -83,7 +83,7 @@ namespace html {
 
 
 	/* ============================================================
-		__gc  (Bug 7 — was missing; Bug 2 — releases docRef)
+		__gc  (Bug 7 - was missing; Bug 2 - releases docRef)
 	============================================================ */
 
 	int node_gc( lua_State *L ) {
@@ -263,7 +263,7 @@ namespace html {
 		SelectorGroup group;
 
 		if ( !ParseSelectorGroup( selector, group ) ) {
-			std::string msg = std::string( "[RainJIT:HTML] node:find() — invalid selector: " ) + selector;
+			std::string msg = std::string( "[RainJIT:HTML] node:find() - invalid selector: " ) + selector;
 			HtmlLog( L, LOG_WARNING, msg.c_str() );
 			lua_pushnil( L );
 			return 1;

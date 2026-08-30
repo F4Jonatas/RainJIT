@@ -58,7 +58,7 @@ struct Rain;
 namespace hotkey {
 
 	// =========================================================================
-	// Context — one per Rain instance
+	// Context - one per Rain instance
 	// =========================================================================
 
 	struct Context {
@@ -84,7 +84,7 @@ namespace hotkey {
 
 
 	// =========================================================================
-	// Internal — shared state between keyboard.cpp, mouse.cpp, hotkey.cpp
+	// Internal - shared state between keyboard.cpp, mouse.cpp, hotkey.cpp
 	// =========================================================================
 
 	namespace internal {

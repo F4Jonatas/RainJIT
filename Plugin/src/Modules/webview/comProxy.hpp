@@ -6,7 +6,7 @@
  * @details
  * Wraps any IDispatch* in a Lua full userdata so that property access,
  * assignment, and method calls are transparently dispatched via COM
- * automation — exactly as AHK and VBScript do natively.
+ * automation - exactly as AHK and VBScript do natively.
  *
  * @par __index strategy:
  *   1. GetIDsOfNames(key) → DISPID.
@@ -22,7 +22,7 @@
  * @par __call strategy:
  *   - If the proxy carries a parent context (parentDisp / parentDispId):
  *       parentDisp->Invoke(parentDispId, DISPATCH_METHOD | DISPATCH_PROPERTYGET, args)
- *     This is identical to how AHK v2 resolves doc.getElementById('main') —
+ *     This is identical to how AHK v2 resolves doc.getElementById('main') -
  *     the method is always called on the owner object, not on an intermediate.
  *   - Otherwise (no parent context, e.g. a root IDispatch object):
  *       disp->Invoke(DISPID_VALUE, DISPATCH_METHOD | DISPATCH_PROPERTYGET, args)
@@ -70,7 +70,7 @@ namespace trident {
 	 * `parentDisp` / `parentDispId` carry the context needed to call a DOM method
 	 * correctly.  When MSHTML's PROPERTYGET for a method (e.g. getElementById)
 	 * returns a VT_DISPATCH "function object", we cannot call that object via
-	 * DISPID_VALUE — MSHTML does not support it.  Instead, __call must re-invoke
+	 * DISPID_VALUE - MSHTML does not support it.  Instead, __call must re-invoke
 	 * DISPATCH_METHOD on the *owner* object (parentDisp) with the original DISPID
 	 * (parentDispId), exactly as AHK v2 does internally.
 	 *
@@ -112,10 +112,10 @@ namespace trident {
 	 * @details
 	 * Two-step resolution, identical to how AHK v2 resolves COM member names:
 	 *
-	 *  1. `IDispatch::GetIDsOfNames` — fast path; covers all static MSHTML members
+	 *  1. `IDispatch::GetIDsOfNames` - fast path; covers all static MSHTML members
 	 *     defined in the type library (body, getElementById, title, etc.).
 	 *
-	 *  2. `IDispatchEx::GetDispID` — fallback for members that are not in the
+	 *  2. `IDispatchEx::GetDispID` - fallback for members that are not in the
 	 *     static type library but exist at runtime, such as JavaScript global
 	 *     variables assigned to the window object (e.g. `window.legacyScroll`).
 	 *     `IDispatchEx` is the JScript/Chakra extension of `IDispatch` that
@@ -154,7 +154,7 @@ namespace trident {
 	 *   3. Fallback → "IDispatch:0x..."
 	 */
 	static inline std::string GetTypeName( IDispatch *disp ) {
-		// 1. Try IHTMLElement — gives us the real tag name
+		// 1. Try IHTMLElement - gives us the real tag name
 		CComQIPtr<IHTMLElement> htmlEl( disp );
 		if ( htmlEl ) {
 			BSTR bstrTag = nullptr;
@@ -165,14 +165,14 @@ namespace trident {
 			}
 		}
 
-		// 2. Try ITypeInfo — works for HTMLDocument, HTMLCollection, etc.
+		// 2. Try ITypeInfo - works for HTMLDocument, HTMLCollection, etc.
 		CComPtr<ITypeInfo> typeInfo;
 		if ( SUCCEEDED( disp->GetTypeInfo( 0, LOCALE_USER_DEFAULT, &typeInfo ) ) && typeInfo ) {
 			BSTR bstrName = nullptr;
 			if ( SUCCEEDED( typeInfo->GetDocumentation( MEMBERID_NIL, &bstrName, nullptr, nullptr, nullptr ) ) && bstrName ) {
 				std::string name = wstring_to_utf8( bstrName );
 				SysFreeString( bstrName );
-				// Skip JScriptTypeInfo — it's the script engine wrapper, not useful
+				// Skip JScriptTypeInfo - it's the script engine wrapper, not useful
 				if ( name != "JScriptTypeInfo" )
 					return name;
 			}
@@ -198,7 +198,7 @@ namespace trident {
 	// Metamethods
 	// -------------------------------------------------------------------------
 
-	/// __gc — releases both the wrapped IDispatch and the parent reference (if any).
+	/// __gc - releases both the wrapped IDispatch and the parent reference (if any).
 	static int proxy_gc( lua_State *L ) {
 		ComProxyData *d = static_cast<ComProxyData *>( lua_touserdata( L, 1 ) );
 		if ( d ) {
@@ -215,7 +215,7 @@ namespace trident {
 	}
 
 	/**
-	 * @brief __tostring — shows the real COM type name for easy debugging.
+	 * @brief __tostring - shows the real COM type name for easy debugging.
 	 *
 	 * Examples:
 	 *   ComProxy(HTMLDocument)
@@ -242,7 +242,7 @@ namespace trident {
 	}
 
 	/**
-	 * @brief __index — intercepts property and method access.
+	 * @brief __index - intercepts property and method access.
 	 *
 	 * Strategy (mirrors AutoHotkey v2 ComObject):
 	 *
@@ -278,7 +278,7 @@ namespace trident {
 			return 1;
 		}
 
-		// Always attempt PROPERTYGET first — this mirrors AutoHotkey v2 ComObject
+		// Always attempt PROPERTYGET first - this mirrors AutoHotkey v2 ComObject
 		// behaviour and is the only reliable approach for MSHTML objects.
 		// Classification via GetMemberProperties / ITypeInfo is unreliable:
 		// many MSHTML properties (body, style, settings, etc.) return ambiguous
@@ -306,7 +306,7 @@ namespace trident {
 			}
 		}
 
-		// PROPERTYGET failed — pure method. Return a callable closure.
+		// PROPERTYGET failed - pure method. Return a callable closure.
 		// ComProxy upvalue ensures Release() on GC.
 		// When called with 0 args, retries PROPERTYGET first (handles ActiveX
 		// objects that lack IDispatchEx/ITypeInfo metadata, e.g. some WMP props).
@@ -325,7 +325,7 @@ namespace trident {
 
 					int nargs = lua_gettop( L );
 
-					// 0 args — try PROPERTYGET first (e.g. WMP .settings, .controls).
+					// 0 args - try PROPERTYGET first (e.g. WMP .settings, .controls).
 					if ( nargs == 0 ) {
 						DISPPARAMS noArgs = {};
 						CComVariant result;
@@ -335,7 +335,7 @@ namespace trident {
 						}
 					}
 
-					// N args or PROPERTYGET failed — method call.
+					// N args or PROPERTYGET failed - method call.
 					std::vector<VARIANT> vargs( nargs );
 					for ( int i = 0; i < nargs; ++i )
 						luaVariant::From( L, i + 1, &vargs[nargs - 1 - i] );
@@ -364,7 +364,7 @@ namespace trident {
 	}
 
 	/**
-	 * @brief __newindex — intercepts property assignment (DISPATCH_PROPERTYPUT).
+	 * @brief __newindex - intercepts property assignment (DISPATCH_PROPERTYPUT).
 	 */
 	static int proxy_newindex( lua_State *L ) {
 		IDispatch *disp = CheckProxy( L, 1 );
@@ -395,7 +395,7 @@ namespace trident {
 	}
 
 	/**
-	 * @brief __call — invokes the proxy as a callable object.
+	 * @brief __call - invokes the proxy as a callable object.
 	 *
 	 * @details
 	 * Two dispatch paths depending on whether the proxy carries a parent context:
@@ -478,7 +478,7 @@ namespace trident {
 		 * @brief Registers the ComProxy metatable in the Lua registry.
 		 *
 		 * Must be called once per lua_State before any Push() call.
-		 * Idempotent — safe to call multiple times.
+		 * Idempotent - safe to call multiple times.
 		 */
 		inline void Register( lua_State *L ) {
 			if ( luaL_newmetatable( L, COM_PROXY_MT ) ) {

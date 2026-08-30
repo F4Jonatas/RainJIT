@@ -1,6 +1,6 @@
 /**
  * @file wininet.cpp
- * @brief HTTP client implementation using WinINet — InternetOpenUrlW path.
+ * @brief HTTP client implementation using WinINet - InternetOpenUrlW path.
  * @license GPL v2.0 License
  *
  * Uses InternetOpenUrlW (high-level WinINet API) instead of the low-level
@@ -13,7 +13,7 @@
  *
  * @note Only GET requests are supported via InternetOpenUrlW.
  *       POST/PUT/etc. require the low-level API and are not compatible
- *       with this driver — a warning is logged if a non-GET method is used.
+ *       with this driver - a warning is logged if a non-GET method is used.
  */
 
 // WinINet must come before any other Windows headers.
@@ -31,7 +31,7 @@
 #include <Includes/rain.hpp>
 #include <Utils/strings.hpp>
 
-// Default User-Agent — matches a real Chrome browser so servers accept the request.
+// Default User-Agent - matches a real Chrome browser so servers accept the request.
 #define WININET_USER_AGENT L"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
@@ -68,7 +68,7 @@ namespace wininet {
 		// ----------------------------------------------------------------
 		if ( request.method != L"GET" && request.method != L"get" ) {
 			Log( ctx, LOG_WARNING,
-			     L"[RainJIT:Fetch] driver=\"wininet\" — only GET requests are supported "
+			     L"[RainJIT:Fetch] driver=\"wininet\" - only GET requests are supported "
 			     L"via InternetOpenUrlW. Use driver=\"winhttp\" for POST/PUT/DELETE." );
 		}
 
@@ -76,7 +76,7 @@ namespace wininet {
 		if ( request.dnsTimeout > 0 || request.connectTimeout > 0 ||
 		     request.sendTimeout > 0 || request.receiveTimeout > 0 ) {
 			Log( ctx, LOG_WARNING,
-			     L"[RainJIT:Fetch] driver=\"wininet\" — phase-specific timeouts "
+			     L"[RainJIT:Fetch] driver=\"wininet\" - phase-specific timeouts "
 			     L"(dnsTimeout, connectTimeout, sendTimeout, receiveTimeout) are not "
 			     L"supported and will be ignored. Use 'timeout' instead." );
 		}
@@ -126,7 +126,7 @@ namespace wininet {
 			// Build additional headers string.
 			//
 			// InternetOpenUrlW accepts a raw header block (key: value\r\n).
-			// Skip User-Agent — already passed to InternetOpenW above.
+			// Skip User-Agent - already passed to InternetOpenW above.
 			// ----------------------------------------------------------------
 			std::wstring extraHeaders;
 			for ( const auto &[key, value] : request.headers ) {
@@ -136,22 +136,22 @@ namespace wininet {
 			}
 
 			// ----------------------------------------------------------------
-			// Flags — mirror what WebParser uses.
+			// Flags - mirror what WebParser uses.
 			//
-			// INTERNET_FLAG_RELOAD       — bypass cache, always fetch fresh.
-			// INTERNET_FLAG_NO_CACHE_WRITE — do not store response in cache.
-			// INTERNET_FLAG_SECURE       — enforce HTTPS when scheme is https.
-			// INTERNET_FLAG_NO_AUTO_REDIRECT — honour followRedirects setting.
+			// INTERNET_FLAG_RELOAD       - bypass cache, always fetch fresh.
+			// INTERNET_FLAG_NO_CACHE_WRITE - do not store response in cache.
+			// INTERNET_FLAG_SECURE       - enforce HTTPS when scheme is https.
+			// INTERNET_FLAG_NO_AUTO_REDIRECT - honour followRedirects setting.
 			// ----------------------------------------------------------------
 			DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE;
 
 			if ( !request.followRedirects )
 				flags |= INTERNET_FLAG_NO_AUTO_REDIRECT;
 
-			// InternetOpenUrlW handles HTTPS automatically — no explicit flag needed.
+			// InternetOpenUrlW handles HTTPS automatically - no explicit flag needed.
 
 			// ----------------------------------------------------------------
-			// Open URL — the single high-level call that does everything.
+			// Open URL - the single high-level call that does everything.
 			// This is what WebParser calls and what Cloudflare accepts.
 			// ----------------------------------------------------------------
 			hUrl = InternetOpenUrlW(

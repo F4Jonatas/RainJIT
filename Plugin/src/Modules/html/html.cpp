@@ -62,10 +62,10 @@ namespace html {
 		doc->output = gumbo_parse_with_options( &kGumboDefaultOptions, htmlStr, len );
 
 		if ( !doc->output ) {
-			HtmlLog( L, LOG_WARNING, "[RainJIT:HTML] html.parse() failed — gumbo returned nullptr" );
+			HtmlLog( L, LOG_WARNING, "[RainJIT:HTML] html.parse() failed - gumbo returned nullptr" );
 			lua_pop( L, 1 ); // remove userdata
 			lua_pushnil( L );
-			lua_pushstring( L, "html.parse() failed — gumbo returned nullptr" );
+			lua_pushstring( L, "html.parse() failed - gumbo returned nullptr" );
 			return 2;
 		}
 

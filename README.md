@@ -44,7 +44,7 @@
   - [Inline Script](#inline-script)
   - [Command with Inline Script](#command-with-inline-script)
 - [Module `rain`](#book-module-rain)
-  - [Property read-only](#diamond_shape_with_a_dot_inside-properties-read-only)
+  - [Property read-only](#diamond_shape_with_a_dot_inside-property-read-only)
   - [Method `rain:absPath()`](#large_orange_diamond-method-rainabspath)
   - [Method `rain:formula()`](#large_orange_diamond-method-rainformula)
   - [Method `rain:var()`](#large_orange_diamond-method-rainvar)
@@ -300,7 +300,7 @@ You can also obtain the rectangle from another **Skin** by specifying **HWND**.
 > You can use it in [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
 
 ```lua
--- @usage rain:getRect([ hwnd ])
+-- @usage rain:getRect([hwnd])
 -- @param (userdata) hwnd
 -- @return (table) properties
 -- @field (number) x - left position
@@ -405,7 +405,7 @@ Moves the Skin window to the specified screen coordinates.
 > Avoid using negative numbers
 
 ```lua
--- @usage rain:moveSkin(x,y)
+-- @usage rain:moveSkin(x, y)
 -- @param (number) X - Coordinate (screen position)
 -- @param (number) Y - Coordinate (screen position)
 -- @return (nil)
@@ -713,15 +713,7 @@ If you are contributing documentation or changes to the source code, please ensu
 > **RainJIT** has modules developed exclusively for **Rainmeter** to improve performance and ease of use.<br>
 > I decided to create these modules to reduce the amount of `Measure` required for Skins.
 
-- [**Rainmeter Documentation**](https://docs.rainmeter.net)
-- [**LuaJIT Website**](https://luajit.org)
-- [**Lua 5.1 Reference Manual**](https://www.lua.org/manual/5.1/)
-
-<br>
-
-
-### Lua Modules
-
+**Lua Modules**
 - [**LuaFileSystem (lfs)**](https://github.com/lunarmodules/luafilesystem) — [**_Lunar Modules_**](https://github.com/lunarmodules)
 - [**WinAPI**](https://github.com/stevedonovan/winapi/blob/master/readme.md) — [**_Steve J Donovan_**](https://github.com/stevedonovan/winapi)
 - [**LuaCOM**](./assets/doc/LuaCOM-README.md) — [**_OneLuaPro_**](https://github.com/OneLuaPro/luacom)
@@ -734,12 +726,19 @@ If you are contributing documentation or changes to the source code, please ensu
 
 <br>
 
-### Class Module
+**Class Module**
 - [**Glass**](./Lua/glass/README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas) — (_Inspiration_ [**FrostedGlass**](https://github.com/KazukiGames82/FrostedGlass))
 - [**JSON**](https://github.com/rxi/json.lua) — [**_rxi_**](https://github.com/rxi)
 - [**Meter**](./Lua/meter/METER-README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas)
   - [**Animate**](./Lua/meter/ANIMATE-README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas)
   - [**Shape**](./Lua/meter/SHAPE-README.md) — [**_F4Jonatas_**](https://github.com/F4Jonatas)
+
+<br>
+
+**Others**
+- [**Rainmeter Documentation**](https://docs.rainmeter.net)
+- [**LuaJIT Website**](https://luajit.org)
+- [**Lua 5.1 Reference Manual**](https://www.lua.org/manual/5.1/)
 
 ---
 

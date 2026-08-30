@@ -84,7 +84,7 @@ static void XmlLog( lua_State *L, int level, const char *msg ) {
  * @note This is an internal helper; not exposed to Lua.
  */
 static std::string FixVoidTags( const std::string &html ) {
-	// Static set — built once, shared across all calls.
+	// Static set - built once, shared across all calls.
 	// clang-format off
 	static const std::unordered_set<std::string> kVoidTags = {
 		"area", "base", "br",   "col",   "embed", "hr",   "img",
@@ -139,7 +139,7 @@ static std::string FixVoidTags( const std::string &html ) {
 		// Locate the closing '>' of this tag
 		const size_t gt = html.find( '>', i );
 		if ( gt == std::string::npos ) {
-			// Unclosed/malformed tag — copy remainder as-is
+			// Unclosed/malformed tag - copy remainder as-is
 			result.append( html, lt, len - lt );
 			pos = len;
 			break;
@@ -523,7 +523,7 @@ Node NodeSet::get( int index ) const {
 }
 
 // ---------------------------------------------------------------------------
-// Lua bindings — module functions
+// Lua bindings - module functions
 // ---------------------------------------------------------------------------
 
 /**
@@ -533,8 +533,8 @@ Node NodeSet::get( int index ) const {
  * `pugi::parse_full` if `options.parse_full` is true).
  *
  * @par Stack
- * - `[1]` string  — XML source text (required).
- * - `[2]` table   — ParseOptions (optional).
+ * - `[1]` string  - XML source text (required).
+ * - `[2]` table   - ParseOptions (optional).
  *
  * @return 1 (`xml.document` userdata) on success.
  * @return 2 (`nil`, error string) on parse failure.
@@ -572,12 +572,12 @@ static int l_parse( lua_State *L ) {
  * without requiring the strict single-root rule of XML.
  *
  * For **fragments** (snippets extracted from a node via `node:html()`),
- * use `node:html()` instead — it additionally applies `parse_fragment`
+ * use `node:html()` instead - it additionally applies `parse_fragment`
  * and fixes HTML5 void tags.
  *
  * @par Stack
- * - `[1]` string  — HTML source text (required).
- * - `[2]` table   — ParseOptions (optional).
+ * - `[1]` string  - HTML source text (required).
+ * - `[2]` table   - ParseOptions (optional).
  *
  * @return 1 (`xml.document` userdata) on success.
  * @return 2 (`nil`, error string) on parse failure.
@@ -609,7 +609,7 @@ static int l_parse_html( lua_State *L ) {
 }
 
 // ---------------------------------------------------------------------------
-// Lua bindings — Document methods
+// Lua bindings - Document methods
 // ---------------------------------------------------------------------------
 
 /// @brief Lua: `doc:root()` → Node
@@ -633,7 +633,7 @@ static int doc_select_single( lua_State *L ) {
 }
 
 // ---------------------------------------------------------------------------
-// Lua bindings — Node methods
+// Lua bindings - Node methods
 // ---------------------------------------------------------------------------
 
 /// @brief Lua: `node:type()` → string
@@ -753,12 +753,12 @@ static int node_outer_xml( lua_State *L ) {
  * mixed content models common in HTML.
  *
  * @par Stack
- * - `[1]` xml.node  — the node whose content should be parsed.
+ * - `[1]` xml.node  - the node whose content should be parsed.
  *
  * @return 1 (`xml.document` userdata) on success.
  * @return 2 (`nil`, error string) on invalid node or parse failure.
  *
- * @par Lua — RSS CDATA description
+ * @par Lua - RSS CDATA description
  * @code{.lua}
  * local desc = item:select_single("description")
  * local hd, err = desc:html()
@@ -768,7 +768,7 @@ static int node_outer_xml( lua_State *L ) {
  * print(img and img:attribute("src") or "no image")
  * @endcode
  *
- * @par Lua — XML node with element children
+ * @par Lua - XML node with element children
  * @code{.lua}
  * local wrapper = doc:select_single('//*[@class="content"]')
  * local hd, err = wrapper:html()
@@ -781,9 +781,9 @@ static int node_outer_xml( lua_State *L ) {
 static int node_html( lua_State *L ) {
 	Node *node = check_node( L, 1 );
 	if ( !node->valid() ) {
-		XmlLog( L, LOG_WARNING, "[RainJIT:XML] node:html() — node is invalid or document has been collected" );
+		XmlLog( L, LOG_WARNING, "[RainJIT:XML] node:html() - node is invalid or document has been collected" );
 		lua_pushnil( L );
-		lua_pushstring( L, "node:html() — node is invalid or document has been collected" );
+		lua_pushstring( L, "node:html() - node is invalid or document has been collected" );
 		return 2;
 	}
 
@@ -807,9 +807,9 @@ static int node_html( lua_State *L ) {
 	std::string html_content = has_element_child ? node->inner_xml() : node->text();
 
 	if ( html_content.empty() ) {
-		XmlLog( L, LOG_WARNING, "[RainJIT:XML] node:html() — node has no extractable content" );
+		XmlLog( L, LOG_WARNING, "[RainJIT:XML] node:html() - node has no extractable content" );
 		lua_pushnil( L );
-		lua_pushstring( L, "node:html() — node has no extractable content" );
+		lua_pushstring( L, "node:html() - node has no extractable content" );
 		return 2;
 	}
 
@@ -822,7 +822,7 @@ static int node_html( lua_State *L ) {
 	auto new_doc = std::make_shared<Document>();
 	const unsigned int flags = pugi::parse_fragment | pugi::parse_embed_pcdata | pugi::parse_ws_pcdata;
 
-	// Use load_buffer (consistent with l_parse/l_parse_html — avoids internal strlen call)
+	// Use load_buffer (consistent with l_parse/l_parse_html - avoids internal strlen call)
 	pugi::xml_parse_result result = new_doc->doc->load_buffer( fixed_html.c_str(), fixed_html.size(), flags );
 
 	if ( !result ) {
@@ -831,7 +831,7 @@ static int node_html( lua_State *L ) {
 		                  ": " + result.description();
 		XmlLog( L, LOG_WARNING, msg.c_str() );
 		lua_pushnil( L );
-		lua_pushfstring( L, "node:html() — parse error at offset %d: %s", static_cast<int>( result.offset ), result.description() );
+		lua_pushfstring( L, "node:html() - parse error at offset %d: %s", static_cast<int>( result.offset ), result.description() );
 		return 2;
 	}
 
@@ -844,7 +844,7 @@ static int node_html( lua_State *L ) {
 }
 
 // ---------------------------------------------------------------------------
-// Lua bindings — NodeSet methods
+// Lua bindings - NodeSet methods
 // ---------------------------------------------------------------------------
 
 /// @brief Lua: `set:size()` → integer
@@ -1028,12 +1028,12 @@ static void push_nodeset( lua_State *L, const NodeSet &set ) {
  * `luaL_newmetatable` creates the metatable **and** stores it in the Lua
  * registry under the given name, which is what enables `luaL_checkudata`
  * to perform type-safe validation. The `if` guard means repeated calls are
- * safe — a name is only registered once per Lua state.
+ * safe - a name is only registered once per Lua state.
  *
  * Each metatable gets:
- * - `__index = itself`   — enables `obj:method()` syntax.
+ * - `__index = itself`   - enables `obj:method()` syntax.
  * - All public methods.
- * - `__gc`               — calls the C++ destructor in-place.
+ * - `__gc`               - calls the C++ destructor in-place.
  */
 static void register_metatables( lua_State *L ) {
 

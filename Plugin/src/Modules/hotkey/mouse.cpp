@@ -22,7 +22,7 @@ static bool ExecuteMouseCallback( hotkey::Context *ctx, const hotkey::MouseConfi
 
 
 // ---------------------------------------------------------------------------
-// ExecuteMouseCallback — main thread only
+// ExecuteMouseCallback - main thread only
 // ---------------------------------------------------------------------------
 static bool ExecuteMouseCallback( hotkey::Context *ctx, const hotkey::MouseConfig &config,
                                   const hotkey::MouseEvent &ev ) {
@@ -115,7 +115,7 @@ LRESULT CALLBACK LowLevelMouseProc( int nCode, WPARAM wParam, LPARAM lParam ) {
 
 
 // ---------------------------------------------------------------------------
-// ProcessMouseEvents — called from hotkey::ProcessMessages
+// ProcessMouseEvents - called from hotkey::ProcessMessages
 // ---------------------------------------------------------------------------
 namespace hotkey {
 
@@ -276,7 +276,7 @@ namespace hotkey {
 
 
 // ---------------------------------------------------------------------------
-// Lua object methods — upvalue layout: [1]=ctx [2]=id
+// Lua object methods - upvalue layout: [1]=ctx [2]=id
 // ---------------------------------------------------------------------------
 
 static int ms_disable( lua_State *L ) {
@@ -378,7 +378,7 @@ static const luaL_Reg ms_methods[] = {
 
 
 // ---------------------------------------------------------------------------
-// hotkeyMouse — Lua binding entry point
+// hotkeyMouse - Lua binding entry point
 // ---------------------------------------------------------------------------
 namespace hotkey {
 

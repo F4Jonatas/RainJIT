@@ -38,6 +38,7 @@ luacom.config.abort_on_API_error = false
 local player = luacom.CreateObject( 'WMPlayer.OCX' )
 player.uiMode = 'invisible'
 
+print( luacom.GetType( player.uiMode ) )
 
 -- rain:var("path", play.contentPath, rain:var("#CURRENTPATH#skin.ini"))
 

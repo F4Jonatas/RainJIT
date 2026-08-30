@@ -6,8 +6,8 @@
   ### A lightweight, intelligent data persistence system for Rainmeter skins using native Windows INI files
 
   <br>
-  <br>
 
+  <img src="../images/depot-logo.png" alt="LOGO" height="200">
 </div>
 
 
@@ -45,10 +45,10 @@ The module doesn't load entire files into memory – it maintains only the insta
 Creates a new **Depot** instance bound to a specific section and file.
 
 ```lua
--- @usage depot([ section [, filepath ]]) → userdata
+-- @usage depot([ section [, filepath]])
 -- @param (string) section - INI file section name. Default: "root"
 -- @param (string) filepath - Path to INI file. Default: "#@#depot\#CURRENTCONFIG#\main.depot"
--- @return (userdata) - A Depot instance
+-- @return (userdata) A Depot instance
 
 -- Simplest form (uses defaults)
 local dp = depot()
@@ -58,9 +58,7 @@ local config = depot("Settings")
 
 -- Custom section and file
 local data = depot("UserData", "#@#storage\\data.ini")
-
--- Absolute path
-local secure = depot("Secrets", "C:\\MyData\\secrets.ini")
+local secure = depot("Secrets", "C:\\MyData\\secrets.ini") -- absolute path
 ```
 
 <br>
@@ -71,18 +69,18 @@ local secure = depot("Secrets", "C:\\MyData\\secrets.ini")
 Writes a value to the file.
 
 ```lua
--- @usage depot:set( key, value ) → userdata
+-- @usage depot:set(key, value)
 -- @param (string) key - Key name
 -- @param (any) value - Any Lua value (automatically converted to string)
--- @return (userdata) - The instance itself (for method chaining)
+-- @return (userdata) The instance itself (for method chaining)
 
 -- Basic string storage
 dp:set("username", "JohnDoe")
 
 -- Automatic type conversion (all stored as strings)
-dp:set("counter", 42)    -- Stored as "42"
-dp:set("active", true)   -- Stored as "true"
-dp:set("data", {1,2,3})  -- Stored as "table: 0x..."
+dp:set("counter", 42)   -- Stored as "42"
+dp:set("active", true)  -- Stored as "true"
+dp:set("data", {1,2,3}) -- Stored as "table: 0x..."
 
 -- Method chaining
 dp:set("first", "value")
@@ -108,11 +106,11 @@ When `raw = true`, the value is returned exactly as stored (as a string), withou
 
 
 ```lua
--- @usage depot:get( key [, default ]) → any
+-- @usage depot:get(key [, default])
 -- @param (string) key - Key name
 -- @param (any) default - Default value if key doesn't exist
 -- @param (boolean) raw - Returns the value without conversion.
--- @return (any) - The converted value, default if provided, or nil
+-- @return (any) The converted value, default if provided, or nil
 
 -- Basic retrieval
 local name = dp:get("username")
@@ -128,8 +126,8 @@ local value   = dp:get("not_exists") -- Returns as nil
 
 -- Raw retrieval (preserves original string)
 dp:set("code", "001")
-print(dp:get("code"))               -- 1 (number)
-print(dp:get("code", nil, true))    -- "001" (string)
+print(dp:get("code"))            -- 1 (number)
+print(dp:get("code", nil, true)) -- "001" (string)
 ```
 
 <br>
@@ -140,9 +138,9 @@ print(dp:get("code", nil, true))    -- "001" (string)
 Checks whether a key exists in the section.
 
 ```lua
--- @usage depot:has( key ) → boolean
+-- @usage depot:has(key)
 -- @param (string) key - Key name
--- @return (boolean) - true if the key exists, false otherwise
+-- @return (boolean) true if the key exists, false otherwise
 
 if dp:has("username") then
   print("Welcome back, " .. dp:get("username"))
@@ -157,9 +155,9 @@ end
 Deletes a specific key from the section.
 
 ```lua
--- @usage depot:remove( key ) → nil
+-- @usage depot:remove( key )
 -- @param (string) key - Key name
--- @return (boolean) - Nothing
+-- @return (nil) Nothing
 
 dp:remove("username")
 ```
@@ -175,10 +173,10 @@ Deletes the entire section and all its keys from the file.
 > This operation cannot be undone.
 
 ```lua
--- @usage depot:clear() → nil
--- @return (boolean) - Nothing
+-- @usage depot:clear()
+-- @return (nil) Nothing
 
-dp:clear()  -- Removes all keys from the section
+dp:clear() -- Removes all keys from the section
 ```
 
 <br>
@@ -189,8 +187,8 @@ dp:clear()  -- Removes all keys from the section
 Returns a list of all keys in the current section.
 
 ```lua
--- @usage depot:keys() → table
--- @return (table) - A table (array) of key names
+-- @usage depot:keys()
+-- @return (table) A table (array) of key names
 
 local keys = dp:keys()
 for i, key in ipairs(keys) do
@@ -206,8 +204,8 @@ end
 Returns a list of all values in the current section (with type conversion).
 
 ```lua
--- @usage depot:values() → table
--- @return (table) - A table (array) of values
+-- @usage depot:values()
+-- @return (table) A table (array) of values
 
 local values = dp:values()
 for i, value in ipairs(values) do
@@ -223,8 +221,8 @@ end
 Returns the section name this instance is bound to.
 
 ```lua
--- @usage depot:name() → string
--- @return (string) - Section name
+-- @usage depot:name()
+-- @return (string) Section name
 
 print("Working with section: " .. dp:name())
 ```
@@ -237,8 +235,8 @@ print("Working with section: " .. dp:name())
 Returns the full path to the file.
 
 ```lua
--- @usage depot:filePath() → string
--- @return (string) - File path as string
+-- @usage depot:filePath()
+-- @return (string) File path as string
 
 print("Data stored in: " .. dp:filePath())
 ```
@@ -254,8 +252,9 @@ Permanently deletes the file from disk.
 > This operation cannot be undone. All data will be lost.
 
 ```lua
--- @usage depot:delete() → boolean
--- @return (boolean) - true on success, false + error code on failure
+-- @usage depot:delete()
+-- @return (boolean) Success
+-- @return (number) Error code on failure
 
 local success, err = dp:delete()
 if success then

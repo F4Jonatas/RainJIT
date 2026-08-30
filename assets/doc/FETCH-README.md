@@ -96,7 +96,7 @@ Before we delve deeper into the subject, let's understand the main difference.
 <br>
 
 
-# :jigsaw: Quick Example
+## :jigsaw: Quick Example
 
 ### Basic Usage
 

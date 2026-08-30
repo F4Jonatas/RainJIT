@@ -16,8 +16,8 @@
  * wParam carries the context ID (FetchContext::refSelf) used to retrieve
  * the completed context from ContextRegistry.
  *
- * Defined here — core.hpp is the single header included by all fetch
- * submodules — to avoid duplicating the constant across http.cpp, wininet.cpp
+ * Defined here - core.hpp is the single header included by all fetch
+ * submodules - to avoid duplicating the constant across http.cpp, wininet.cpp
  * and lua.cpp.
  */
 #define WM_FETCH_COMPLETE ( WM_APP + 3 )
@@ -105,8 +105,8 @@ namespace core {
 		 * @brief HTTP driver/stack to use for this request.
 		 *
 		 * Supported values:
-		 * - "winhttp"  (default) — WinHTTP stack, clean and fast.
-		 * - "wininet"            — WinINet stack, inherits IE/Edge session context.
+		 * - "winhttp"  (default) - WinHTTP stack, clean and fast.
+		 * - "wininet"            - WinINet stack, inherits IE/Edge session context.
 		 *                         Useful for sites that block non-browser clients
 		 *                         (e.g. Cloudflare-protected feeds).
 		 *

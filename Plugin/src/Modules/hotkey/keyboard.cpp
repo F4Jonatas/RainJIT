@@ -27,7 +27,7 @@ static bool        ExecuteKeyboardCallback( hotkey::Context *ctx, const hotkey::
 
 
 // ---------------------------------------------------------------------------
-// GetCharFromVK — called only from main thread
+// GetCharFromVK - called only from main thread
 // ---------------------------------------------------------------------------
 static std::string GetCharFromVK( int vkCode ) {
 	BYTE keyboardState[256] = {};
@@ -207,7 +207,7 @@ std::vector<int> hotkey::ParseCombination( const std::string &str ) {
 
 
 // ---------------------------------------------------------------------------
-// ExecuteKeyboardCallback — main thread only
+// ExecuteKeyboardCallback - main thread only
 // ---------------------------------------------------------------------------
 static bool ExecuteKeyboardCallback( hotkey::Context *ctx, const hotkey::KeyboardConfig &config,
                                      const std::vector<int> &combo, bool isPressed ) {
@@ -344,7 +344,7 @@ LRESULT CALLBACK LowLevelKeyboardProc( int nCode, WPARAM wParam, LPARAM lParam )
 
 
 // ---------------------------------------------------------------------------
-// ProcessKeyboardEvents — called from hotkey::ProcessMessages
+// ProcessKeyboardEvents - called from hotkey::ProcessMessages
 // ---------------------------------------------------------------------------
 namespace hotkey {
 
@@ -371,7 +371,7 @@ namespace hotkey {
 
 
 // ---------------------------------------------------------------------------
-// Lua object methods — upvalue layout: [1]=ctx [2]=id
+// Lua object methods - upvalue layout: [1]=ctx [2]=id
 // ---------------------------------------------------------------------------
 
 static int kb_disable( lua_State *L ) {
@@ -473,7 +473,7 @@ static const luaL_Reg kb_methods[] = {
 
 
 // ---------------------------------------------------------------------------
-// hotkeyKeyboard — Lua binding entry point
+// hotkeyKeyboard - Lua binding entry point
 // ---------------------------------------------------------------------------
 namespace hotkey {
 

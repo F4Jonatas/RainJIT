@@ -74,7 +74,7 @@ namespace html {
 
 
 	/**
-	 * @brief Node garbage collector — releases docRef.
+	 * @brief Node garbage collector - releases docRef.
 	 */
 	int node_gc( lua_State *L );
 

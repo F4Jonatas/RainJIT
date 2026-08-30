@@ -38,7 +38,7 @@ extern LRESULT CALLBACK LowLevelMouseProc    ( int nCode, WPARAM wParam, LPARAM 
 
 
 // ---------------------------------------------------------------------------
-// Hidden window WndProc — named static, no lambdas
+// Hidden window WndProc - named static, no lambdas
 // ---------------------------------------------------------------------------
 static LRESULT CALLBACK HotkeyWndProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 	if ( msg == WM_CREATE ) {
@@ -187,7 +187,7 @@ namespace hotkey {
 
 
 // ---------------------------------------------------------------------------
-// Module table functions — registered via luaL_Reg
+// Module table functions - registered via luaL_Reg
 // ---------------------------------------------------------------------------
 
 static int hotkey_keyboard( lua_State *L ) {

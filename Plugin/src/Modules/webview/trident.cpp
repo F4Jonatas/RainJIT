@@ -59,7 +59,7 @@ namespace trident {
 		Control *ctrl; ///< Owning control.
 	};
 
-	/// Popup (browser) window subclass data — used to suppress DWM shadow.
+	/// Popup (browser) window subclass data - used to suppress DWM shadow.
 	struct ControlSubclassData {
 		Control *ctrl; ///< Owning control.
 	};
@@ -119,7 +119,7 @@ namespace trident {
 			return utf8_to_wstring( url );
 		}
 
-		// Path relativo, variável Rainmeter, ou "./" — resolver via absPath
+		// Path relativo, variável Rainmeter, ou "./" - resolver via absPath
 		std::wstring wurl = utf8_to_wstring( url );
 
 		// "./" ou ".\": RmPathToAbsolute não garante tratamento,
@@ -440,7 +440,7 @@ namespace trident {
 
 
 	// -------------------------------------------------------------------------
-	// ExternalDispatch — window.external for JavaScript
+	// ExternalDispatch - window.external for JavaScript
 	// -------------------------------------------------------------------------
 
 	/**
@@ -605,7 +605,7 @@ namespace trident {
 			int status = lua_pcall( L, argCount, 1, 0 );
 			if ( status != LUA_OK ) {
 				const char *err = lua_tostring( L, -1 );
-				// FIX #2: use m_ctx->rain directly — ctrl may be null if already removed from map
+				// FIX #2: use m_ctx->rain directly - ctrl may be null if already removed from map
 				Rain *logRain = m_ctx ? m_ctx->rain : nullptr;
 				if ( logRain )
 					RN_LOG( logRain, LOG_ERROR, ( L"[RainJIT:Trident] bound function error: " + utf8_to_wstring( err ) ).c_str() );
@@ -680,7 +680,7 @@ namespace trident {
 
 
 	// -------------------------------------------------------------------------
-	// SkinSecurityManager — IInternetSecurityManager
+	// SkinSecurityManager - IInternetSecurityManager
 	//
 	// Permite que o MSHTML carregue recursos locais referenciados com paths
 	// relativos dentro de documentos file:// da skin.
@@ -732,7 +732,7 @@ namespace trident {
 			return path.rfind( m_skinPath, 0 ) == 0;
 		}
 
-		// Retorna URLZONE_LOCAL_MACHINE para recursos da skin — permite carregamento.
+		// Retorna URLZONE_LOCAL_MACHINE para recursos da skin - permite carregamento.
 		STDMETHODIMP MapUrlToZone( LPCWSTR pwszUrl, DWORD *pdwZone, DWORD ) override {
 			if ( !pdwZone )
 				return E_POINTER;
@@ -752,7 +752,7 @@ namespace trident {
 			return INET_E_DEFAULT_ACTION;
 		}
 
-		// Resto das interfaces — delega ao comportamento padrão.
+		// Resto das interfaces - delega ao comportamento padrão.
 		STDMETHODIMP SetSecuritySite( IInternetSecurityMgrSite * ) override {
 			return INET_E_DEFAULT_ACTION;
 		}
@@ -778,7 +778,7 @@ namespace trident {
 
 
 	// -------------------------------------------------------------------------
-	// WebBrowserSite — IOleClientSite + IDocHostUIHandler
+	// WebBrowserSite - IOleClientSite + IDocHostUIHandler
 	// FIX #1: added m_ctx member and updated constructor signature
 	// -------------------------------------------------------------------------
 
@@ -830,7 +830,7 @@ namespace trident {
 			return ref;
 		}
 
-		// IServiceProvider — entrega o SkinSecurityManager ao MSHTML.
+		// IServiceProvider - entrega o SkinSecurityManager ao MSHTML.
 		STDMETHODIMP QueryService( REFGUID guidService, REFIID riid, void **ppv ) override {
 			if ( !ppv )
 				return E_POINTER;
@@ -933,7 +933,7 @@ namespace trident {
 		}
 
 		/**
-		 * FIX #1: uses m_ctx directly — no g_contexts lookup needed.
+		 * FIX #1: uses m_ctx directly - no g_contexts lookup needed.
 		 * FIX (mutex): g_contextsMutex protects only externalDispatch creation,
 		 * not a g_contexts traversal, so std::mutex is safe here with no risk of
 		 * deadlock (lock is never held by the caller at this point).
@@ -964,7 +964,7 @@ namespace trident {
 
 
 	// -------------------------------------------------------------------------
-	// EventSink — DWebBrowserEvents2
+	// EventSink - DWebBrowserEvents2
 	// -------------------------------------------------------------------------
 
 	/**
@@ -1212,7 +1212,7 @@ namespace trident {
 			}
 
 			else if ( dispIdMember == DISPID_WINDOWCLOSING ) {
-				// Mesmo padrão — cancelável direto
+				// Mesmo padrão - cancelável direto
 				auto ctrlIt = m_ctx->controls.find( m_configId );
 				if ( ctrlIt != m_ctx->controls.end() ) {
 					Control &ctrl = *ctrlIt->second;
@@ -1349,7 +1349,7 @@ namespace trident {
 	 * whenever an external caller (e.g. the glass Lua module) re-enables NC
 	 * rendering.  wParam == TRUE means rendering was just enabled; we
 	 * immediately re-apply DWMNCRP_DISABLED.  wParam == FALSE is our own
-	 * suppression firing back — ignored to avoid an infinite loop.
+	 * suppression firing back - ignored to avoid an infinite loop.
 	 */
 	static LRESULT CALLBACK ControlSubclassProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData ) {
 		if ( uMsg == WM_DWMNCRENDERINGCHANGED && wParam == TRUE ) {
@@ -1494,7 +1494,7 @@ namespace trident {
 			L"Shell.Explorer",
 			dwStyle,
 			screenX, screenY, finalW, finalH,
-			ctrl.hwndParent, // owner window — keeps browser above skin in z-order
+			ctrl.hwndParent, // owner window - keeps browser above skin in z-order
 			nullptr,
 			GetModuleHandleW( nullptr ),
 			nullptr
@@ -1614,7 +1614,7 @@ namespace trident {
 	 *
 	 * All Lua closures hold a ControlHandle* instead of a raw Control*.
 	 * DoQuit nulls handle->ctrl BEFORE freeing the Control, so any closure
-	 * called after quit — including l_gc fired by the GC after Cleanup() —
+	 * called after quit - including l_gc fired by the GC after Cleanup() -
 	 * sees a null ctrl and returns immediately.
 	 *
 	 * Lifetime: allocated in l_create, freed by l_gc after DoQuit has nulled ctrl.
@@ -1626,7 +1626,7 @@ namespace trident {
 	/**
 	 * FIX #4: g_contextsMutex is NOT held while ProcessMessages calls
 	 * DrainEventQueue. Callbacks fired during drain may call browser:quit()
-	 * which acquires the mutex in DoQuit — holding it here would deadlock.
+	 * which acquires the mutex in DoQuit - holding it here would deadlock.
 	 */
 	int ProcessMessages( Rain *rain ) {
 		Context *ctx = nullptr;
@@ -1898,7 +1898,7 @@ namespace trident {
 			content = sanitize::HtmlFragment( html, opts );
 			if ( content != html )
 				RN_LOG( ctrl->rain, LOG_WARNING,
-								L"[RainJIT:Trident] [SECURITY] write() content was modified — "
+								L"[RainJIT:Trident] [SECURITY] write() content was modified - "
 								L"dangerous tags, event attributes, or blocked CSS were removed." );
 		}
 
@@ -1910,7 +1910,7 @@ namespace trident {
 		if ( !htmlDoc )
 			return 0;
 
-		// document.open() — resets the document, clears existing content.
+		// document.open() - resets the document, clears existing content.
 		// Invoked via IDispatch because IHTMLDocument2::open() requires
 		// several optional parameters that are inconvenient to supply via COM.
 		DISPID dispOpen = 0;
@@ -1920,7 +1920,7 @@ namespace trident {
 			docDisp->Invoke( dispOpen, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD, &noArgs, nullptr, nullptr, nullptr );
 		}
 
-		// document.write(html) — inject content into the open stream.
+		// document.write(html) - inject content into the open stream.
 		std::wstring wtext = utf8_to_wstring( content );
 		CComBSTR bstrText( wtext.c_str() );
 		DISPPARAMS params = {};
@@ -1933,7 +1933,7 @@ namespace trident {
 		docDisp->Invoke( DISPID_IHTMLDOCUMENT2_WRITE, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD, &params, nullptr, nullptr, nullptr );
 		VariantClear( &varg );
 
-		// document.close() — finalises the parse and fires documentcomplete.
+		// document.close() - finalises the parse and fires documentcomplete.
 		htmlDoc->close();
 
 		return 0;
@@ -1979,7 +1979,7 @@ namespace trident {
 		if ( warg.size() >= 2 && warg[0] == L'.' && ( warg[1] == L'/' || warg[1] == L'\\' ) )
 			warg = L"#CURRENTPATH#" + warg.substr( 2 );
 
-		// Tenta resolver como path — aceita variáveis Rainmeter e "./"
+		// Tenta resolver como path - aceita variáveis Rainmeter e "./"
 		std::wstring resolved = ctrl->rain->absPath( warg );
 		if ( !resolved.empty() && fs::fileExists( resolved ) ) {
 			if ( !fs::ReadTextFile( resolved, script ) ) {
@@ -2079,7 +2079,7 @@ namespace trident {
 			return 1;
 		}
 
-		// nil — JavaScript pode retornar "null", "undefined" ou vazio
+		// nil - JavaScript pode retornar "null", "undefined" ou vazio
 		if ( resultStr == "null" || resultStr == "undefined" || resultStr.empty() ) {
 			lua_pushnil( L );
 			return 1;
@@ -2192,11 +2192,11 @@ namespace trident {
 	 *
 	 * Lua signature: trident.create(table)
 	 *
-	 * Lock discipline — three distinct phases:
-	 *   PHASE 1 (locked)   — COM init, Context creation.
-	 *   PHASE 2 (unlocked) — Lua option parsing, CreateWebBrowserControl, Navigate2.
+	 * Lock discipline - three distinct phases:
+	 *   PHASE 1 (locked)   - COM init, Context creation.
+	 *   PHASE 2 (unlocked) - Lua option parsing, CreateWebBrowserControl, Navigate2.
 	 *                         Trident may call GetExternal here; lock must NOT be held.
-	 *   PHASE 3 (locked)   — Insert Control into map, create ExternalDispatch/ControlHandle.
+	 *   PHASE 3 (locked)   - Insert Control into map, create ExternalDispatch/ControlHandle.
 	 *
 	 * FIX #5: AtlAxWinInit() moved outside the mutex (idempotent, no shared state to protect).
 	 */
@@ -2208,11 +2208,11 @@ namespace trident {
 			return 2;
 		}
 
-		// FIX #5: outside the lock — idempotent Win32 class registration.
+		// FIX #5: outside the lock - idempotent Win32 class registration.
 		AtlAxWinInit();
 
 		// -------------------------------------------------------------------
-		// PHASE 1 — shared state only, safe to hold the lock.
+		// PHASE 1 - shared state only, safe to hold the lock.
 		// -------------------------------------------------------------------
 		Context *ctx = nullptr;
 		int configId = 0;
@@ -2249,10 +2249,10 @@ namespace trident {
 
 			configId = ctx->nextId++;
 		}
-		// g_contextsMutex is now FREE — Trident can call GetExternal safely.
+		// g_contextsMutex is now FREE - Trident can call GetExternal safely.
 
 		// -------------------------------------------------------------------
-		// PHASE 2 — Lua parsing + COM operations. No lock held.
+		// PHASE 2 - Lua parsing + COM operations. No lock held.
 		// -------------------------------------------------------------------
 		luaL_checktype( L, 1, LUA_TTABLE );
 		Control ctrl = {};
@@ -2399,7 +2399,7 @@ namespace trident {
 					if ( sanitize::IsUrlSafe( wstring_to_utf8( resolved ), allowLocal ) )
 						wurl = resolved;
 					else
-						RN_LOG( rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] create() URL blocked — about:blank. Blocked: " + resolved ).c_str() );
+						RN_LOG( rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] create() URL blocked - about:blank. Blocked: " + resolved ).c_str() );
 				} else {
 					wurl = resolved;
 				}
@@ -2421,7 +2421,7 @@ namespace trident {
 		ctrl.webBrowser->Navigate2( &vUrl, &vFlags, nullptr, nullptr, nullptr );
 
 		// -------------------------------------------------------------------
-		// PHASE 3 — insert into map, build Lua object. Lock re-acquired.
+		// PHASE 3 - insert into map, build Lua object. Lock re-acquired.
 		// -------------------------------------------------------------------
 		Control *storedCtrl = nullptr;
 		ControlHandle *handle = nullptr;
@@ -2443,7 +2443,7 @@ namespace trident {
 			storedCtrl->handle = handle;
 		}
 
-		// Build Lua browser table (no lock needed — unique_ptr keeps address stable).
+		// Build Lua browser table (no lock needed - unique_ptr keeps address stable).
 		lua_newtable( L );
 
 		auto pushMethod = [&]( const char *name, lua_CFunction fn ) {
@@ -2492,7 +2492,7 @@ namespace trident {
 		lua_setfield( L, -2, "hwnd" );
 
 		// browser.document and browser.window are live properties resolved via
-		// __index — no () needed, consistent with comProxy behaviour.
+		// __index - no () needed, consistent with comProxy behaviour.
 		lua_newtable( L ); // metatable
 
 		lua_pushlightuserdata( L, handle );
@@ -2541,7 +2541,7 @@ namespace trident {
 		lua_pushvalue( L, -1 );
 		lua_setfield( L, LUA_REGISTRYINDEX, storedCtrl->browserKey.c_str() );
 
-		// Callback API is explicitly (browser, event) — no environment injection needed.
+		// Callback API is explicitly (browser, event) - no environment injection needed.
 		// All call sites (DrainEventQueue, BeforeNavigate2) already pass browser as arg1.
 
 		ControlHandle **sentinelData = static_cast<ControlHandle **>( lua_newuserdata( L, sizeof( ControlHandle * ) ) );

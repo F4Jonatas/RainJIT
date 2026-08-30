@@ -1,6 +1,6 @@
 
 
-static const char *luacom5_source_bytes = R"lua(
+static const char luacom5_source_bytes[] = R"lua(
 	--
 	--   Enhanced functionality for the LuaCOM library
 	--
@@ -1103,4 +1103,5 @@ static const char *luacom5_source_bytes = R"lua(
 
 
 
-static const int luacom5_source_size = sizeof( luacom5_source_bytes ) ;
+// -1 para excluir o '\0'
+static const int luacom5_source_size = sizeof(luacom5_source_bytes) - 1;

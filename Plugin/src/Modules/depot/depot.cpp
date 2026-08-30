@@ -367,7 +367,7 @@ static int constructor( lua_State *L ) {
 			try {
 				std::filesystem::create_directories( dir );
 			} catch ( ... ) {
-				RmLog( rain->rm, LOG_WARNING, L"[RainJIT:Depot] constructor — failed creating directories" );
+				RmLog( rain->rm, LOG_WARNING, L"[RainJIT:Depot] constructor - failed creating directories" );
 			}
 		}
 	}
@@ -495,7 +495,7 @@ static int depot_delete( lua_State *L ) {
 	if ( !result ) {
 		DWORD err = GetLastError();
 
-		std::wstring msg = L"[RainJIT:Depot] d:delete() failed — " + path +
+		std::wstring msg = L"[RainJIT:Depot] d:delete() failed - " + path +
 		                   L" (error " + std::to_wstring( err ) + L")";
 
 		RmLog( rain->rm, LOG_ERROR, msg.c_str() );
@@ -562,7 +562,7 @@ extern "C" int luaopen_depot( lua_State *L ) {
 	/* methods (no upvalue needed) */
 	luaL_setfuncs( L, depot::depot_methods, 0 );
 
-	/* d:delete() needs Rain* upvalue — registered separately */
+	/* d:delete() needs Rain* upvalue - registered separately */
 	lua_pushlightuserdata( L, rain );
 	lua_pushcclosure( L, depot::depot_delete, 1 );
 	lua_setfield( L, -2, "delete" );

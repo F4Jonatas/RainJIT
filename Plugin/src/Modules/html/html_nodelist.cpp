@@ -113,7 +113,7 @@ namespace html {
 
 
 	/* ============================================================
-		list:eq(index)  — 1-based
+		list:eq(index)  - 1-based
 	============================================================ */
 
 	static int list_eq( lua_State *L ) {
@@ -136,7 +136,7 @@ namespace html {
 
 
 	/* ============================================================
-		list:text()  — uses shared ExtractText from html_node.cpp
+		list:text()  - uses shared ExtractText from html_node.cpp
 	============================================================ */
 
 	static int list_text( lua_State *L ) {
@@ -193,7 +193,7 @@ namespace html {
 
 
 	/* ============================================================
-		GC  (Bug 2 — releases docRef)
+		GC  (Bug 2 - releases docRef)
 	============================================================ */
 
 	static int list_gc( lua_State *L ) {

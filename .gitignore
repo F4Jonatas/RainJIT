@@ -12,6 +12,7 @@ assets/images/*.*
 !assets/images/xml-logo.png
 !assets/images/fetch-logo.png
 !assets/images/com-logo.png
+!assets/images/depot-logo.png
 
 private.md
 .obsidian

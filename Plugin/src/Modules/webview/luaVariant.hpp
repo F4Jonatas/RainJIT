@@ -97,7 +97,7 @@ namespace luaVariant {
 			lua_pushboolean( L, v.boolVal == VARIANT_TRUE );
 			break;
 		case VT_DISPATCH:
-			// Raw pointer — caller wraps in ComProxy if needed.
+			// Raw pointer - caller wraps in ComProxy if needed.
 			lua_pushlightuserdata( L, v.pdispVal );
 			break;
 		case VT_NULL:

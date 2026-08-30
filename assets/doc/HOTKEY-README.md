@@ -54,7 +54,7 @@ local kb = hotkey.keyboard({
   focus = false,
 
   callback = function(event)
-      print("F12 pressed globally!")
+    print("F12 pressed globally!")
   end
 })
 ```
@@ -73,7 +73,7 @@ local ms = hotkey.mouse({
   focus = false,
 
   callback = function(event)
-      print("Left click at", event.x, event.y)
+    print("Left click at", event.x, event.y)
   end
 })
 ```
@@ -270,21 +270,21 @@ Returning `false` from the callback blocks the key event from reaching other app
 
 The callback receives a single table with the following fields:
 
-| Field         | Type      | Description                                                     |
-| :--           | :--:      | :--:                                                             |
-| `char`        | _string_  | UTF-8 character produced by the key (empty if non-printable).   |
-| `code`        | _number_  | Virtual key code of the triggering key.                         |
-| `type`        | _string_  | `"press"` or `"release"`.                                       |
-| `keys`        | _table_   | Names of the keys in the matched combination.                   |
-| `capslock`    | _boolean_ | Caps Lock state.                                                 |
-| `numlock`     | _boolean_ | Num Lock state.                                                  |
-| `scrolllock`  | _boolean_ | Scroll Lock state.                                               |
-| `ctrl`        | _boolean_ | Any Ctrl key pressed.                                            |
-| `alt`         | _boolean_ | Any Alt key pressed.                                             |
-| `shift`       | _boolean_ | Any Shift key pressed.                                           |
-| `timestamp`   | _number_  | Milliseconds elapsed since the system started.                  |
-| `vk`          | _string_  | Name of the triggering key (e.g. `"VK_F12"`).                    |
-| `focus`       | _boolean_ | Whether the skin window had foreground focus at trigger time.    |
+| Field         | Type      | Description                                                   |
+| :--           | :--:      | :--:                                                          |
+| `char`        | _string_  | UTF-8 character produced by the key (empty if non-printable). |
+| `code`        | _number_  | Virtual key code of the triggering key.                       |
+| `type`        | _string_  | `"press"` or `"release"`.                                     |
+| `keys`        | _table_   | Names of the keys in the matched combination.                 |
+| `capslock`    | _boolean_ | Caps Lock state.                                              |
+| `numlock`     | _boolean_ | Num Lock state.                                               |
+| `scrolllock`  | _boolean_ | Scroll Lock state.                                            |
+| `ctrl`        | _boolean_ | Any Ctrl key pressed.                                         |
+| `alt`         | _boolean_ | Any Alt key pressed.                                          |
+| `shift`       | _boolean_ | Any Shift key pressed.                                        |
+| `timestamp`   | _number_  | Milliseconds elapsed since the system started.                |
+| `vk`          | _string_  | Name of the triggering key (e.g. `"VK_F12"`).                 |
+| `focus`       | _boolean_ | Whether the skin window had foreground focus at trigger time. |
 
 ---
 

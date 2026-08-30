@@ -201,7 +201,7 @@ namespace lua {
 		lua_setfield( L, -2, "status" );
 
 		// Raw body stored as a Lua string in a private field.
-		// Exposed lazily via :text() and :bytes() — never duplicated.
+		// Exposed lazily via :text() and :bytes() - never duplicated.
 		if ( !response.body.empty() )
 			lua_pushlstring( L, reinterpret_cast<const char *>( response.body.data() ), response.body.size() );
 		else
@@ -260,21 +260,21 @@ namespace lua {
 		} );
 		lua_setfield( L, -2, "cookies" );
 
-		// :bytes() — returns raw body as a binary Lua string, no conversion
+		// :bytes() - returns raw body as a binary Lua string, no conversion
 		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
 			lua_getfield( L2, 1, "__body" );
 			return 1;
 		} );
 		lua_setfield( L, -2, "bytes" );
 
-		// :text() — returns body as UTF-8 string (Lua strings are byte arrays)
+		// :text() - returns body as UTF-8 string (Lua strings are byte arrays)
 		lua_pushcfunction( L, []( lua_State *L2 ) -> int {
 			lua_getfield( L2, 1, "__body" );
 			return 1;
 		} );
 		lua_setfield( L, -2, "text" );
 
-		// :xml() — identical to xml.parse( body )
+		// :xml() - identical to xml.parse( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
@@ -284,7 +284,7 @@ namespace lua {
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:xml() — xml module unavailable: " +
+					std::wstring msg = L"[RainJIT:Fetch] response:xml() - xml module unavailable: " +
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
@@ -301,7 +301,7 @@ namespace lua {
 			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:xml() — parse failed: " +
+					std::wstring msg = L"[RainJIT:Fetch] response:xml() - parse failed: " +
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
@@ -315,7 +315,7 @@ namespace lua {
 		}, 1 );
 		lua_setfield( L, -2, "xml" );
 
-		// :html() — identical to html.parse( body )
+		// :html() - identical to html.parse( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
@@ -325,7 +325,7 @@ namespace lua {
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:html() — html module unavailable: " +
+					std::wstring msg = L"[RainJIT:Fetch] response:html() - html module unavailable: " +
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
@@ -342,7 +342,7 @@ namespace lua {
 			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:html() — parse failed: " +
+					std::wstring msg = L"[RainJIT:Fetch] response:html() - parse failed: " +
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
@@ -356,7 +356,7 @@ namespace lua {
 		}, 1 );
 		lua_setfield( L, -2, "html" );
 
-		// :json() — identical to json( body )
+		// :json() - identical to json( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
@@ -366,7 +366,7 @@ namespace lua {
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:json() — json module unavailable: " +
+					std::wstring msg = L"[RainJIT:Fetch] response:json() - json module unavailable: " +
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
@@ -380,7 +380,7 @@ namespace lua {
 			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
 				const char *err = lua_tostring( L2, -1 );
 				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:json() — parse failed: " +
+					std::wstring msg = L"[RainJIT:Fetch] response:json() - parse failed: " +
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
@@ -393,7 +393,7 @@ namespace lua {
 		}, 1 );
 		lua_setfield( L, -2, "json" );
 
-		// :save(path) — resolves Rainmeter variables and relative paths via absPath
+		// :save(path) - resolves Rainmeter variables and relative paths via absPath
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
@@ -692,7 +692,7 @@ namespace lua {
 
 
 	static void requestOptions( lua_State *L, auto ctx ) {
-		// Parse driver — must be read first so warnings about unsupported options
+		// Parse driver - must be read first so warnings about unsupported options
 		// can reference the active driver.
 		lua_getfield( L, 2, "driver" );
 		if ( lua_isstring( L, -1 ) ) {
@@ -702,7 +702,7 @@ namespace lua {
 			if ( ctx->request.driver != "winhttp" && ctx->request.driver != "wininet" ) {
 				std::wstring msg = L"[RainJIT:Fetch] Unknown driver \"" +
 				                   utf8_to_wstring( ctx->request.driver ) +
-				                   L"\" — falling back to \"winhttp\".";
+				                   L"\" - falling back to \"winhttp\".";
 				if ( ctx->rain && ctx->rain->rm )
 					RmLog( ctx->rain->rm, LOG_WARNING, msg.c_str() );
 				ctx->request.driver = "winhttp";
@@ -750,14 +750,14 @@ namespace lua {
 		}
 		lua_pop( L, 1 );
 
-		// Parse phase-specific timeouts — warn if driver is wininet
+		// Parse phase-specific timeouts - warn if driver is wininet
 		auto checkPhaseTimeout = [&]( const char *field, int &target ) {
 			lua_getfield( L, 2, field );
 			if ( lua_isnumber( L, -1 ) ) {
 				target = static_cast<int>( lua_tointeger( L, -1 ) );
 
 				if ( ctx->request.driver == "wininet" && target > 0 ) {
-					std::wstring msg = L"[RainJIT:Fetch] driver=\"wininet\" — \"" +
+					std::wstring msg = L"[RainJIT:Fetch] driver=\"wininet\" - \"" +
 					                   utf8_to_wstring( field ) +
 					                   L"\" is not supported by WinINet and will be ignored.";
 					if ( ctx->rain && ctx->rain->rm )
@@ -865,7 +865,7 @@ namespace lua {
 		// is called while the request is in flight.
 		ctx->refSelf = core::ContextRegistry::instance().registerContext( ctx );
 
-		// Execute directly on the current thread — no busy-wait, no worker thread.
+		// Execute directly on the current thread - no busy-wait, no worker thread.
 		if ( ctx->request.driver == "wininet" )
 			wininet::ExecuteFetchThread( ctx );
 		else

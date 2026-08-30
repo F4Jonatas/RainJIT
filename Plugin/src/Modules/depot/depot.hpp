@@ -147,7 +147,7 @@ struct Depot {
 			);
 			// clang-format on
 
-			// read == buffer.size() - 1 means the value was truncated — double and retry.
+			// read == buffer.size() - 1 means the value was truncated - double and retry.
 			if ( read < static_cast<DWORD>( buffer.size() ) - 1 )
 				return wstring_to_utf8( buffer.data() );
 
@@ -234,7 +234,7 @@ struct Depot {
 	 * @brief Checks if a key exists in the section.
 	 *
 	 * Uses a sentinel default value to correctly distinguish a missing key
-	 * from a key with an empty value — unlike a plain read + length check.
+	 * from a key with an empty value - unlike a plain read + length check.
 	 *
 	 * @param key Key name (UTF-8).
 	 * @return true if the key exists (even with an empty value), false otherwise.

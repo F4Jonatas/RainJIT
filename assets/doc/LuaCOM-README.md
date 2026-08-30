@@ -11,7 +11,7 @@
   <br>
 
 
-  <img src="./assets/images/com-logo.png" alt="LOGO" width="200" height="200">
+  <img src="../images/com-logo.png" alt="LOGO" width="200" height="200">
 
 </div>
 
@@ -25,11 +25,11 @@
 <summary><ins>Table of contents</ins></summary>
 
 - [Features](#features)
-   2. [Who Should Read What (or About the Manual)](#12-who-should-read-what-or-about-the-manual)
-2. [Tutorial](#chapter-2-tutorial)
-   1. [Using The LuaCOM library](#21-using-the-luacom-library)
-   2. [Locating COM Objects](#22-locating-com-objects)
-   3. [Creating Objects](#23-creating-objects)
+   - [Who Should Read What (or About the Manual)](#12-who-should-read-what-or-about-the-manual)
+- [Tutorial](#chapter-2-tutorial)
+   - [Using The LuaCOM library](#21-using-the-luacom-library)
+- [Locating COM Objects](#22-locating-com-objects)
+   - [Creating Objects](#23-creating-objects)
    4. [Getting Help about an Object](#24-getting-help-about-an-object)
    5. [Methods and Properties](#25-methods-and-properties)
    6. [Releasing Objects](#26-releasing-objects)
@@ -123,35 +123,576 @@ LuaCOM has been designed and implemented by [**Vinicius Almendra**](almendra@tec
 - Log mechanism to ease the debugging of applications
 
 <br>
+<br>
 
 
-### 2.2 Locating COM Objects
-
-The first step to use a COM object is to find it. COM objects are registered in the system registry and are associated with an unique Class Identifier, known as CLSID. A CLSID may also be associated with a string known as Programmatic Identifier or ProgID. This last one is the easiest way to reference a COM object. E.g., the ProgID for Microsoft® Word® is "Word.Application".
-
-If one do not know in advance what is the CLSID or the ProgID of the object of interest, them it's possible to use tools like OleView to find the object, although the best place to find it is in the object's documentation.
-
-### 2.3 Creating Objects
-
-With the ProgID or the CLSID of an object, it's now possible to create a new instance of it or to get a running instance. To do so, the easiest way is to use the method `CreateObject` of the Lua API:
+## :jigsaw: Quick Example
 
 ```lua
-word = luacom.CreateObject("Word.Application")
-assert(word)
-word.Visible = true
-```
+local luacom = import("luacom")
 
-If there is an already running instance of the object you want, `GetObject` must be used to use it. The following code illustrates this:
+-- With the ProgID or the CLSID of an object, it's now possible to create a new instance of it or to get a running instance. To do so, the easiest way is to use the method CreateObject of the Lua API
+local player = luacom.CreateObject("WMPlayer.OCX")
+assert( player )
+player.uiMode = "invisible"
 
-```lua
+
+-- If there is an already running instance of the object you want, GetObject must be used to use it. The following code illustrates this
+
 -- If there is an instance of Word(r) running,
 -- it will end it
-word = luacom.GetObject("Word.Application")
+local word = luacom.GetObject("Word.Application")
 if word then
-    word:Quit()
-    word = nil
+  word:Quit()
+  word = nil
 end
 ```
+
+---
+
+<br>
+<br>
+
+
+## :book: Module `luaCOM`
+
+### :large_orange_diamond: Method `luacom.CreateObject()`
+
+This method finds the Class ID referenced by the ID parameter and creates an instance of the object with this Class ID.<br>
+If there is any problem (ProgID not found, error instantiating object), the method returns nil.
+
+```lua
+-- @usage luacom.CreateObject(progID)
+-- @param (string) progID
+-- @return (table|nil) LuaCOM object
+local inet = luacom.CreateObject("InetCtls.Inet")
+
+if inet == nil then
+  print("Error! Object could not be created!")
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.Connect()`
+
+This method finds the default source interface of the object `luacom_obj`, creates an instance of this interface whose implementation is given by `implementation_table` and creates a connection point between the `luacom_obj` and the implemented source interface. Any calls made by the `luacom_obj` to the source interface implementation will be translated to Lua calls to member function present in the `implementation_table`. If the method succeeds, the LuaCOM object implemented by `implementation_table`, plus a cookie that identifies the connection, are returned; otherwise, nil is returned.
+
+Notice that, to receive events, it's necessary to have a Windows message loop.
+
+```lua
+local events_handler = {}
+function events_handler:NewValue(new_value)
+  print(new_value)
+end
+
+
+-- @usage luacom.Connect(luacom_obj, implementation_table)
+-- @param (table) luacom_obj - LuaCOM object
+-- @param (table|userdata) implementation_table
+-- @return (table|nil) LuaCOM object
+-- @return (number) cookie
+local events_obj = luacom.Connect(luacom_obj, events_handler)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.ImplInterface()`
+
+This method finds the type library associated with the ProgID and tries to find the type information of an interface called `interface_name`. If it does, then creates an object whose implementation is `impl_table`, that is, any method call or property access on this object is translated to calls or access on the members of the table. Then it makes a LuaCOM object for the implemented interface and returns it.<br>
+If there are any problems in the process (ProgID not found, interface not found, interface isn't a `dispinterface`), the method returns nil.
+
+```lua
+-- @usage luacom.ImplInterface(impl_table, ProgID, interface_name)
+-- @param (table|userdata) impl_table
+-- @param (string) ProgID
+-- @param (string) interface_name
+-- @return (table|nil) implemented_obj - LuaCOM object
+
+local myobject = {}
+myobject.Property = "teste"
+
+function myobject:MyMethod()
+  print("My method!")
+end
+
+
+
+local luacom_obj = luacom.ImplInterface(myobject, "TEST.Test", "ITest")
+
+-- these are done via Lua
+myobject:MyMethod()
+print( myobject.Property )
+
+-- this call is done through COM
+luacom_obj:MyMethod()
+print( luacom_obj.Property )
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.ImplInterfaceFromTypelib()`
+
+This method loads the type library whose file path is "typelib_path" and tries to find the type information of an interface called "interface_name". If it does, then creates an object whose implementation is "impl_table", that is, any method call or property access on this object is translated to calls or access on the members of the table. Then it makes a LuaCOM object for the implemented interface and returns it. If there are any problems in the process (ProgID not found, interface not found, interface isn't a dispinterface), the method returns nil. The "coclass_name" parameter is optional; it is only needed if the resulting LuaCOM object is to be passed to the methods `Connect`, `AddConnection` or `ExposeObject`. This parameter specifies the Component Object class name to which the interface belongs, as one interface may be used in more than one "coclass".
+
+```lua
+-- @usage luacom.ImplInterfaceFromTypelib(impl_table, typelib_path, interface_name [, coclass_name])
+-- @param (table|userdata) impl_table
+-- @param (string) typelib_path
+-- @param (string) interface_name
+-- @param (string) [coclass_name]
+-- @return (table|nil) implemented_obj - LuaCOM object
+
+local myobject = {}
+myobject.Property = "teste"
+
+function myobject:MyMethod()
+  print("My method!")
+end
+
+local luacom_obj = luacom.ImplInterfaceFromTypelib(myobject, "test.tlb", "ITest", "Test")
+
+-- these are done via Lua
+myobject:MyMethod()
+print(myobject.Property)
+
+-- this call is done through COM
+luacom_obj:MyMethod()
+print( luacom_obj.Property )
+```
+
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.GetObject()`
+
+The first version method finds the Class ID referenced by the ProgID parameter and tries to find a running instance of the object having this Class ID. If there is any problem (ProgID not found, object is not running), the method returns nil.
+The second version tries to find an object through its moniker. If there is any problem, the method returns nil.
+
+```lua
+-- @usage luacom.GetObject(ProgID)
+-- @param (string) ProgID
+-- @return (table|nil) luacom_obj - LuaCOM object
+
+local excel = luacom.GetObject("Excel.Application")
+if excel == nil then
+  print("Error! Could not get object!")
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.NewObject() NewControl`
+
+This method is analogous to `ImplInterface`, doing just a step further: it locates the default interface for the ProgID and uses its type information. That is, this method creates a Lua implementation of a COM object's default interface. This is useful when implementing a complete COM object in Lua. It also creates a connection point for sending events to the client application and returns it as the second return value. If there are any problems in the process (ProgID not found, default interface is not a dispinterface etc), the method returns nil twice and returns the error message as the third return value.
+
+To send events to the client application, just call methods of the event sink table returned. The method call will be translated to COM calls to each connection. These calls may contain parameters (as specified in the type information).
+
+```lua
+-- @usage luacom.NewObject(impl_table, ProgID)  - Creates a COM object
+-- @usage luacom.NewControl(impl_table, ProgID) - Creates an OLE control
+-- @param (table|userdata) impl_table
+-- @param (string) ProgID
+-- @return (table|nil) - LuaCOM object
+-- @return (table|nil) - Event sink
+-- @return (string|nil) - Error message in the case of failure
+
+
+local myobject = {}
+myobject.Property = "teste"
+
+function myobject:MyMethod()
+  print("My method!")
+end
+
+
+local obj, evt, err = luacom.NewObject(myobject, "TEST.Test")
+
+-- these are done via Lua
+myobject:MyMethod()
+print(myobject.Property)
+
+-- this call is done through COM
+luacom_obj:MyMethod()
+print(luacom_obj.Property)
+
+-- here we sink events
+evt:Event1()
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.ExposeObject()`
+
+This method creates and registers a class factory for `luacom_obj`, so that other running applications can use it. It returns a cookie that must be used to unregister the object. If the method fails, it returns nil.
+
+**ATTENTION**: the object MUST be unregistered (using `RevokeObject`) before calling `luacom_close` or `lua_close`, otherwise unhandled exceptions might occur.
+
+```lua
+-- @usage luacom.ExposeObject(luacom_obj)
+-- @param (table) luacom_obj - LuaCOM object
+-- @return (number|nil) cookie
+
+local myobject = luacom.NewObject(impl_table, "Word.Application")
+local cookie = luacom.ExposeObject(myobject)
+
+function end_of_application()
+  luacom.RevokeObject(cookie)
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.RevokeObject()`
+
+Revokes a previously registered `ExposeObject` operation.
+
+```lua
+-- @usage luacom.RevokeObject(cookie)
+-- @param (number) cookie
+-- @return (boolean|nil)
+
+local myobject = luacom.NewObject(impl_table, "Word.Application")
+local cookie = luacom.ExposeObject(myobject)
+assert(luacom.RevokeObject(cookie))
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.RegisterObject()`
+
+This method creates the necessary registry entries for a COM object, using the information in `registration_info` table. If the component is successfully registered, the method returns a non-nil value.
+
+The `registration_info` table must contain the following fields[^5]:
+
+[^5]: For a better description of these fields, see COM's documentation.
+
+- **VersionIndependentProgID** This field must contain a string describing the programmatic identifier for the component, e.g. "MyCompany.MyApplication".
+- **ProgID** The same as VersionIndependentProgID but with a version number, e.g. "MyCompany.MyApplication.2".
+- **TypeLib** The file name of the type library describing the component. This file name should contain a path, if the type library isn't in the same folder of the executable. Samples: `mytypelib.tlb`, `c:\app\test.tlb`, `test.exe\1` (this last one can be used when the type library is bound to the executable as a resource).
+- **Control** Must be `true` if the object is an OLE control, and `false` or nil otherwise.
+- **CoClass** The name of the component class. There must be a coclass entry in the type library with the same name or the registration will fail.
+- **ComponentName** This is the human-readable name of the component.
+- **Arguments** This field specifies what arguments will be supplied to the component executable when started via COM. Normally it should contain "/Automation".
+- **ScriptFile** This field specifies the full path of the script file that implements the component. Only used to register in-process servers.
+
+This method is not a generic "registering tool" for COM components, as it assumes the component to be registered is implemented by the running executable during registration.
+
+```lua
+-- @usage luacom.RegisterObject(registration_info)
+-- @param (table) registration_info - Registration information
+-- @return (any) nil or non-nil value
+
+-- Lua registration code
+local function RegisterComponent()
+  local reginfo = {}
+  reginfo.VersionIndependentProgID = "TESTE.Teste"
+
+  -- Adds version information
+  reginfo.ProgID = reginfo.VersionIndependentProgID..".1"
+  reginfo.TypeLib = "teste.tlb"
+  reginfo.CoClass = "Teste"
+  reginfo.ComponentName = "Test Component"
+  reginfo.Arguments = "/Automation"
+  reginfo.ScriptFile = "teste.lua"
+
+  local res = luacom.RegisterObject(reginfo)
+  return res
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.UnRegisterObject()`
+
+This method removes the registry entries for a COM object, using the information in `registration_info` table. If the component is successfully unregistered, the method returns a non-nil value.
+
+The `registration_info` table must contain the following fields[^6]:
+
+[^6]: For a better description of these fields, see COM's documentation.
+
+- **VersionIndependentProgID** This field must contain a string describing the programmatic identifier for the component, e.g. "MyCompany.MyApplication".
+- **ProgID** The same as VersionIndependentProgID but with a version number, e.g. "MyCompany.MyApplication.2".
+- **TypeLib** The file name of the type library describing the component. This file name should contain a path, if the type library isn't in the same folder of the executable. Samples: `mytypelib.tlb`, `c:\app\test.tlb`, `test.exe\1` (this last one can be used when the type library is bound to the executable as a resource).
+- **CoClass** The name of the component class. There must be a coclass entry in the type library with the same name or the registration will fail.
+
+```lua
+-- @usage luacom.UnRegisterObject(registration_info)
+-- @param (table) registration_info - Registration information
+-- @return (any) nil or non-nil value
+
+-- Lua registration code
+function UnRegisterComponent()
+  local reginfo = {}
+  reginfo.VersionIndependentProgID = "TESTE.Teste"
+
+  -- Adds version information
+  reginfo.ProgID = reginfo.VersionIndependentProgID..".1"
+  reginfo.TypeLib = "teste.tlb"
+  reginfo.CoClass = "Teste"
+
+  local res = luacom.UnRegisterObject(reginfo)
+  return res
+end
+
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.addConnection()`
+
+
+This method connects two LuaCOM objects, setting the server as an event sink for the client, that is, the client will call methods of the server to notify events (following the COM model). This will only work if the client supports connection points of the server's type. If the method succeeds, it returns the cookie that identifies the connection; otherwise, it throws an error.
+
+```lua
+-- @usage luacom.addConnection(client, server)
+-- @param (table) client - LuaCOM object
+-- @param (table) server - LuaCOM object
+-- @return (number) cookie
+
+local obj = luacom.CreateObject("TEST.Test")
+
+local event_sink = {}
+function event_sink:KeyPress(keynumber)
+  print(keynumber)
+end
+
+local event_obj = luacom.ImplInterface(event_sink, "TEST.Test", "ITestEvents")
+local cookie = luacom.addConnection(obj, event_obj)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.releaseConnection()`
+
+This method disconnects a LuaCOM object from an event sink.
+
+```lua
+-- @usage luacom.releaseConnection(client, event_sink, cookie)
+-- @param (table) client
+-- @param (table) event_sink
+-- @param (table) cookie
+-- @return (nil)
+
+local obj = luacom.CreateObject("TEST.Test")
+
+local event_sink = {}
+function event_sink:KeyPress(keynumber)
+  print(keynumber)
+end
+
+local event_obj = luacom.ImplInterface(event_sink, "TEST.Test", "ITestEvents")
+
+local result = luacom.addConnection(obj, event_obj)
+luacom.releaseConnection(obj)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.ProgIDfromCLSID()`
+
+This method is a proxy for the Win32 function `ProgIDFromCLSID`.
+
+```lua
+-- @usage luacom.ProgIDfromCLSID(clsid)
+-- @param (string) clsid
+-- @return (string|nil) progID
+
+local progid = luacom.ProgIDfromCLSID("{8E27C92B-1264-101C-8A2F-040224009C02}")
+print(progid)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.CLSIDfromProgID()`
+
+It's the inverse of `ProgIDfromCLSID`.
+
+```lua
+-- @usage luacom.CLSIDfromProgID(progID)
+-- @param (string) progID
+-- @return (string|nil) clsID
+
+local clsid = luacom.CLSIDfromProgID("Word.Application")
+print(clsid)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.ShowHelp()`
+
+This method tries to locate the `luacom_obj`'s help file in its type information and shows it.
+
+```lua
+-- @usage luacom.ShowHelp(luacom_obj)
+-- @param (table) luacom_obj - LuaCOM object
+-- @return (nil)
+
+local obj = luacom.CreateObject("Word.Application")
+luacom.ShowHelp(obj)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.GetIUnknown()`
+
+This method returns a userdata holding the `IUnknown` interface pointer to the COM object behind `luacom_obj`. It's important to notice that Lua does not duplicates userdata: many calls to `GetIUnknown` for the same LuaCOM object will return the same userdata. This means that the reference count for the `IUnknown` interface will be incremented only once (that is, the first time the userdata is pushed) and will be decremented only when all the references to that userdata go out of scope (that is, when the userdata suffers garbage collection).
+
+One possible use for this method is to check whether two LuaCOM objects reference the same COM object.
+
+```lua
+-- @usage luacom.GetIUnknown(luacom_obj)
+-- @param (table) luacom_obj - LuaCOM object
+-- @return (userdata|nil) IUnknown metatable
+
+-- Creates two LuaCOM objects for the same COM object
+-- a running instance of Microsoft Word
+local word1 = luacom.GetObject("Word.Application")
+local word2 = luacom.GetObject("Word.Application")
+
+-- These two userdata should be the same
+local unk1 = luacom.GetIUnknown(word1)
+local unk2 = luacom.GetIUnknown(word2)
+
+assert(unk1 == unk2)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.isMember()`
+
+This method returns `true` (that is, different from nil) if there exists a method or a property of the `luacom_obj` named `member_name`.
+
+```lua
+-- @usage luacom.isMember(luacom_obj, name)
+-- @param (table) luacom_obj - LuaCOM object
+-- @param (string) name - Member name
+-- @return (boolean)
+
+local obj = luacom.CreateObject("MyObject.Test")
+if luacom.isMember(obj, "Test") then
+  obj:Test()
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.StartLog()`
+
+This methods activates the log facility of LuaCOM, writing to the log file all errors that occurr. If the library was compiled with `VERBOSE` defined, it also logs other informative messages like creation and destruction of LuaCOM internal objects, method calls etc. This can help track down object leaks. The method returns `true` if the log file could be opened, `false` otherwise.
+
+```lua
+-- @usage luacom.StartLog(log_file_name)
+-- @param (string) log_file_name
+-- @return (boolean) status
+
+local ok = luacom.StartLog("luacomlog.txt")
+if not ok then
+  print("log not opened")
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.EndLog()`
+
+This method stops the log facility (if it has been activated), closing the log file.
+
+```lua
+-- @usage luacom.EndLog()
+-- @return (nil)
+
+luacom.EndLog()
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `luacom.GetEnumerator()`
+
+This method returns a COM enumerator for a given LuaCOM object, if it provides one.<br>
+This is the same as calling the `NewEnum` method, at least for the majority of the objects.<br>
+
+This object is a proxy for a COM object that implements the [**`IEnumVARIANT`**](https://learn.microsoft.com/pt-br/windows/win32/api/oaidl/nn-oaidl-ienumvariant) interface. It translates the calls made to fields of the table to method calls using that interface. Enumerators arise often when dealing with collections.
+
+> [!NOTE]
+> #### Enumerator Object Methods
+>
+> - `:Next()` — Returns the next object in the enumeration or `nil` if the end has been reached.
+> - `:Skip()` — Skips the next object, returning `true` if succeeded of `false` if not.
+> - `:Reset()` — Restarts the enumerator.
+> - `:Clone()` — Returns a new enumerator in the same state.
+
+```lua
+-- @usage luacom.GetEnumerator(luacom_obj)
+-- @param (table) luacom_obj - LuaCOM object
+-- @return (table|nil) Enumerator object or nil
+
+-- Prints all sheets of an open Excel Application
+local excel = luacom.GetObject("Excel.Application")
+local e = luacom.GetEnumerator(excel.Sheets)
+
+local s = e:Next()
+while s do
+  print(s.Name)
+  s = e:Next()
+end
+```
+
+<br>
+
+
+### 6.5 Type Library Object
+
+The type library object is a proxy for the interface `ITypeLib`. It can be obtained using the API method `LoadTypeLibrary` or the type information object method `GetTypeLib`.
+
+**Methods**
+
+- **GetDocumentation** returns a table containing the fields `name`, `helpstring`, `helpcontext` and `helpfile` for the type library.
+- **GetTypeInfoCount** returns the number of type descriptions contained in the type library.
+- **GetTypeInfo(n)** returns an type information object for the n-th type description.
+- **ShowHelp** tries to launch the help file associated with the type library (if any).
+
+### 6.6 Type Information Object
+
+The type information object is a proxy for the interface `ITypeInfo`. It can be obtained using the API method `GetTypeInfo` or the type library object method `GetTypeInfo`.
+
+**Methods**
+
+- **GetTypeLib** returns the containing type library object.
+- **GetFuncDesc(n)** returns a table describing the n-th function of the type description. This table contains the following fields: `memid` (dispatch identifier), `invkind` (invoke kind), `Params` (number of parameters), `ParamsOpt` (number of optional parameters), `description`, `helpfile`, `helpcontext`, `name`. Besides that, it stores an array-like table called `parameters` describing each parameter of the function, with these fields: `name`, `type`.
+- **GetVarDesc(n)** returns a table describing the n-th variable (or constant) in the type description. This table contains the following fields: `name`, `value` (for constants only).
+- **GetDocumentation** returns a table with documentation for the type description, with the fields `name`, `helpstring`, `helpcontext` and `helpfile`.
+- **GetTypeAttr** returns a table containing the type attributes for the type description. This table holds the following fields: `GUID`, `typekind`, `Funcs` (number of functions), `Vars` (number of variables or constants) and `ImplTypes`. There is also a `flags` field, containing a table that describes the flags for this type description. This table contains the following boolean fields: `control`, `appobject`, `dispatchable`, `oleautomation`, `cancreate`.
+- **GetImplType(n)** For type descriptions of COM classes, this returns the type information object for the nth interface of the COM class.
+- **GetImplTypeFlags(n)** For type descriptions of COM classes, this returns a table containing the implementation flags for the n-th interface belonging to the COM class. This table holds the following boolean flags: `default`, `source`, `restricted`, `defaultvtable`.
+- **ExportEnumerations** returns a table with all the enumerations in this typelib. The keys are the enumeration names, and each one of them is a table, keyed by the enumeration values.
+
+---
+
+<br>
+
+
+
+
 
 ### 2.4 Getting Help about an Object
 
@@ -264,28 +805,6 @@ The standard API is further divided in two classes: the Lua API and the C/C++ AP
 | `ImportIUnknown` | Converts a light userdata (pointer) to an IUnknown full userdata. |
 | `DetectAutomation` | Used to implement COM servers. Looks in the command-line for /Register or /UnRegister /Automation (not case-sensitive) and calls user-defined functions to register, unregister, or expose objects, entering a message loop in the latter case. If there is no command-line then assume it is being run in-process, calls the expose function and returns. |
 
-**Extended Lua API**
-
-| Method | Description |
-|---|---|
-| `CreateLocalObject` | Creates a LuaCOM object as an out-of-process server. |
-| `CreateInprocObject` | Creates a LuaCOM object as an in-process server. |
-| `ExportConstants` | Exports all the constants of a type library (standalone or bound to a LuaCOM object) to the global environment (or optionally to a table). |
-| `DumpTypeLib` | Creates an HTML file describing a type library. |
-| `GetType` | Returns a string describing the type of object, in the case its an object belonging to the LuaCOM library. |
-| `ViewTypeLib` | Runs `DumpTypeLib` and shows the created file using Internet Explorer®. |
-| `pairs` | Does the same as `pairs` for COM Enumerators. |
-| `FillTypeLib` | Creates a table describing a type library. |
-| `FillTypeInfo` | Creates a table describing a type info. |
-
-**Standard C/C++ API**
-
-| Function | Description |
-|---|---|
-| `luacom_open` | Initializes the LuaCOM library in a Lua state. It must be called before any use of LuaCOM features. |
-| `luacom_close` | LuaCOM's termination function. |
-| `luacom_detectAutomation` | This function is a helper to create COM servers. It looks in the command line for the switches "/Automation" and "/Register" and call some user-defined Lua functions accordingly. |
-| `luacom_IDispatch2LuaCOM` | Takes an IDispatch interface and creates a LuaCOM object to expose it, pushing the object on the Lua stack. |
 
 ### 3.2 LuaCOM objects
 
@@ -324,11 +843,11 @@ Follows a sample of these situations:
 ```lua
 -- First, we get a luacom object using LuaCOM API
 excel = luacom.CreateObject("Excel.Application")
-assert(luacomE.GetType(excel) == "LuaCOM")
+assert(luacom.GetType(excel) == "LuaCOM")
 
 -- now we get one from a method call
 sheets = excel.Sheets
-assert(luacomE.GetType(sheets) == "LuaCOM")
+assert(luacom.GetType(sheets) == "LuaCOM")
 ```
 
 A LuaCOM object may be passed as a parameter to method calls on other LuaCOM objects, if these methods expect an argument of type `dispinterface`. Here is a sample to illustrate this situation:
@@ -884,27 +1403,6 @@ LuaCOM deals with other objects besides COM Automation ones. Here we describe th
 
 #### 3.5.1 The Enumerator Object
 
-This object is a proxy for a COM object that implements the `IEnumVARIANT` interface. It translates the calls made to fields of the table to method calls using that interface. Enumerators arise often when dealing with collections. To obtain an enumerator for a collection, use the Lua API method `GetEnumerator`. Example:
-
-```lua
---
--- Sample use of enumerators
---
-
--- Gets an instance
-word = luacom.GetObject("Word.Application")
-
--- Gets an enumerator for the Documents collection
-docs_enum = luacom.GetEnumerator(word.Documents)
-
--- Prints the names of all open documents
-doc = docs_enum:Next()
-while doc do
-    print(doc.Name)
-    doc = docs_enum:Next()
-end
-```
-
 The Extended Lua API method `pairs` allows the traversal of the enumeration using Lua's for statement. The sample above can be rewritten this way:
 
 ```lua
@@ -1226,1135 +1724,17 @@ Set obj = obj_dummy
 
 This way the client may call methods of the COM object using the `obj` variable.
 
-### 5.5 History
+---
 
-**Version 1.3b2**
 
-- OLE controls with embedded UI;
-- Representing variants with tables;
+### 2.2 Locating COM Objects
 
-**Version 1.3b**
+The first step to use a COM object is to find it. COM objects are registered in the system registry and are associated with an unique Class Identifier, known as CLSID. A CLSID may also be associated with a string known as Programmatic Identifier or ProgID. This last one is the easiest way to reference a COM object. E.g., the ProgID for Microsoft® Word® is "Word.Application".
 
-- Conversion tag/metamethod for tables;
-- Representing dates with tables;
-- More than one event sink connected to an object;
-- A method of typelibs returned by `GetTypeInfo` exports all enumerations of the typelib to a table;
-- Removal of registered servers from registry (unregister);
-- Identifies when an interface pointer is in fact a local Lua table implementing a COM object;
-- Fixed memory leak with some out parameters;
-- Removed line break in some system exceptions.
-
-**Version 1.2**
-
-- Can be loaded by Lua 5's `require` function;
-- In-process servers, fully implemented in Lua (no initialization code in C is necessary for in-process servers, and for local servers using Lua 5);
-- Now 1-based arrays are correctly converted by LuaCOM;
-- UNICODE strings are correctly converted from/to ANSI ones by LuaCOM;
-- byte arrays are now converted from/to strings with embedded zeros;
-- LuaCOM now has a limited support for loading and browsing type information and type libraries. This includes the ability to import type library constants (enum's) as Lua globals and the ability to open the help information associated with a component;
-- objects implementing `IEnumVARIANT` interface are now supported. This means that collections can be used in LuaCOM in a similar way as the are in VBScript®;
-- implemented a log mechanism to simplify debugging;
-- LuaCOM now handles correctly COM calls with named parameters[^4]. This caused problems when receiving Microsoft Excel® events;
-- now it's possible to specify the context used to create an instance of a COM object (whether it should be created as a local server or as an in-process server);
-- non-ANSI code removed;
-- when faced with an `IUnknown` pointer, LuaCOM now queries it for `IDispatch` or `IEnumVARIANT` interfaces, returning a LuaCOM object instead of an `IUnknown` pointer;
-- improved error-handling: now LuaCOM allows the customization of the actions to be taken when errors occur;
-- LuaCOM now supports the concept of default method: when one uses a reference to a LuaCOM object as a function, LuaCOM does the function call using the default method of that object;
-- part of the Lua API of LuaCOM now is implemented in Lua 5. This eases the addition of new features and avoids cramming the library. Nevertheless, this does not impact those who use the binary release, as they carry the Lua code precompiled;
-- `luacom.GetObject` now supports the use of monikers. Among other thing, this makes possible to use WMI and to open document files directly, e.g. `luacom.GetObject("myfile.xls")`;
-- `luacom.CreateObject` and `luacom.GetObject` now make an attemp to initialize the COM object via `IPersistStreamInit`. Some objects refuse to work without this step.
-
-[^4]: Notice that LuaCOM does not implement named parameters; it just takes them when called from a COM client and puts them.
-
-**Version 1.1**
-
-- LuaCOM is now compatible with Lua 4 and Lua 5. It's just a matter of linking with the right library;
-- when used with Lua 5, LuaCOM uses booleans to better match the Automation types;
-- all functions of LuaCOM's Lua API are now grouped together in a single table called `luacom`, although they are still accessible globally as `luacom_<function>` in the Lua 4 version of the library;
-- now it's possible to create instances of Microsoft® Office® applications (Excel®, Powerpoint® etc.). It was only possible to use them via `GetObject`; now you can create a new instance of these applications using `luacom.CreateObject`;
-- when compiled with the `NDEBUG` flag, LuaCOM does not use any kind of terminal output anymore (`printf`, `cout` etc). This could break some applications.
-
-**Version 1.0**
-
-- property access modified: now parameterized properties must be accessed as functions using a prefix to differentiate property read and write. If the prefix is omitted, a property get is assumed;
-- syntax "`obj.Property(param)`" is no longer supported. A colon – ":" – must be used: "`obj:Property(param)`";
-- better support for implementation of COM objects, including registration and event generation;
-- Type conversion engine rewritten. Now it adheres more firmly to the types specified in the type libraries;
-- binding rewritten to better support "out" and "in-out" parameters and to adhere more strictly to the recommended memory allocation policies for COM;
-- COM objects without type information are now supported.
-
-**Version 0.9.2**
-
-- removal of `LUACOM_TRUE` and `LUACOM_FALSE` constants; now booleans follow the same convention of the C language;
-- memory and interface leaks fixed;
-- some functions of the API have slightly different names;
-- changes in memory allocation policy, to follow more strictly practices recommended in COM documentation;
-- parameter passing policies changed;
-- added limited support for `IUnknown` pointers;
-- changes in type conversion;
-- added limited support for implementing and registering COM objects in Lua
-
-**Version 0.9.1**
-
-- conversion to Lua 4;
-- better handling of different kinds of type information (e.g. now can access Microsoft Internet Explorer® object);
-- now handles more gracefully exceptions and errors;
-- added support for optional parameters with default values;
-- LuaCOM does not initializes COM libraries anymore; this is left to the user;
-- more stringent behavior about the syntax of method calls and property access (methods with ":" and properties with ".").
+If one do not know in advance what is the CLSID or the ProgID of the object of interest, them it's possible to use tools like OleView to find the object, although the best place to find it is in the object's documentation.
 
 ---
 
-## Chapter 6 Reference
-
-### 6.1 The C/C++ API
-
-#### luacom_open
-
-**Prototype**
-
-```c
-void luacom_open(lua_State* L);
-```
-
-**Description**
-
-This function initializes the LuaCOM library, creates the global `luacom` table and fills it with LuaCOM methods in the given Lua state. Notice that it's necessary to initialize COM before, using `OleInitialize` or `CoInitialize` or something like that.
-
-**Sample**
-
-```c
-int main()
-{
-    lua_State *L = lua_open(0);
-    OleInitialize(NULL);
-    luacom_open(L);
-    .
-    .
-    .
-}
-```
-
-#### luacom_close
-
-**Prototype**
-
-```c
-void luacom_close(lua_State* L);
-```
-
-**Description**
-
-This function is intended to clean up the data structures associated with LuaCOM in a specific Lua state (L). Currently, it does nothing, but in future releases it will do. So, do not remove from your code! It must be also called before the COM termination functions (`OleUninitialize` and `CoInitialize`) and before `lua_close`.
-
-**Sample**
-
-```c
-int main()
-{
-    lua_State *L = lua_open(0);
-    OleInitialize(NULL);
-    luacom_open(L);
-    .
-    .
-    .
-    luacom_close(L);
-    lua_close(L);
-    OleUninitialize();
-}
-```
-
-#### luacom_detectAutomation
-
-**Prototype**
-
-```c
-int luacom_detectAutomation(lua_State *L, int argc, char *argv[]);
-```
-
-**Description**
-
-This function gets from the top of the Lua stack a table which should hold two fields named "StartAutomation" and "Register" (these fields should contain functions that implement these actions). Then it searches the command line (provided argc and argv) for the switches "/Automation" or "/Register". If one of these switches is found, it then calls the corresponding function in the Lua table. Finally it returns a value telling what happened, so the caller function may change its course of action (if needed).
-
-This function is simply a helper for those implementing Automation servers using LuaCOM. Most of the work should be done by the Lua code, using the methods `RegisterObject`, `NewObject`, and `ExposeObject`.
-
-**Sample**
-
-```c
-/*
- * com_object.cpp
- *
- * This sample C++ code initializes the libraries and
- * the COM engine to export a COM object implemented in Lua
- */
-#include <ole2.h>
-
-// libraries
-extern "C"
-{
-#include <lua.h>
-#include <lualib.h>
-}
-
-#include <luacom.h>
-
-int main (int argc, char *argv[])
-{
-    int a = 0;
-
-    CoInitialize(NULL);
-    IupOpen();
-
-    lua_State *L = lua_open(0);
-    lua_baselibopen (L);
-    lua_strlibopen(L);
-    lua_iolibopen(L);
-    luacom_open(L);
-
-    lua_dofile(L, "implementation.lua");
-
-    // Pushes the table containing the functions
-    // responsible for the initialization of the
-    // COM object
-    lua_getglobal(L, "COM");
-
-    // detects whether the program was invoked for Automation,
-    // registration or none of that
-    int result = luacom_detectAutomation(L, argc, argv);
-
-    switch(result)
-    {
-        case LUACOM_AUTOMATION:
-            // runs the message loop, as all the needed initialization
-            // has already been performed
-            MessageLoop();
-            break;
-
-        case LUACOM_NOAUTOMATION:
-            // This only works as a COM server
-            printf("Error. This is a COM server\n");
-            break;
-
-        case LUACOM_REGISTER:
-            // Notifies that the COM object has been
-            // registered
-            printf("COM object successfully registered.");
-            break;
-
-        case LUACOM_AUTOMATION_ERROR:
-            // detectAutomation found /Automation or /Register but
-            // the initialization Lua functions returned some error
-            printf("Error starting Automation");
-            break;
-    }
-
-    luacom_close(L);
-    lua_close(L);
-    CoUninitialize();
-
-    return 0;
-}
-```
-
-```lua
--------
--- implementation.lua
---
--- This is a sample implementation of a COM server in Lua
---
-
--- This is the implementation of the COM object
-TestObj = {}
-function TestObj:showWindow()
-    dialog.show()
-end
-
-function TestObj:hideWindow()
-    dialog.hide()
-end
-
--- Here we create and populate the table to
--- be used with detectAutomation
-COM = {}
-
--- This functions creates the COM object to be
--- exported and exposes it.
-function COM:StartAutomation()
-    -- creates the object using its default interface
-    COMAppObject, events, e = luacom.NewObject(TestObj, "TESTE.Teste")
-
-    -- This error will be caught by detectAutomation
-    if COMAppObject == nil then
-        error("NewObject failed: "..e)
-    end
-
-    -- Exposes the object
-    cookie = luacom.ExposeObject(COMAppObject)
-    if cookie == nil then
-        error("ExposeObject failed!")
-    end
-end
-
-function COM:Register()
-    -- fills table with registration information
-    local reginfo = {}
-    reginfo.VersionIndependentProgID = "TESTE.Teste"
-    reginfo.ProgID = reginfo.VersionIndependentProgID..".1"
-    reginfo.TypeLib = "teste.tlb"
-    reginfo.CoClass = "Teste"
-    reginfo.ComponentName = "Test Component"
-    reginfo.Arguments = "/Automation"
-
-    -- stores component information in the registry
-    local res = luacom.RegisterObject(reginfo)
-    if res == nil then
-        error("RegisterObject failed!")
-    end
-end
-
-function COM:UnRegister()
-    -- fills table with registration information
-    local reginfo = {}
-    reginfo.VersionIndependentProgID = "TESTE.Teste"
-    reginfo.ProgID = reginfo.VersionIndependentProgID..".1"
-    reginfo.TypeLib = "teste.tlb"
-    reginfo.CoClass = "Teste"
-
-    -- removes component information from the registry
-    local res = luacom.UnRegisterObject(reginfo)
-    if res == nil then
-        error("UnRegisterObject failed!")
-    end
-end
-```
-
-#### luacom_IDispatch2LuaCOM
-
-**Prototype**
-
-```c
-int luacom_IDispatch2LuaCOM(lua_State *L, void *pdisp_arg);
-```
-
-**Description**
-
-This functions takes a pointer to `IDispatch`, creates a LuaCOM object for it and pushes it in the Lua stack. This function is useful when one gets an interface for a COM object from C/C++ code and wants to use it in Lua.
-
-**Sample**
-
-```c
-void CreateAndExport(lua_State* L)
-{
-    // Creates the object
-    IUnknown *obj = CreateObj();
-
-    // Gets the IDispatch
-    IDispatch* pdisp = NULL;
-    QueryInterface(IID_IDISPATCH, &pdisp);
-
-    // pushes onto lua stack
-    luacom_IDispatch2LuaCOM(L, (void *) pdisp);
-}
-```
-
-### 6.2 The Lua Standard API
-
-#### CreateObject
-
-**Use**
-
-```lua
-luacom_obj = luacom.CreateObject(ID, creation_context, untyped)
-```
-
-**Description**
-
-This method finds the Class ID referenced by the ID parameter and creates an instance of the object with this Class ID. If there is any problem (ProgID not found, error instantiating object), the method returns nil.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| ProgID | String |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| luacom_obj | LuaCOM object |
-| | nil |
-
-**Sample**
-
-```lua
-inet_obj = luacom.CreateObject("InetCtls.Inet")
-if inet_obj == nil then
-    print("Error! Object could not be created!")
-end
-```
-
-#### Connect
-
-**Use**
-
-```lua
-implemented_obj, cookie = luacom.Connect(luacom_obj, implementation_table)
-```
-
-**Description**
-
-This method finds the default source interface of the object `luacom_obj`, creates an instance of this interface whose implementation is given by `implementation_table` and creates a connection point between the `luacom_obj` and the implemented source interface. Any calls made by the `luacom_obj` to the source interface implementation will be translated to Lua calls to member function present in the `implementation_table`. If the method succeeds, the LuaCOM object implemented by `implementation_table`, plus a cookie that identifies the connection, are returned; otherwise, nil is returned.
-
-Notice that, to receive events, it's necessary to have a Windows message loop.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| luacom_obj | LuaCOM object |
-| implementation_table | Table or userdata |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| implemented_obj | LuaCOM object |
-| | nil |
-| cookie | number |
-
-**Sample**
-
-```lua
-events_handler = {}
-function events_handler:NewValue(new_value)
-    print(new_value)
-end
-
-events_obj = luacom.Connect(luacom_obj, events_handler)
-```
-
-#### ImplInterface
-
-**Use**
-
-```lua
-implemented_obj = luacom.ImplInterface(impl_table, ProgID, interface_name)
-```
-
-**Description**
-
-This method finds the type library associated with the ProgID and tries to find the type information of an interface called "interface_name". If it does, then creates an object whose implementation is "impl_table", that is, any method call or property access on this object is translated to calls or access on the members of the table. Then it makes a LuaCOM object for the implemented interface and returns it. If there are any problems in the process (ProgID not found, interface not found, interface isn't a dispinterface), the method returns nil.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| impl_table | table or userdata |
-| ProgID | string |
-| interface_name | string |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| implemented_obj | LuaCOM object |
-| | nil |
-
-**Sample**
-
-```lua
-myobject = {}
-function myobject:MyMethod()
-    print("My method!")
-end
-myobject.Property = "teste"
-
-luacom_obj = luacom.ImplInterface(myobject, "TEST.Test", "ITest")
-
--- these are done via Lua
-myobject:MyMethod()
-print(myobject.Property)
-
--- this call is done through COM
-luacom_obj:MyMethod()
-print(luacom_obj.Property)
-```
-
-#### ImplInterfaceFromTypelib
-
-**Use**
-
-```lua
-impl_obj = luacom.ImplInterfaceFromTypelib(
-                impl_table,
-                typelib_path,
-                interface_name,
-                coclass_name)
-```
-
-**Description**
-
-This method loads the type library whose file path is "typelib_path" and tries to find the type information of an interface called "interface_name". If it does, then creates an object whose implementation is "impl_table", that is, any method call or property access on this object is translated to calls or access on the members of the table. Then it makes a LuaCOM object for the implemented interface and returns it. If there are any problems in the process (ProgID not found, interface not found, interface isn't a dispinterface), the method returns nil. The "coclass_name" parameter is optional; it is only needed if the resulting LuaCOM object is to be passed to the methods `Connect`, `AddConnection` or `ExposeObject`. This parameter specifies the Component Object class name to which the interface belongs, as one interface may be used in more than one "coclass".
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| impl_table | table or userdata |
-| typelib_path | string |
-| interface_name | string |
-| coclass_name (optional) | string |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| implemented_obj | LuaCOM object |
-| | nil |
-
-**Sample**
-
-```lua
-myobject = {}
-function myobject:MyMethod()
-    print("My method!")
-end
-myobject.Property = "teste"
-
-luacom_obj = luacom.ImplInterfaceFromTypelib(myobject, "test.tlb",
-                                              "ITest", "Test")
-
--- these are done via Lua
-myobject:MyMethod()
-print(myobject.Property)
-
--- this call is done through COM
-luacom_obj:MyMethod()
-print(luacom_obj.Property)
-```
-
-#### GetObject
-
-**Use**
-
-```lua
-luacom_obj = luacom.GetObject(ProgID)
-luacom_obj = luacom.GetObject(moniker)
-```
-
-**Description**
-
-The first version method finds the Class ID referenced by the ProgID parameter and tries to find a running instance of the object having this Class ID. If there is any problem (ProgID not found, object is not running), the method returns nil.
-
-The second version tries to find an object through its moniker. If there is any problem, the method returns nil.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| ProgID/moniker | String |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| luacom_obj | LuaCOM object |
-| | nil |
-
-**Sample**
-
-```lua
-excel = luacom.GetObject("Excel.Application")
-if excel == nil then
-    print("Error! Could not get object!")
-end
-```
-
-#### NewObject/NewControl
-
-**Use**
-
-```lua
--- Creates a COM object
-implemented_obj, events_sink, errmsg = luacom.NewObject(impl_table, ProgID)
-
--- Creates an OLE control
-implemented_obj, events_sink, errmsg = luacom.NewControl(impl_table, ProgID)
-```
-
-**Description**
-
-This method is analogous to `ImplInterface`, doing just a step further: it locates the default interface for the ProgID and uses its type information. That is, this method creates a Lua implementation of a COM object's default interface. This is useful when implementing a complete COM object in Lua. It also creates a connection point for sending events to the client application and returns it as the second return value. If there are any problems in the process (ProgID not found, default interface is not a dispinterface etc), the method returns nil twice and returns the error message as the third return value.
-
-To send events to the client application, just call methods of the event sink table returned. The method call will be translated to COM calls to each connection. These calls may contain parameters (as specified in the type information).
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| impl_table | table or userdata |
-| ProgID | string |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| implemented_obj | LuaCOM object |
-| | nil |
-| event_sink | event sink table |
-| | nil |
-| errmsg | error message in the case of failure |
-| | nil |
-
-**Sample**
-
-```lua
-myobject = {}
-function myobject:MyMethod()
-    print("My method!")
-end
-myobject.Property = "teste"
-
-obj, evt, err = luacom.NewObject(myobject, "TEST.Test")
-
--- these are done via Lua
-myobject:MyMethod()
-print(myobject.Property)
-
--- this call is done through COM
-luacom_obj:MyMethod()
-print(luacom_obj.Property)
-
--- here we sink events
-evt:Event1()
-```
-
-#### ExposeObject
-
-**Use**
-
-```lua
-cookie = luacom.ExposeObject(luacom_obj)
-```
-
-**Description**
-
-This method creates and registers a class factory for `luacom_obj`, so that other running applications can use it. It returns a cookie that must be used to unregister the object. If the method fails, it returns nil.
-
-**ATTENTION**: the object MUST be unregistered (using `RevokeObject`) before calling `luacom_close` or `lua_close`, otherwise unhandled exceptions might occur.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| luacom_obj | LuaCOM object |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| cookie | number |
-| | nil |
-
-**Sample**
-
-```lua
-myobject = luacom.NewObject(impl_table, "Word.Application")
-cookie = luacom.ExposeObject(myobject)
-
-function end_of_application()
-    luacom.RevokeObject(cookie)
-end
-```
-
-#### RegisterObject
-
-**Use**
-
-```lua
-result = luacom.RegisterObject(registration_info)
-```
-
-**Description**
-
-This method creates the necessary registry entries for a COM object, using the information in `registration_info` table. If the component is successfully registered, the method returns a non-nil value.
-
-The `registration_info` table must contain the following fields[^5]:
-
-[^5]: For a better description of these fields, see COM's documentation.
-
-- **VersionIndependentProgID** This field must contain a string describing the programmatic identifier for the component, e.g. "MyCompany.MyApplication".
-- **ProgID** The same as VersionIndependentProgID but with a version number, e.g. "MyCompany.MyApplication.2".
-- **TypeLib** The file name of the type library describing the component. This file name should contain a path, if the type library isn't in the same folder of the executable. Samples: `mytypelib.tlb`, `c:\app\test.tlb`, `test.exe\1` (this last one can be used when the type library is bound to the executable as a resource).
-- **Control** Must be `true` if the object is an OLE control, and `false` or nil otherwise.
-- **CoClass** The name of the component class. There must be a coclass entry in the type library with the same name or the registration will fail.
-- **ComponentName** This is the human-readable name of the component.
-- **Arguments** This field specifies what arguments will be supplied to the component executable when started via COM. Normally it should contain "/Automation".
-- **ScriptFile** This field specifies the full path of the script file that implements the component. Only used to register in-process servers.
-
-This method is not a generic "registering tool" for COM components, as it assumes the component to be registered is implemented by the running executable during registration.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| registration_info | table with registration information |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| result | nil or non-nil value |
-
-**Sample**
-
-```lua
--- Lua registration code
-function RegisterComponent()
-    reginfo.VersionIndependentProgID = "TESTE.Teste"
-
-    -- Adds version information
-    reginfo.ProgID = reginfo.VersionIndependentProgID..".1"
-    reginfo.TypeLib = "teste.tlb"
-    reginfo.CoClass = "Teste"
-    reginfo.ComponentName = "Test Component"
-    reginfo.Arguments = "/Automation"
-    reginfo.ScriptFile = "teste.lua"
-
-    local res = luacom.RegisterObject(reginfo)
-    return res
-end
-```
-
-#### UnRegisterObject
-
-**Use**
-
-```lua
-result = luacom.UnRegisterObject(registration_info)
-```
-
-**Description**
-
-This method removes the registry entries for a COM object, using the information in `registration_info` table. If the component is successfully unregistered, the method returns a non-nil value.
-
-The `registration_info` table must contain the following fields[^6]:
-
-[^6]: For a better description of these fields, see COM's documentation.
-
-- **VersionIndependentProgID** This field must contain a string describing the programmatic identifier for the component, e.g. "MyCompany.MyApplication".
-- **ProgID** The same as VersionIndependentProgID but with a version number, e.g. "MyCompany.MyApplication.2".
-- **TypeLib** The file name of the type library describing the component. This file name should contain a path, if the type library isn't in the same folder of the executable. Samples: `mytypelib.tlb`, `c:\app\test.tlb`, `test.exe\1` (this last one can be used when the type library is bound to the executable as a resource).
-- **CoClass** The name of the component class. There must be a coclass entry in the type library with the same name or the registration will fail.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| registration_info | table with registration information |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| result | nil or non-nil value |
-
-**Sample**
-
-```lua
--- Lua registration code
-function UnRegisterComponent()
-    reginfo.VersionIndependentProgID = "TESTE.Teste"
-
-    -- Adds version information
-    reginfo.ProgID = reginfo.VersionIndependentProgID..".1"
-    reginfo.TypeLib = "teste.tlb"
-    reginfo.CoClass = "Teste"
-
-    local res = luacom.UnRegisterObject(reginfo)
-    return res
-end
-```
-
-#### addConnection
-
-**Use**
-
-```lua
-cookie = luacom.addConnection(client, server)
-```
-
-**Description**
-
-This method connects two LuaCOM objects, setting the server as an event sink for the client, that is, the client will call methods of the server to notify events (following the COM model). This will only work if the client supports connection points of the server's type. If the method succeeds, it returns the cookie that identifies the connection; otherwise, it throws an error.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| client | LuaCOM object |
-| server | LuaCOM object |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| cookie | number |
-
-**Sample**
-
-```lua
-obj = luacom.CreateObject("TEST.Test")
-
-event_sink = {}
-function event_sink:KeyPress(keynumber)
-    print(keynumber)
-end
-
-event_obj = luacom.ImplInterface(
-                event_sink, "TEST.Test", "ITestEvents")
-
-cookie = luacom.addConnection(obj, event_obj)
-```
-
-#### releaseConnection
-
-**Use**
-
-```lua
-luacom.releaseConnection(client, event_sink, cookie)
-```
-
-**Description**
-
-This method disconnects a LuaCOM object from an event sink.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| client | LuaCOM object |
-| event_sink | LuaCOM object |
-| cookie | LuaCOM object |
-
-**Return Values**
-
-There are none.
-
-**Sample**
-
-```lua
-obj = luacom.CreateObject("TEST.Test")
-
-event_sink = {}
-function event_sink:KeyPress(keynumber)
-    print(keynumber)
-end
-
-event_obj = luacom.ImplInterface(
-                event_sink, "TEST.Test", "ITestEvents")
-
-result = luacom.addConnection(obj, event_obj)
-.
-.
-.
-luacom.releaseConnection(obj)
-```
-
-#### ProgIDfromCLSID
-
-**Use**
-
-```lua
-progID = luacom.ProgIDfromCLSID(clsid)
-```
-
-**Description**
-
-This method is a proxy for the Win32 function `ProgIDFromCLSID`.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| clsid | string |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| progID | string |
-| | nil |
-
-**Sample**
-
-```lua
-progid = luacom.ProgIDfromCLSID("{8E27C92B-1264-101C-8A2F-040224009C02}")
-obj = luacom.CreateObject(progid)
-```
-
-#### CLSIDfromProgID
-
-**Use**
-
-```lua
-clsid = luacom.CLSIDfromProgID(progID)
-```
-
-**Description**
-
-It's the inverse of `ProgIDfromCLSID`.
-
-#### ShowHelp
-
-**Use**
-
-```lua
-luacom.ShowHelp(luacom_obj)
-```
-
-**Description**
-
-This method tries to locate the `luacom_obj`'s help file in its type information and shows it.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| luacom_obj | LuaCOM object |
-
-**Return Values**
-
-None.
-
-**Sample**
-
-```lua
-obj = luacom.CreateObject("TEST.Test")
-luacom.ShowHelp(obj)
-```
-
-#### GetIUnknown
-
-**Use**
-
-```lua
-iunknown = luacom.GetIUnknown(luacom_obj)
-```
-
-**Description**
-
-This method returns a userdata holding the `IUnknown` interface pointer to the COM object behind `luacom_obj`. It's important to notice that Lua does not duplicates userdata: many calls to `GetIUnknown` for the same LuaCOM object will return the same userdata. This means that the reference count for the `IUnknown` interface will be incremented only once (that is, the first time the userdata is pushed) and will be decremented only when all the references to that userdata go out of scope (that is, when the userdata suffers garbage collection).
-
-One possible use for this method is to check whether two LuaCOM objects reference the same COM object.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| luacom_obj | LuaCOM object |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| iunknown | userdata with IUnknown metatable |
-| | nil |
-
-**Sample**
-
-```lua
--- Creates two LuaCOM objects for the same COM object
--- (a running instance of Microsoft Word(R) )
-word1 = luacom.GetObject("Word.Application")
-word2 = luacom.GetObject("Word.Application")
-
--- These two userdata should be the same
-unk1 = luacom.GetIUnknown(word1)
-unk2 = luacom.GetIUnknown(word2)
-
-assert(unk1 == unk2)
-```
-
-#### isMember
-
-**Use**
-
-```lua
-answer = luacom.isMember(luacom_obj, member_name)
-```
-
-**Description**
-
-This method returns `true` (that is, different from nil) if there exists a method or a property of the `luacom_obj` named `member_name`.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| luacom_obj | LuaCOM object |
-| member_name | string |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| answer | nil or non-nil |
-
-**Sample**
-
-```lua
-obj = luacom.CreateObject("MyObject.Test")
-if luacom.isMember(obj, "Test") then
-    result = obj:Test()
-end
-```
-
-#### StartLog
-
-**Use**
-
-```lua
-result = luacom.StartLog(log_file_name)
-```
-
-**Description**
-
-This methods activates the log facility of LuaCOM, writing to the log file all errors that occurr. If the library was compiled with `VERBOSE` defined, it also logs other informative messages like creation and destruction of LuaCOM internal objects, method calls etc. This can help track down object leaks. The method returns `true` if the log file could be opened, `false` otherwise.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| log_file_name | string |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| result | boolean |
-
-**Sample**
-
-```lua
-ok = luacom.StartLog("luacomlog.txt")
-if not ok then
-    print("log not opened")
-end
-```
-
-#### EndLog
-
-**Use**
-
-```lua
-luacom.EndLog()
-```
-
-**Description**
-
-This method stops the log facility (if it has been activated), closing the log file.
-
-**Parameters**
-
-None.
-
-**Return Values**
-
-None.
-
-**Sample**
-
-```lua
-luacom.EndLog()
-```
-
-#### GetEnumerator
-
-**Use**
-
-```lua
-e = luacom.GetEnumerator(luacom_obj)
-```
-
-**Description**
-
-This method returns a COM enumerator for a given LuaCOM object (if it provides one). This is the same as calling the `NewEnum` method, at least for the majority of the objects. The enumerator object is described in section 6.4.
-
-**Parameters**
-
-| Parameter | Type |
-|---|---|
-| luacom_obj | LuaCOM object |
-
-**Return Values**
-
-| Return Item | Possible Values |
-|---|---|
-| e | enumerator object or nil |
-
-**Sample**
-
-```lua
--- Prints all sheets of an open Excel Application
-excel = luacom.GetObject("Excel.Application")
-e = luacom.GetEnumerator(excel.Sheets)
-
-s = e:Next()
-while s do
-    print(s.Name)
-    s = e:Next()
-end
-```
-
-### 6.3 Lua Extended API
-
-- `pairs`
-- `GetType`
-- `CreateLocalObject`
-- `CreateInprocObject`
-- `LoadConstants`
-- `FillTypeInfo`
-- `FillTypeLib`
-
-### 6.4 Enumerator Object
-
-The enumerator object is a proxy for the interface `IEnumVARIANT`. It can be obtained using the API method `GetEnumerator`.
-
-**Methods**
-
-- **Next** returns the next object in the enumeration or nil if the end has been reached.
-- **Skip** skips the next object, returning `true` if succeeded of `false` if not.
-- **Reset** restarts the enumerator.
-- **Clone** returns a new enumerator in the same state.
-
-### 6.5 Type Library Object
-
-The type library object is a proxy for the interface `ITypeLib`. It can be obtained using the API method `LoadTypeLibrary` or the type information object method `GetTypeLib`.
-
-**Methods**
-
-- **GetDocumentation** returns a table containing the fields `name`, `helpstring`, `helpcontext` and `helpfile` for the type library.
-- **GetTypeInfoCount** returns the number of type descriptions contained in the type library.
-- **GetTypeInfo(n)** returns an type information object for the n-th type description.
-- **ShowHelp** tries to launch the help file associated with the type library (if any).
-
-### 6.6 Type Information Object
-
-The type information object is a proxy for the interface `ITypeInfo`. It can be obtained using the API method `GetTypeInfo` or the type library object method `GetTypeInfo`.
-
-**Methods**
-
-- **GetTypeLib** returns the containing type library object.
-- **GetFuncDesc(n)** returns a table describing the n-th function of the type description. This table contains the following fields: `memid` (dispatch identifier), `invkind` (invoke kind), `Params` (number of parameters), `ParamsOpt` (number of optional parameters), `description`, `helpfile`, `helpcontext`, `name`. Besides that, it stores an array-like table called `parameters` describing each parameter of the function, with these fields: `name`, `type`.
-- **GetVarDesc(n)** returns a table describing the n-th variable (or constant) in the type description. This table contains the following fields: `name`, `value` (for constants only).
-- **GetDocumentation** returns a table with documentation for the type description, with the fields `name`, `helpstring`, `helpcontext` and `helpfile`.
-- **GetTypeAttr** returns a table containing the type attributes for the type description. This table holds the following fields: `GUID`, `typekind`, `Funcs` (number of functions), `Vars` (number of variables or constants) and `ImplTypes`. There is also a `flags` field, containing a table that describes the flags for this type description. This table contains the following boolean fields: `control`, `appobject`, `dispatchable`, `oleautomation`, `cancreate`.
-- **GetImplType(n)** For type descriptions of COM classes, this returns the type information object for the nth interface of the COM class.
-- **GetImplTypeFlags(n)** For type descriptions of COM classes, this returns a table containing the implementation flags for the n-th interface belonging to the COM class. This table holds the following boolean flags: `default`, `source`, `restricted`, `defaultvtable`.
-- **ExportEnumerations** returns a table with all the enumerations in this typelib. The keys are the enumeration names, and each one of them is a table, keyed by the enumeration values.
-
----
 
 ## Chapter 7 Credits
 

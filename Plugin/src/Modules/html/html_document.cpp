@@ -122,7 +122,7 @@ namespace html {
 		SelectorGroup group;
 
 		if ( !ParseSelectorGroup( selector, group ) ) {
-			std::string msg = std::string( "[RainJIT:HTML] doc:find() — invalid selector: " ) + selector;
+			std::string msg = std::string( "[RainJIT:HTML] doc:find() - invalid selector: " ) + selector;
 			HtmlLog( L, LOG_WARNING, msg.c_str() );
 			lua_pushnil( L );
 			return 1;

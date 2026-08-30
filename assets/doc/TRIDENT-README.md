@@ -82,39 +82,38 @@ Trident also includes optional HTML sanitization, JavaScript-to-Lua communicatio
 local trident = require("webview.trident")
 
 local browser = trident.create({
-    url          = "./index.html",   -- relative to skin directory
-    width        = 400,
-    height       = 300,
-    left         = 0,
-    top          = 0,
-    transparent  = true,
-    colorKey     = 0xFF00FF,
-    insideSkin   = true,
-    silent       = true,
-    cornerRadius = 10,
-    hide         = false,
-    sanitize     = false,
+  url          = "./index.html", -- relative to skin directory
+  width        = 400,
+  height       = 300,
+  left         = 0,
+  top          = 0,
+  transparent  = true,
+  colorKey     = 0xFF00FF,
+  insideSkin   = true,
+  silent       = true,
+  cornerRadius = 10,
+  hide         = false,
+  sanitize     = false,
 
-    callback = function( browser, event )
-        if event.type == "documentcomplete" then
-            browser:write([[
-                <html>
-                <body style="background:transparent; color:white; font-family:sans-serif">
-                    <h2>Hello from Lua!</h2>
-                </body>
-                </html>
-            ]])
-        end
-
-        if event.type == "navigateerror" then
-            print("Failed to load: " .. tostring(event.data) .. " code: " .. tostring(event.statusCode))
-        end
+  callback = function( browser, event )
+    if event.type == "documentcomplete" then
+      browser:write([[
+        <html>
+          <body style="background:transparent; color:white; font-family:sans-serif">
+            <h2>Hello from Lua!</h2>
+          </body>
+        </html>
+      ]])
     end
+
+    if event.type == "navigateerror" then
+      print("Failed to load: " .. tostring(event.data) .. " code: " .. tostring(event.statusCode))
+    end
+  end
 })
 ```
 
 ---
-
 
 <br>
 <br>
@@ -191,7 +190,7 @@ ProcessName.exe = <DWORD value>
 Common values:
 
 | IE version emulated | Value  |
-|---------------------|--------|
+| :--:                | :--:   |
 | IE7 (default)       | 7000   |
 | IE8                 | 8000   |
 | IE9                 | 9000   |
@@ -250,13 +249,13 @@ In addition to everything above, you gain:
 
 All functions that accept a URL or file path — `url` in `create()`, `navigate()`, and `execScript()` — share the same resolution logic:
 
-| Input form | Example | Resolved as |
-|---|---|---|
-| Absolute URL with scheme | `https://example.com` | Passed through unchanged |
-| `file://` URL | `file:///C:/skins/foo.html` | Passed through unchanged |
-| `./` relative path | `./web/index.html` | Expanded to `#CURRENTPATH#web\index.html` then canonicalized |
-| Rainmeter variable | `#@#web\index.html` | Variables expanded, then canonicalized |
-| Bare filename | `index.html` | Resolved via `RmPathToAbsolute` |
+| Input form               | Example                     | Resolved as                                                  |
+| :--:                     | :--:                        | :--:                                                         |
+| Absolute URL with scheme | `https://example.com`       | Passed through unchanged                                     |
+| `file://` URL            | `file:///C:/skins/foo.html` | Passed through unchanged                                     |
+| `./` relative path       | `./web/index.html`          | Expanded to `#CURRENTPATH#web\index.html` then canonicalized |
+| Rainmeter variable       | `#@#web\index.html`         | Variables expanded, then canonicalized                       |
+| Bare filename            | `index.html`                | Resolved via `RmPathToAbsolute`                              |
 
 Resolved local paths are automatically converted to `file:///` URLs for `navigate()` and `create()`. For `execScript()`, if the resolved path points to an existing file, the file is read and its contents are executed as the script.
 
@@ -290,22 +289,22 @@ end
 
 **Config table fields:**
 
-| Field          | Type     | Default         | Description |
-|----------------|----------|-----------------|-------------|
+| Field          | Type     | Default         | Description                                                         |
+| :--:           | :--:     | :--:            | :--:                                                                |
 | `url`          | string   | `"about:blank"` | Initial URL. Accepts `./`, Rainmeter variables, and absolute paths. |
-| `width`        | number   | `800`           | Desired width in pixels. |
-| `height`       | number   | `600`           | Desired height in pixels. |
-| `left`         | number   | `0`             | X offset relative to parent skin window. |
-| `top`          | number   | `0`             | Y offset relative to parent skin window. |
-| `transparent`  | boolean  | `false`         | Enable color-key transparency. |
-| `colorKey`     | number   | `0xFF00FF`      | RGB color used as transparent key. |
-| `silent`       | boolean  | `true`          | Suppress script error dialog boxes. |
-| `insideSkin`   | boolean  | `true`          | Clip control to the parent skin bounds. |
-| `hide`         | boolean  | `false`         | Create the window initially hidden. |
-| `padding`      | table    | `{0,0,0,0}`     | `{left, top, widthReduction, heightReduction}` |
-| `cornerRadius` | number   | `0`             | Rounded corner radius in pixels. |
-| `sanitize`     | any      | `true`          | HTML sanitization mode. See [Sanitization](#sanitization). |
-| `callback`     | function | `nil`           | Event handler. See [Event System](#event-system). |
+| `width`        | number   | `800`           | Desired width in pixels.                                            |
+| `height`       | number   | `600`           | Desired height in pixels.                                           |
+| `left`         | number   | `0`             | X offset relative to parent skin window.                            |
+| `top`          | number   | `0`             | Y offset relative to parent skin window.                            |
+| `transparent`  | boolean  | `false`         | Enable color-key transparency.                                      |
+| `colorKey`     | number   | `0xFF00FF`      | RGB color used as transparent key.                                  |
+| `silent`       | boolean  | `true`          | Suppress script error dialog boxes.                                 |
+| `insideSkin`   | boolean  | `true`          | Clip control to the parent skin bounds.                             |
+| `hide`         | boolean  | `false`         | Create the window initially hidden.                                 |
+| `padding`      | table    | `{0,0,0,0}`     | `{left, top, widthReduction, heightReduction}`                      |
+| `cornerRadius` | number   | `0`             | Rounded corner radius in pixels.                                    |
+| `sanitize`     | any      | `true`          | HTML sanitization mode. See [Sanitization](#sanitization).          |
+| `callback`     | function | `nil`           | Event handler. See [Event System](#event-system).                   |
 
 ---
 
@@ -329,14 +328,14 @@ A `<base href>` tag pointing to the skin directory is automatically injected int
 
 ```lua
 callback = function(browser, event)
-    if event.type == "documentcomplete" then
-        browser:write([[
-            <html><head><meta http-equiv="X-UA-Compatible" content="IE=edge"></head>
-            <body>
-                <img src="./assets/logo.png">
-            </body></html>
-        ]])
-    end
+  if event.type == "documentcomplete" then
+    browser:write([[
+      <html><head><meta http-equiv="X-UA-Compatible" content="IE=edge"></head>
+      <body>
+        <img src="./assets/logo.png">
+      </body></html>
+    ]])
+  end
 end
 ```
 
@@ -363,7 +362,7 @@ browser:execScript("./js/init.js")
 browser:execScript("#@#js\\app.js")
 
 -- Return value types
--- JS: true/false        → Lua: boolean
+-- JS: true/false       → Lua: boolean
 -- JS: 42 / 3.14        → Lua: integer / number
 -- JS: "hello"          → Lua: string
 -- JS: null / undefined → Lua: nil
@@ -467,54 +466,54 @@ end
 
 **Common event table fields:**
 
-| Field       | Type   | Present when                             |
-|-------------|--------|------------------------------------------|
-| `type`      | string | Always.                                  |
-| `timestamp` | number | Always. `GetTickCount64()` milliseconds. |
+| Field       | Type   | Present when                                                                                                                               |
+| :--:        | :--:   | :--:                                                                                                                                       |
+| `type`      | string | Always.                                                                                                                                    |
+| `timestamp` | number | Always. `GetTickCount64()` milliseconds.                                                                                                   |
 | `data`      | any    | Type-dependent. See table below. When the value is a valid Lua table literal, it is automatically decoded — otherwise it remains a string. |
 
 **Full event reference:**
 
-| `type`                  | Fires when | Extra fields |
-|-------------------------|------------|--------------|
-| `"documentcomplete"`    | Document and all frames finished loading. | — |
-| `"navigatecomplete"`    | Top-level navigation committed. | — |
-| `"titlechange"`         | `<title>` element changed. | `title` (string) |
-| `"navigate"`            | Link clicked or `window.location` changed. **Synchronous — return `false` to cancel.** | `data` (URL string) |
-| `"statustextchange"`    | Status bar text changed. | `data` (string) |
-| `"progresschange"`      | Download progress updated. | `progress` (number), `progressMax` (number) |
-| `"downloadbegin"`       | Download or navigation started. | — |
-| `"downloadcomplete"`    | Download or navigation finished. | — |
-| `"navigateerror"`       | Navigation failed. | `data` (URL string), `statusCode` (number) |
-| `"newwindow"`           | Popup window requested. **Synchronous — return `false` to cancel.** | — |
-| `"windowclosing"`       | `window.close()` called. **Synchronous — return `false` to cancel.** | — |
-| `"commandstatechange"`  | Back/forward availability changed. | `command` (number), `enabled` (boolean) |
-| *custom name*           | JS called `window.external.notify(name, data)`. | `data` (string or table) |
+| `type`                  | Fires when                                                                             | Extra fields                                |
+| :--:                    | :--:                                                                                   | :--:                                        |
+| `"documentcomplete"`    | Document and all frames finished loading.                                              | —                                           |
+| `"navigatecomplete"`    | Top-level navigation committed.                                                        | —                                           |
+| `"titlechange"`         | `<title>` element changed.                                                             | `title` (string)                            |
+| `"navigate"`            | Link clicked or `window.location` changed. **Synchronous — return `false` to cancel.** | `data` (URL string)                         |
+| `"statustextchange"`    | Status bar text changed.                                                               | `data` (string)                             |
+| `"progresschange"`      | Download progress updated.                                                             | `progress` (number), `progressMax` (number) |
+| `"downloadbegin"`       | Download or navigation started.                                                        | —                                           |
+| `"downloadcomplete"`    | Download or navigation finished.                                                       | —                                           |
+| `"navigateerror"`       | Navigation failed.                                                                     | `data` (URL string), `statusCode` (number)  |
+| `"newwindow"`           | Popup window requested. **Synchronous — return `false` to cancel.**                    | —                                           |
+| `"windowclosing"`       | `window.close()` called. **Synchronous — return `false` to cancel.**                   | —                                           |
+| `"commandstatechange"`  | Back/forward availability changed.                                                     | `command` (number), `enabled` (boolean)     |
+| *custom name*           | JS called `window.external.notify(name, data)`.                                        | `data` (string or table)                    |
 
 **Cancelable events** (`"navigate"`, `"newwindow"`, `"windowclosing"`) are dispatched **synchronously** — they do not go through the event queue. The Lua callback's return value is read immediately to set the COM cancel flag.
 
 ```lua
 callback = function(browser, event)
-    -- Block all popups
-    if event.type == "newwindow" then
-        return false
-    end
+  -- Block all popups
+  if event.type == "newwindow" then
+    return false
+  end
 
-    -- Open external links in system browser
-    if event.type == "navigate" and event.data:find("^https?://") then
-        os.execute('start "" "' .. event.data .. '"')
-        return false
-    end
+  -- Open external links in system browser
+  if event.type == "navigate" and event.data:find("^https?://") then
+    os.execute('start "" "' .. event.data .. '"')
+    return false
+  end
 
-    -- Track progress
-    if event.type == "progresschange" then
-        print(event.progress .. "/" .. event.progressMax)
-    end
+  -- Track progress
+  if event.type == "progresschange" then
+    print(event.progress .. "/" .. event.progressMax)
+  end
 
-    -- Handle navigation errors
-    if event.type == "navigateerror" then
-        print("Error " .. event.statusCode .. " loading " .. event.data)
-    end
+  -- Handle navigation errors
+  if event.type == "navigateerror" then
+    print("Error " .. event.statusCode .. " loading " .. event.data)
+  end
 end
 ```
 
@@ -536,18 +535,18 @@ window.external.notify("myEvent", JSON.stringify({ value: 42 }));
 ```lua
 -- Lua callback
 callback = function(browser, event)
-    if event.type == "myEvent" then
-        -- event.data is automatically decoded to a table when possible
-        print(event.data.value)  -- 42
-    end
+  if event.type == "myEvent" then
+    -- event.data is automatically decoded to a table when possible
+    print(event.data.value) -- 42
+  end
 end
 ```
 
 **Signature:** `window.external.notify(name, data)`
 
-| Parameter | Type   | Description                                              |
-|-----------|--------|----------------------------------------------------------|
-| `name`    | string | Becomes `event.type` in the Lua callback.                |
+| Parameter | Type   | Description                                                                                                          |
+| :--:      | :--:   | :--:                                                                                                                 |
+| `name`    | string | Becomes `event.type` in the Lua callback.                                                                            |
 | `data`    | any    | Coerced to string. Decoded to a Lua table automatically if the value is valid Lua syntax — otherwise kept as string. |
 
 > **Tip:** Use `JSON.stringify()` on the JS side. Simple JSON objects (`{"key":"value"}`) are valid Lua table syntax and will be decoded automatically. Arrays (`[1,2,3]`) are not decoded and remain strings — use a JSON library for those.
@@ -562,17 +561,17 @@ end
 
 By default, when the user clicks a link (or JavaScript changes `window.location`), the browser navigates internally. The module intercepts every navigation via `BeforeNavigate2` and fires a `"navigate"` event **synchronously** to the Lua callback. The callback's return value decides what happens:
 
-| Return value              | Effect |
-|---------------------------|--------|
+| Return value              | Effect                                               |
+| :--:                      | :--:                                                 |
 | `false`                   | Navigation cancelled. Browser stays on current page. |
-| `true`, `nil`, or nothing | Navigation proceeds normally inside the browser. |
+| `true`, `nil`, or nothing | Navigation proceeds normally inside the browser.     |
 
 ```lua
 callback = function(browser, event)
-    if event.type == "navigate" then
-        os.execute('start "" "' .. event.data .. '"')
-        return false
-    end
+  if event.type == "navigate" then
+    os.execute('start "" "' .. event.data .. '"')
+    return false
+  end
 end
 ```
 
@@ -623,11 +622,11 @@ Rounded corners are applied via `SetWindowRgn` with a rounded rectangle region o
 
 HTML sanitization is applied to `write()` content before it reaches the browser. It is a Gumbo-based pipeline controlled per control via the `sanitize` option.
 
-| Value   | Behavior |
-|---------|----------|
+| Value   | Behavior                                                                              |
+| :--:    | :--:                                                                                  |
 | `true`  | `SANITIZE_ALL` — blocks scripts, events, dangerous CSS, and validates URLs (default). |
-| `false` | `SANITIZE_NONE` — no filtering. Use when you control all HTML content. |
-| table   | Starts from `SANITIZE_ALL` and clears specific flags via string tokens. |
+| `false` | `SANITIZE_NONE` — no filtering. Use when you control all HTML content.                |
+| table   | Starts from `SANITIZE_ALL` and clears specific flags via string tokens.               |
 
 **Allow tokens:**
 
@@ -635,13 +634,13 @@ HTML sanitization is applied to `write()` content before it reaches the browser.
 sanitize = { "allow_scripts", "allow_events", "allow_style", "allow_css", "allow_urls", "allow_local" }
 ```
 
-| Token              | Effect |
-|--------------------|--------|
-| `"allow_scripts"`  | Permit `<script>`, `<iframe>`, `<object>`, `<embed>` and their children. |
-| `"allow_events"`   | Permit `on*` event handler attributes (`onclick`, `onload`, etc.). |
-| `"allow_style"`    | Pass `style` attribute through entirely (implies `allow_css`). |
-| `"allow_css"`      | Keep `style` attribute but skip dangerous CSS declaration filtering. |
-| `"allow_urls"`     | Skip URL validation on `href`/`src`/`action` attributes. |
+| Token              | Effect                                                                                                                                                                    |
+| :--:               | :--:                                                                                                                                                                      |
+| `"allow_scripts"`  | Permit `<script>`, `<iframe>`, `<object>`, `<embed>` and their children.                                                                                                  |
+| `"allow_events"`   | Permit `on*` event handler attributes (`onclick`, `onload`, etc.).                                                                                                        |
+| `"allow_style"`    | Pass `style` attribute through entirely (implies `allow_css`).                                                                                                            |
+| `"allow_css"`      | Keep `style` attribute but skip dangerous CSS declaration filtering.                                                                                                      |
+| `"allow_urls"`     | Skip URL validation on `href`/`src`/`action` attributes.                                                                                                                  |
 | `"allow_local"`    | Permit `file://` URLs and enable local resource loading from the skin directory. Required for `./` relative paths inside HTML/CSS to work when `sanitize` is not `false`. |
 
 > **Note:** `execScript()` bypasses sanitization entirely — Lua callers are considered trusted.

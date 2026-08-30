@@ -113,7 +113,7 @@ namespace http {
 			if ( ctx->cancelled.load() )
 				throw std::runtime_error( "Request cancelled before start" );
 
-			// Parse URL using WinHttpCrackUrl — handles IPv6, credentials,
+			// Parse URL using WinHttpCrackUrl - handles IPv6, credentials,
 			// fragments, and custom ports correctly without manual string parsing.
 			std::wstring url = request.url;
 
@@ -152,7 +152,7 @@ namespace http {
 				path = L"/";
 
 			// Extract Basic Auth credentials from URL (user:password@host).
-			// WinHTTP does not send credentials from the URL automatically —
+			// WinHTTP does not send credentials from the URL automatically -
 			// WinHttpSetCredentials must be called explicitly after WinHttpOpenRequest.
 			std::wstring urlUser;
 			std::wstring urlPassword;
@@ -257,7 +257,7 @@ namespace http {
 			}
 
 			// Configure request options
-			// Disable automatic decompression — WinHTTP's built-in decompressor
+			// Disable automatic decompression - WinHTTP's built-in decompressor
 			// has known issues with chunked responses, causing WinHttpReadData to
 			// return 0 bytes immediately. Request identity encoding so the server
 			// sends uncompressed data, which WinHttpReadData handles correctly.
@@ -375,7 +375,7 @@ namespace http {
 			DWORD totalBytes = 0;
 			bool readSuccess = false;
 
-			// WinHttpQueryDataAvailable is intentionally avoided — it fails with
+			// WinHttpQueryDataAvailable is intentionally avoided - it fails with
 			// E_UNEXPECTED on chunked Transfer-Encoding in synchronous mode.
 			// WinHttpReadData with a fixed buffer handles both chunked and
 			// Content-Length responses: 0 bytes read signals genuine EOF.
@@ -432,7 +432,7 @@ namespace http {
 			}
 
 
-			// Clear error only on 2xx/3xx — preserve error message on server-side failures.
+			// Clear error only on 2xx/3xx - preserve error message on server-side failures.
 			if ( response.status >= 200 && response.status < 400 )
 				response.error.clear();
 

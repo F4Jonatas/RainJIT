@@ -11,15 +11,15 @@
  *
  * @details
  * ### Design principles
- * - **Read-only DOM** — no modification API is exposed.
- * - **UTF-8 throughout** — all Lua strings in/out are UTF-8.
- * - **Automatic lifetime management** — documents, nodes, and node sets are
+ * - **Read-only DOM** - no modification API is exposed.
+ * - **UTF-8 throughout** - all Lua strings in/out are UTF-8.
+ * - **Automatic lifetime management** - documents, nodes, and node sets are
  *   garbage-collected Lua userdata objects backed by `shared_ptr`/`weak_ptr`.
  *   A Document stays alive as long as any Node or NodeSet derived from it is
  *   reachable in Lua.
- * - **Thread-safe per document** — each Document is fully independent.
+ * - **Thread-safe per document** - each Document is fully independent.
  *   The optional XPath cache is protected by an internal mutex.
- * - **Error-safe** — `xml.parse()` and `xml.parse_html()` never throw; they
+ * - **Error-safe** - `xml.parse()` and `xml.parse_html()` never throw; they
  *   return `nil, errmsg` on failure.
  *
  * @par Lua quick-start
@@ -153,7 +153,7 @@ namespace xml {
 	 * Inherits from `std::enable_shared_from_this` so internal helpers can
 	 * obtain a `shared_ptr<Document>` from `this` when constructing Nodes.
 	 *
-	 * @note Non-copyable. Move-constructible. The internal mutex is not moved —
+	 * @note Non-copyable. Move-constructible. The internal mutex is not moved -
 	 *       a fresh default-constructed mutex is created on every move.
 	 *
 	 * @par Lua type
@@ -274,7 +274,7 @@ namespace xml {
 	 *  4. Parses the result as a new `xml.document` using fragment-tolerant flags.
 	 *  5. Returns `doc` on success, or `nil, errmsg` on failure.
 	 *
-	 * @par Lua — `node:html()` example
+	 * @par Lua - `node:html()` example
 	 * @code{.lua}
 	 * -- RSS <description> with embedded HTML in a CDATA section:
 	 * local desc  = item:select_single("description")
@@ -317,7 +317,7 @@ namespace xml {
 			return !doc.expired();
 		}
 
-		/// @brief Implicit bool conversion — equivalent to `valid()`.
+		/// @brief Implicit bool conversion - equivalent to `valid()`.
 		explicit operator bool() const {
 			return valid();
 		}
@@ -370,7 +370,7 @@ namespace xml {
 		 * @brief Return the raw node value.
 		 *
 		 * For `text` and `cdata` nodes: the character data content.
-		 * For `element` nodes: always empty — use `text()` instead.
+		 * For `element` nodes: always empty - use `text()` instead.
 		 *
 		 * @return @b string
 		 */
@@ -425,7 +425,7 @@ namespace xml {
 		 *
 		 * @return `vector<pair<string,string>>`  Each pair is `{ attr_name, attr_value }`.
 		 *
-		 * @par Lua — returns a `{name = value}` table
+		 * @par Lua - returns a `{name = value}` table
 		 * @code{.lua}
 		 * for name, value in pairs(root:attributes()) do
 		 *     print(name, "=", value)
@@ -471,14 +471,14 @@ namespace xml {
 		 *
 		 * @return `vector<Node>`  Ordered list; may be empty.
 		 *
-		 * @par Lua — all children
+		 * @par Lua - all children
 		 * @code{.lua}
 		 * for _, child in ipairs(channel:children()) do
 		 *     print(child:name(), child:type())
 		 * end
 		 * @endcode
 		 *
-		 * @par Lua — filtered by name
+		 * @par Lua - filtered by name
 		 * @code{.lua}
 		 * local items = root:child("channel"):children("item")
 		 * for i, item in ipairs(items) do
@@ -654,9 +654,9 @@ namespace xml {
 	 * @brief Standard `luaopen_*` entry point invoked by `require("xml")`.
 	 *
 	 * Registers three named metatables in the Lua registry:
-	 * - `xml.document` — for Document userdata
-	 * - `xml.node`     — for Node userdata
-	 * - `xml.nodeSet`  — for NodeSet userdata
+	 * - `xml.document` - for Document userdata
+	 * - `xml.node`     - for Node userdata
+	 * - `xml.nodeSet`  - for NodeSet userdata
 	 *
 	 * Each metatable has `__index = itself` so method calls resolve correctly,
 	 * and a `__gc` metamethod that calls the C++ destructor in-place.

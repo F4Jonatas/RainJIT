@@ -36,7 +36,8 @@
 		"files.trimTrailingWhitespace": true,
 
 		"[markdown]": {
-			"editor.insertSpaces": true
+			"editor.insertSpaces": true,
+			"editor.wordWrap": "off"
 		},
 
 

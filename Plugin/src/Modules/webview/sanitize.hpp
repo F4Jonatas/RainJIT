@@ -13,11 +13,11 @@
  *
  * Three sanitization layers:
  *
- *   1. PreProcess — strips null bytes and dangerous control characters
+ *   1. PreProcess - strips null bytes and dangerous control characters
  *      from the raw string before gumbo sees it. MSHTML ignores null bytes
  *      inside tag names (`<scr\0ipt>`); gumbo must agree on what it parses.
  *
- *   2. HTML tree walk — gumbo builds a full, browser-equivalent DOM tree,
+ *   2. HTML tree walk - gumbo builds a full, browser-equivalent DOM tree,
  *      then we reconstruct the output from scratch visiting only safe nodes.
  *        - Blocked tags (script, iframe, object, etc.) and their entire
  *          subtree are dropped silently.
@@ -30,7 +30,7 @@
  *        - The `style` attribute is filtered per-declaration, not removed.
  *        - Safety attributes are injected on certain tags (rel=nofollow on <a>).
  *
- *   3. CSS filter (per-declaration) — for `style` attributes:
+ *   3. CSS filter (per-declaration) - for `style` attributes:
  *        a. CSS comments are stripped before processing. This defeats the
  *           comment-splitting attack where "expression(" is disguised by
  *           inserting a CSS comment in the middle of the keyword.
@@ -165,7 +165,7 @@ namespace sanitize {
 		 * @brief Decode HTML entities in a string.
 		 *
 		 * @details
-		 * Security primitive — not just a display utility.
+		 * Security primitive - not just a display utility.
 		 * Attackers encode `javascript:` as `&#106;avascript:` or `&#x6A;avascript:`
 		 * to bypass naive string comparisons. We decode before protocol checking so
 		 * we see exactly what the browser will see.
@@ -705,7 +705,7 @@ namespace sanitize {
 				if ( opts.blockEvents && attrName.size() >= 2 && attrName[0] == 'o' && attrName[1] == 'n' )
 					continue;
 
-				// Drop globally blocked attributes (always — these have no safe use)
+				// Drop globally blocked attributes (always - these have no safe use)
 				if ( BlockedAttributes().count( attrName ) )
 					continue;
 
