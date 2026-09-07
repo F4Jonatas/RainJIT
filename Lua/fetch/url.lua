@@ -21,12 +21,12 @@ M.__index = M
 
 
 
-local function encodeValue(v)
-	if type(v) == 'table' and v.__raw then
-		return v.value
+local function encodeValue( val )
+	if type( val ) == 'table' and val.__raw then
+		return val.value
 	end
 
-	return M.encode(v)
+	return M.encode( val )
 end
 
 
@@ -41,37 +41,37 @@ local QUERY_MT = {
 		local data = self.__data
 
 		if value == nil then
-			rawset(data, key, nil)
+			rawset( data, key, nil )
 
-		elseif type(value) == 'table' and value.__raw then
+		elseif type( value ) == 'table' and value.__raw then
 			-- Preserve raw values without modification
 			if value.value ~= nil then
-				rawset(data, key, nil)
+				rawset( data, key, nil )
 			else
-				rawset(data, key, value)
+				rawset( data, key, value )
 			end
 
-		elseif type(value) == 'string' then
-			local trimmed = value:match('^%s*(.-)%s*$')
+		elseif type( value ) == 'string' then
+			local trimmed = value:match( '^%s*(.-)%s*$' )
 
 			if trimmed == '' then
-					rawset(data, key, nil)
+					rawset( data, key, nil )
 			else
-					rawset(data, key, trimmed)
+					rawset( data, key, trimmed )
 			end
 
-		elseif type(value) == 'number' then
-			rawset(data, key, tostring(value))
+		elseif type( value ) == 'number' then
+			rawset( data, key, tostring( value ))
 
 		else
-			error('Query parameter must be string, number or raw, got '.. type(value), 2)
+			error( 'Query parameter must be string, number or raw, got '.. type( value ), 2 )
 		end
 	end,
 
 
 
-	__pairs = function(t)
-		return pairs( t.__data )
+	__pairs = function( Table )
+		return pairs( Table.__data )
 	end
 }
 
@@ -86,31 +86,29 @@ local RESULT_MT = {
 
 			-- Collect and sort keys (deterministic order)
 			local keys = {}
-			for key in pairs(t.query) do
-				keys[#keys + 1] = key
+			for key in pairs( t.query ) do
+				keys[ #keys + 1 ] = key
 			end
-			table.sort(keys)
+			table.sort( keys )
 
 			-- Build query string
-			for _, key in ipairs(keys) do
-				local val = t.query[key]
+			for _, key in ipairs( keys ) do
+				local val = t.query[ key ]
 
-				if type(val) == 'table' and not val.__raw then
+				if type( val ) == 'table' and not val.__raw then
 					-- multi-value array
-					for _, v in ipairs(val) do
-						query_parts[#query_parts + 1] =
-							M.encode(key) .. '=' .. encodeValue(v)
+					for _, v in ipairs( val ) do
+						query_parts[ #query_parts + 1 ] = M.encode( key ) .. '=' .. encodeValue( v )
 					end
 
 				elseif val ~= nil then
 					-- single value (string, number, or RAW)
-					query_parts[#query_parts + 1] =
-						M.encode(key) .. '=' .. encodeValue(val)
+					query_parts[#query_parts + 1] = M.encode( key ) .. '=' .. encodeValue( val )
 				end
 			end
 
 			if #query_parts > 0 then
-				return '?' .. table.concat(query_parts, '&')
+				return '?' .. table.concat( query_parts, '&' )
 			else
 				return ''
 			end
@@ -125,46 +123,54 @@ local RESULT_MT = {
 
 			-- Include fragment or hashparams in fullpath
 			if t.fragment then
-				fragment_part = '#' .. M.encode(t.fragment)
+				fragment_part = '#' .. M.encode( t.fragment )
+
 			elseif t.hashparams then
 				-- Build hashparams string
 				local hash_parts = {}
-				for key, val in pairs(t.hashparams) do
-					if type(val) == 'table' and not val.__raw then
-						for _, v in ipairs(val) do
-							hash_parts[#hash_parts + 1] = M.encode(key) .. '=' .. encodeValue(v)
+				for key, val in pairs( t.hashparams ) do
+					if type( val ) == 'table' and not val.__raw then
+						for _, v in ipairs( val ) do
+							hash_parts[ #hash_parts + 1 ] = M.encode( key ) .. '=' .. encodeValue( v )
 						end
 					elseif val ~= nil then
-						hash_parts[#hash_parts + 1] = M.encode(key) .. '=' .. encodeValue(val)
+						hash_parts[ #hash_parts + 1 ] = M.encode( key ) .. '=' .. encodeValue( val )
 					end
 				end
+
 				if #hash_parts > 0 then
-					fragment_part = '#' .. table.concat(hash_parts, '&')
+					fragment_part = '#' .. table.concat( hash_parts, '&' )
 				end
 			end
 
 			return path .. search .. fragment_part
+
+
 		elseif k == 'href' then
 			-- Build complete href dynamically
 			local href = ''
 			if t.scheme then
 				href = href .. t.scheme .. ':'
 			end
+
 			if t.authority then
 				href = href .. '//'
 				if t.username then
-					href = href .. M.encode(t.username)
+					href = href .. M.encode( t.username )
 					if t.password then
-						href = href .. ':' .. M.encode(t.password)
+						href = href .. ':' .. M.encode( t.password )
 					end
 					href = href .. '@'
 				end
-				href = href .. (t.host or '')
+
+				href = href .. ( t.host or '' )
+
 				if t.port then
 					href = href .. ':' .. t.port
 				end
 			end
-			href = href .. (t.fullpath or '')
+
+			href = href .. ( t.fullpath or '' )
 			return href
 		end
 	end
@@ -206,6 +212,7 @@ M.raw = function( value )
 		value = tostring( value )
 	}
 end
+
 
 
 ---Percent-encodes a string following RFC 3986.
@@ -318,28 +325,30 @@ local parse_fragment_and_hashparams = function(fragment_str)
 	end
 
 	-- Check if fragment contains parameters (contains '=' or '&')
-	if fragment_str:find('=') or fragment_str:find('&') then
+	if fragment_str:find( '=' ) or fragment_str:find( '&' ) then
 		-- Try to parse as hash parameters
 		local params = {}
-		string.gsub(fragment_str, '([^&=]+)=([^&=]*)&?', function(key, val)
-			key = M.unescape(key)
-			val = M.unescape(val)
+		string.gsub( fragment_str, '([^&=]+)=([^&=]*)&?', function( key, val )
+			key = M.unescape( key )
+			val = M.unescape( val )
 
-			if not params[key] then
-				params[key] = val
+			if not params[ key ] then
+				params[ key ] = val
+
 			else
 				local t = type(params[key])
 				if t == 'string' then
-					params[key] = {params[key], val}
+					params[ key ] = { params[ key ], val }
+
 				elseif t == 'table' then
-					params[key][#params[key] + 1] = val
+					params[ key ][#params[ key ] + 1] = val
 				end
 			end
 		end)
 
 		-- If we successfully parsed parameters, use them
-		if next(params) ~= nil then
-			result.hashparams = create_query_table(params)
+		if next( params ) ~= nil then
+			result.hashparams = create_query_table( params )
 			result.fragment = nil -- Not a simple fragment
 		end
 	end
@@ -362,42 +371,42 @@ end
 -- local query = parsequery("name=John&age=30&tags=lua&tags=url")
 -- -- Returns: {name="John", age="30", tags={"lua", "url"}}
 --
-M.parsequery = function(query_string)
-	if type(query_string) ~= 'string' then
+M.parsequery = function( query_string )
+	if type( query_string ) ~= 'string' then
 		return create_query_table()
 	end
 
 	local raw_data = {}
 
-	for pair in query_string:gmatch('[^&]+') do
-		local key, val = pair:match('([^=]*)=?(.*)')
+	for pair in query_string:gmatch( '[^&]+' ) do
+		local key, val = pair:match( '([^=]*)=?(.*)' )
 
 		-- Decode
-		key = M.unescape(key or '')
-		val = M.unescape(val or '')
+		key = M.unescape( key or '' )
+		val = M.unescape( val or '' )
 
 		-- Trim whitespace
-		key = key:match('^%s*(.-)%s*$') or key
-		val = val:match('^%s*(.-)%s*$') or val
+		key = key:match( '^%s*(.-)%s*$' ) or key
+		val = val:match( '^%s*(.-)%s*$' ) or val
 
 		-- Ignore empty keys
 		if key ~= '' then
-			if raw_data[key] == nil then
-				raw_data[key] = val
+			if raw_data[ key ] == nil then
+				raw_data[ key ] = val
 			else
-				local t = type(raw_data[key])
+				local t = type( raw_data[ key ])
 
 				if t == 'string' then
-					raw_data[key] = { raw_data[key], val }
+					raw_data[ key ] = { raw_data[ key ], val }
 
 				elseif t == 'table' then
-					raw_data[key][#raw_data[key] + 1] = val
+					raw_data[ key ][ #raw_data[ key ] + 1 ] = val
 				end
 			end
 		end
 	end
 
-	return create_query_table(raw_data)
+	return create_query_table( raw_data )
 end
 
 
@@ -462,10 +471,11 @@ M.parse = function( str )
 			result.userinfo = userinfo
 			remaining = rest
 			-- Split into username and password if present
-			local username, password = result.userinfo:match('^([^:]+):?(.*)$')
-			result.username = M.unescape(username)
+			local username, password = result.userinfo:match( '^([^:]+):?(.*)$' )
+			result.username = M.unescape( username )
+
 			if password and password ~= '' then
-				result.password = M.unescape(password)
+				result.password = M.unescape( password )
 			end
 		end
 
@@ -473,42 +483,43 @@ M.parse = function( str )
 		-- Host can be: domain, IPv4, IPv6 in brackets, or hostname
 
 		-- Check for IPv6 address
-		if remaining:sub(1, 1) == '[' then
+		if remaining:sub( 1, 1 ) == '[' then
 			-- IPv6 address
-			local ipv6, after_bracket = remaining:match('%[([%x:.]+)%](.*)')
+			local ipv6, after_bracket = remaining:match( '%[([%x:.]+)%](.*)' )
 			if ipv6 then
 				result.host = '[' .. ipv6 .. ']'
 				remaining = after_bracket or ''
 			end
+
 		else
 			-- Regular host (stop at : / ? #)
-			local host_match = remaining:match('^([^:/?#]+)')
+			local host_match = remaining:match( '^([^:/?#]+)' )
 			if host_match then
 				result.host = host_match
-				remaining = remaining:sub(#host_match + 1)
+				remaining = remaining:sub( #host_match + 1 )
 			end
 		end
 
 		-- 5. Parse port
-		if remaining:sub(1, 1) == ':' then
-			local port = remaining:match('^:([0-9]+)')
+		if remaining:sub( 1, 1 ) == ':' then
+			local port = remaining:match( '^:([0-9]+)' )
 			if port then
-				result.port = tonumber(port)
-				remaining = remaining:sub(#port + 2) -- Remove ':' and port
+				result.port = tonumber( port )
+				remaining = remaining:sub( #port + 2 ) -- Remove ':' and port
 			end
 		end
 	end
 
 	-- 6. Parse pathname (string) and path (array)
-	local path_match = remaining:match('^([^?#]*)')
+	local path_match = remaining:match( '^([^?#]*)' )
 	if path_match and path_match ~= '' then
 		-- pathname: full path as string
 		result.pathname = path_match
 
 		-- path: array of path segments (already decoded)
-		result.path = M.parsepath(path_match)
+		result.path = M.parsepath( path_match )
 
-		remaining = remaining:sub(#path_match + 1)
+		remaining = remaining:sub( #path_match + 1 )
 	else
 		-- For empty paths
 		result.pathname = ''
@@ -516,34 +527,36 @@ M.parse = function( str )
 	end
 
 	-- 7. Parse query string (smart table)
-	if remaining:sub(1, 1) == '?' then
-		local query_string = remaining:match('^%?([^#]*)')
+	if remaining:sub( 1, 1 ) == '?' then
+		local query_string = remaining:match( '^%?([^#]*)' )
 		if query_string and query_string ~= '' then
 			-- query: smart table with parsed parameters
-			result.query = M.parsequery(query_string)
-			remaining = remaining:sub(#query_string + 2) -- Remove '?' and query
+			result.query = M.parsequery( query_string )
+			remaining = remaining:sub( #query_string + 2 ) -- Remove '?' and query
+
 		else
 			-- Empty query (? without parameters) - still create smart table
 			result.query = M.parsequery()
 		end
+
 	else
 		-- No query string - create empty smart table
 		result.query = M.parsequery()
 	end
 
 	-- 8. Parse fragment/hash parameters
-	if remaining:sub(1, 1) == '#' then
-		local fragment_str = remaining:sub(2)
+	if remaining:sub( 1, 1 ) == '#' then
+		local fragment_str = remaining:sub( 2 )
 		if fragment_str and fragment_str ~= '' then
 			-- Parse as both fragment and possible hashparams
-			local fragment_data = parse_fragment_and_hashparams(fragment_str)
+			local fragment_data = parse_fragment_and_hashparams( fragment_str )
 
 			if fragment_data.fragment then
 				result.fragment = fragment_data.fragment
 				result.hash = fragment_data.fragment -- alias
 			end
 
-			if fragment_data.hashparams and next(fragment_data.hashparams) ~= nil then
+			if fragment_data.hashparams and next( fragment_data.hashparams ) ~= nil then
 				result.hashparams = fragment_data.hashparams
 			end
 		end
@@ -593,7 +606,7 @@ end
 -- 	}
 -- }
 --
-M.build = function(parts)
+M.build = function( parts )
 	local url = ''
 
 	if parts.scheme then
@@ -604,9 +617,9 @@ M.build = function(parts)
 		url = url .. '//'
 
 		if parts.username then
-			url = url .. M.encode(parts.username)
+			url = url .. M.encode( parts.username )
 			if parts.password then
-				url = url .. ':' .. M.encode(parts.password)
+				url = url .. ':' .. M.encode( parts.password )
 			end
 			url = url .. '@'
 		end
@@ -620,11 +633,11 @@ M.build = function(parts)
 
 	-- Build pathname from path array or use pathname string
 	local pathname = ''
-	if parts.path and type(parts.path) == 'table' then
+	if parts.path and type( parts.path ) == 'table' then
 		-- Reconstruct from array
 		if #parts.path > 0 then
 			-- Make path absolute if host exists
-			pathname = table.concat(parts.path, '/')
+			pathname = table.concat( parts.path, '/' )
 			if parts.host then
 				pathname = '/' .. pathname
 			end
@@ -637,46 +650,49 @@ M.build = function(parts)
 	-- Ensure proper formatting
 	if pathname ~= '' then
 		-- Add leading slash if needed and not present
-		if parts.host and not pathname:match('^/') then
+		if parts.host and not pathname:match( '^/' ) then
 			pathname = '/' .. pathname
 		end
 		url = url .. pathname
 	end
 
 	-- Build query string from query table
-	if parts.query and type(parts.query) == 'table' then
+	if parts.query and type( parts.query ) == 'table' then
 		local query_parts = {}
-		for k, v in pairs(parts.query) do
+		for k, v in pairs( parts.query ) do
 			if type(v) == 'table' and not v.__raw then
 				for _, val in ipairs(v) do
-					query_parts[#query_parts + 1] = M.encode(k) .. '=' .. encodeValue(val)
+					query_parts[ #query_parts + 1 ] = M.encode( k ) .. '=' .. encodeValue( val )
 				end
+
 			elseif v ~= nil then
-				query_parts[#query_parts + 1] = M.encode(k) .. '=' .. encodeValue(v)
+				query_parts[ #query_parts + 1 ] = M.encode( k ) .. '=' .. encodeValue( v )
 			end
 		end
+
 		if #query_parts > 0 then
-			url = url .. '?' .. table.concat(query_parts, '&')
+			url = url .. '?' .. table.concat( query_parts, '&' )
 		end
 	end
 
 	-- Add fragment or hashparams
 	if parts.fragment then
-		url = url .. '#' .. M.encode(parts.fragment)
+		url = url .. '#' .. M.encode( parts.fragment )
 	elseif parts.hashparams then
 		-- Build hash parameters string
 		local hash_parts = {}
-		for k, v in pairs(parts.hashparams) do
-			if type(v) == 'table' then
-				for _, val in ipairs(v) do
-					hash_parts[#hash_parts + 1] = M.encode(k) .. '=' .. encodeValue(val)
+		for k, v in pairs( parts.hashparams ) do
+			if type( v ) == 'table' then
+				for _, val in ipairs( v ) do
+					hash_parts[ #hash_parts + 1 ] = M.encode( k ) .. '=' .. encodeValue( val )
 				end
 			elseif v ~= nil then
-				hash_parts[#hash_parts + 1] = M.encode(k) .. '=' .. encodeValue(v)
+				hash_parts[ #hash_parts + 1 ] = M.encode( k ) .. '=' .. encodeValue( v )
 			end
 		end
+
 		if #hash_parts > 0 then
-			url = url .. '#' .. table.concat(hash_parts, '&')
+			url = url .. '#' .. table.concat( hash_parts, '&' )
 		end
 	end
 

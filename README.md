@@ -75,9 +75,9 @@
 
 </details>
 
+<br>
+<br>
 
-<br>
-<br>
 
 ## Overview
 
@@ -114,7 +114,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 Install the package [`RainJIT.rmskin`](https://github.com/F4Jonatas/RainJIT/releases/latest)<br>
 
 > [!IMPORTANT]
-> After installation, it is highly recommended to move the [**Models folder**](#file-locations) to the Rainmeter [**@Vault folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/); this gives you access to all installed Skins, preventing file duplication.
+> After installation, it is highly recommended to move the [**Lua folder**](#file-locations) to the Rainmeter [**@Vault folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/); this gives you access to all installed Skins, preventing file duplication.
 
 
 
@@ -277,7 +277,7 @@ end
 Get the window identifier (**HWND**). Based on the Skin name of current Skin.
 
 > [!TIP]
-> functionality similar to [**PluginConfigActive**](https://github.com/jsmorley/ConfigActive)
+> Functionality similar to [**PluginConfigActive**](https://github.com/jsmorley/ConfigActive)
 
 ```lua
 -- @usage rain:getSkin(skin)
@@ -442,7 +442,7 @@ If the [`rain:init()`](#large_orange_diamond-method-raininit) method is defined,
 > This helps to gather information about Skin dimensions, avoiding incorrect zero values.
 
 ```lua
---- Called once when skin is ready
+-- Called once when skin is ready
 function rain:init()
   print("Skin Width", rain:getW())
   rain:var("Initialized", "true")
@@ -480,7 +480,7 @@ If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defi
 > Therefore, it's recommended to keep all `Meter` and `Measure` elements set to [`UpdateDivider=-1`](https://docs.rainmeter.net/manual/meters/general-options/#UpdateDivider) _(except the **RainJIT Measure**)_. This approach prevents **Rainmeter** from updating them with every update, allowing you to manually update only when necessary. This not only improves performance but also provides greater control over the flow of animations and updates in the Skin.
 
 ```lua
--- Called every frame
+--- Called every frame
 -- @param (number) au - accumulated updates (resets every ~9 quadrillion seconds)
 -- @param (number) dt - delta time in seconds (clamped to 0.0-1.0)
 

@@ -40,6 +40,7 @@ player.uiMode = 'invisible'
 
 print( luacom.GetType( player.uiMode ) )
 
+
 -- rain:var("path", play.contentPath, rain:var("#CURRENTPATH#skin.ini"))
 
 

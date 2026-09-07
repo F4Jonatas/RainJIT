@@ -7,7 +7,19 @@
 </div>
 
 
+
+## Overview
+
 A lightweight Lua module that applies modern Windows visual effects (Mica, Acrylic, Blur, Dark Mode, Rounded Corners, Border, Shadow) to any window using FFI and native Windows APIs.
+
+_**How It Works**_<br>
+The module uses LuaJIT's FFI to call three Windows API functions:
+
+- `SetWindowCompositionAttribute` – for legacy accent effects (blur, acrylic, transparency).
+- `DwmSetWindowAttribute` – for modern DWM attributes (Mica, dark mode, corners, border color, shadow).
+- `RtlGetVersion` – to check the Windows build number for compatibility.
+
+Before applying new effects, an internal general reset function is always called to disable all previously defined attributes (including the border color), ensuring a clean initial state.
 
 ---
 
@@ -30,8 +42,6 @@ A lightweight Lua module that applies modern Windows visual effects (Mica, Acryl
 - **Border** – Remove, restore, or set a custom color for the DWM border
 - **Shadow** – Enable or disable the window shadow
 
----
-
 <br>
 <br>
 
@@ -42,28 +52,22 @@ A lightweight Lua module that applies modern Windows visual effects (Mica, Acryl
 - **LuaJIT** (or any Lua with `ffi` support)
 - No external dependencies – the module uses `user32.dll`, `dwmapi.dll`, and `ntdll.dll` via FFI.
 
----
-
 <br>
 <br>
 
 
-## :book: Usage
 
-```lua
--- @usage glass( hwnd, options ) → nil
--- @param (number|userdata) hwnd - a valid Windows window handle (LuaJIT FFI `HWND` cdata).
--- @param (table) options – a table with the desired effects (all fields optional).
-
-glass(hwnd, options)
-```
-
-
-### :jigsaw: Example
+## :jigsaw: Example
 
 
 ```lua
 local glass = require("glass")
+
+
+-- @usage glass(hwnd, options)
+-- @param (number|userdata) hwnd - a valid Windows window handle (LuaJIT FFI `HWND` cdata).
+-- @param (table) options – a table with the desired effects (all fields optional).
+-- @return (nil)
 
 glass( rain.hwnd, {
   effect  = "mica",
@@ -72,11 +76,9 @@ glass( rain.hwnd, {
   shadow  = true,
   border  = false  -- remove the DWM border
 })
-```
 
-Custom border color:
 
-```lua
+-- Custom border color
 glass( rain.hwnd, {
   effect = "acrylic",
   border = 0xFF0000  -- red border (0xRRGGBB)
@@ -89,151 +91,87 @@ glass( rain.hwnd, {
 <br>
 
 
-## :diamond_shape_with_a_dot_inside: Options
+## :book: Usage
 
-<table>
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h4>Option</h4>
-    </td>
-    <td align="center" nowrap="nowrap">
-      <h4>Description</h4>
-      <img width="900" height="1" alt="">
-    </td>
-  </tr>
+### :diamond_shape_with_a_dot_inside: Property `effect`
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>effect</code></h5>
-    </td>
-    <td rowspan="2">
-      Selects the background effect for the window.
-      <ul>
-        <li><b>mica / mica_alt</b> – Windows 11 backdrop materials (requires build ≥ 22000).</li>
-        <li><b>blur</b> – Classic blur behind the window.</li>
-        <li><b>acrylic</b> – Fluent Design acrylic blur (requires build ≥ 17134). Use <code>effect_opts</code> to set
-          opacity and tint color.</li>
-        <li><b>transparent</b> – Simple transparent gradient (no blur).</li>
-        <li><b>solid</b> – Opaque fill; you can set opacity and color via <code>effect_opts</code>.</li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>string</code>
-      <br>
-      <b>Allowed Values:</b>
-      <ul>
-        <li><code>"mica"</code></li>
-        <li><code>"mica_alt"</code></li>
-        <li><code>"blur"</code></li>
-        <li><code>"acrylic"</code></li>
-        <li><code>"transparent"</code></li>
-        <li><code>"solid"</code></li>
-      </ul>
-    </td>
-  </tr>
+Selects the background effect for the window.
+- `mica`|`mica_alt` – Windows 11 backdrop materials (requires build ≥ 22000).
+- `blur` – Classic blur behind the window.
+- `acrylic` – Fluent Design acrylic blur (requires build ≥ 17134). Use effect_opts to set opacity and tint color.
+- `transparent` – Simple transparent gradient (no blur).
+- `solid` – Opaque fill; you can set opacity and color via effect_opts.
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>effect_opts</code></h5>
-    </td>
-    <td rowspan="2">
-      Additional parameters for <code>"acrylic"</code> and <code>"solid"</code> effects.
-      <ul>
-        <li><b>opacity</b> – Alpha value. Default: <code>0</code> for acrylic, <code>255</code> for solid.</li>
-        <li><b>color</b> – RGB tint color. Default: <code>0x000000</code> (black).</li>
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>table</code>
-      <br>
-    </td>
-  </tr>
+Values: (`mica`|`mica_alt`|`blur`|`acrylic`|`transparent`|`solid`)<br>
+Type: `string`
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>corners</code></h5>
-    </td>
-    <td rowspan="2">
-      Controls the rounding of window corners.
-      <ul>
-        <li><b>round</b> – Fully rounded corners.</li>
-        <li><b>small</b> – Slightly rounded corners.</li>
-        <li><b>none</b> – Sharp, square corners.</li>
-        <li><b>default</b> – Restores the system default behavior.</li>
-      </ul>
-      <i>(Requires Windows 11 build ≥ 22000; may work on some Windows 10 builds with newer DWM.)</i>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>string</code>
-      <br>
-      <b>Allowed Values:</b>
-      <ul>
-        <li><code>"round"</code></li>
-        <li><code>"small"</code></li>
-        <li><code>"none"</code></li>
-        <li><code>"default"</code></li>
-      </ul>
-    </td>
-  </tr>
+<br>
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>dark</code></h5>
-    </td>
-    <td rowspan="2">
-      If <code>true</code>, enables immersive dark mode for the window title bar and borders.
-      <br>
-      If <code>false</code>, disables dark mode.
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>boolean</code>
-    </td>
-  </tr>
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>border</code></h5>
-    </td>
-    <td rowspan="2">
-      Controls the DWM border drawn around the window frame.
-      <ul>
-        <li><b>false</b> – Removes the border entirely.</li>
-        <li><b>true</b> – Restores the system default border color.</li>
-        <li><b>0xRRGGBB</b> – Sets a custom border color (e.g. <code>0xFF0000</code> for red).</li>
-      </ul>
-      <i>(Requires Windows 11 build ≥ 22000. Ignored silently on older builds.)</i>
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>boolean | number</code>
-    </td>
-  </tr>
+### :diamond_shape_with_a_dot_inside: Property `effect_opts`
 
-  <tr>
-    <td align="center" nowrap="nowrap">
-      <h5><code>shadow</code></h5>
-    </td>
-    <td rowspan="2">
-      If <code>true</code>, the window shadow is enabled.
-      <br>
-      If <code>false</code>, the shadow is removed.
-    </td>
-  </tr>
-  <tr>
-    <td nowrap="nowrap">
-      <b>Type:</b> <code>boolean</code>
-    </td>
-  </tr>
-</table>
+Additional parameters for `acrylic` and `solid` effects.
+- `opacity` – Alpha value. Default: 0 for acrylic, 255 for solid.
+- `color`  – RGB tint color. Default: 0x000000 (black).
+
+Values: (`opacity`|`color`)<br>
+Type: `table`
+
+<br>
+
+
+### :diamond_shape_with_a_dot_inside: Property `corners`
+
+Controls the rounding of window corners.
+- `round` – Fully rounded corners.
+- `small` – Slightly rounded corners.
+- `none` – Sharp, square corners.
+- `default` – Restores the system default behavior.
+
+> [!IMPORTANT]
+> Requires Windows 11 build ≥ 22000; may work on some Windows 10 builds with newer DWM.
+
+
+Values: (`round`|`small`|`none`|`default`)<br>
+Type: `string`
+
+<br>
+
+
+### :diamond_shape_with_a_dot_inside: Property `dark`
+
+If `true`, enables immersive dark mode for the window title bar and borders.<br>
+If `false`, disables dark mode.
+
+Values: (`false`|`true`)<br>
+Type: `boolean`
+
+<br>
+
+
+### :diamond_shape_with_a_dot_inside: Property `border`
+
+Controls the DWM border drawn around the window frame.
+- `false` – Removes the border entirely.
+- `true` – Restores the system default border color.
+- `0xRRGGBB` – Sets a custom border color (e.g. `0xFF0000` for red).
+
+> [!IMPORTANT]
+> Requires Windows 11 build ≥ 22000. Ignored silently on older builds.
+
+Values: (`false`|`true`|[`Hexadecimal Colors`](https://htmlcolorcodes.com/))<br>
+Type: (`boolean`|`number`)
+
+<br>
+
+
+### :diamond_shape_with_a_dot_inside: Property `shadow`
+
+If `true`, the window shadow is enabled.<br>
+If `false`, the shadow is removed.
+
+Values: (`false`|`true`)<br>
+Type: `boolean`
 
 ---
 
@@ -275,15 +213,9 @@ glass( rain.hwnd, {
 <br>
 
 
-## How It Works
+## :scroll: License
 
-The module uses LuaJIT's FFI to call three Windows API functions:
-
-- `SetWindowCompositionAttribute` – for legacy accent effects (blur, acrylic, transparency).
-- `DwmSetWindowAttribute` – for modern DWM attributes (Mica, dark mode, corners, border color, shadow).
-- `RtlGetVersion` – to check the Windows build number for compatibility.
-
-Before applying new effects, `glass` always calls an internal `resetAll` function that disables all previously set attributes (including border color), ensuring a clean slate.
+Licensed under the **GPL v2.0 License**.
 
 ---
 
