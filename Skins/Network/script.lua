@@ -1,7 +1,5 @@
 -- cSpell:ignoreRegExp leftdouble|wheeldown|wheelup|lgradient|CURRENTPATH|listdir|getn|strokecolor
 
-require( 'math.utils' )
-
 local depot   = require( 'depot' )
 local meter   = require( 'meter' )
 local chart   = require( 'meter.chart.line' )
@@ -9,58 +7,34 @@ local measure = require( 'measure' )
 local glass   = require( 'glass' )
 
 
-local MAX_POINTS     = 40
-local MAX_DOWNLOAD   = 0
-local MAX_UPLOAD     = 0
-local PADDING_TOP    = 15
-local PADDING_BOTTOM = 5
-local PADDING_LEFT   = 75
-local PADDING_RIGHT  = 15
-local HEIGHT         = rain:var( 'HEIGHT' ) - rain:var( '#MARGIN_TOP#' ) - 3
-local WIDTH          = rain:var( 'WIDTH'  ) - PADDING_RIGHT
-local SPACING        = ( WIDTH - PADDING_LEFT ) / MAX_POINTS
+local dp       = depot()
+local netIn    = measure( 'netIn' )
+local netout   = measure( 'netOut' )
+local value    = meter( 'value' )
+local valueMax = meter( 'value.max' )
 
-local DOWNLOAD_ARRAY = {}
-local UPLOAD_ARRAY   = {}
-for index = 1, MAX_POINTS do
-	table.insert( DOWNLOAD_ARRAY, 0 )
-	table.insert( UPLOAD_ARRAY  , 0 )
-end
-
-
-local dp           = depot()
-local downMaxValue = math.max( dp:get( 'download-max-value', 0 ), 0 )
-local upMaxValue   = math.max( dp:get( 'upload-max-value'  , 0 ), 0 )
-
-local netIn       = measure( 'netIn' )
-local netout      = measure( 'netOut' )
-local value       = meter( 'value' )
-local valueMax    = meter( 'value.max' )
-local downGraph   = meter( 'graphic' )
-local downGraphBG = downGraph:shape(2)
-local upGraph     = downGraph:shape(3)
 
 
 local grapth = chart({
-	meter         = downGraph,
-	points        = MAX_POINTS,
-	paddingTop    = 50,
-	paddingBottom = PADDING_BOTTOM,
-	paddingLeft   = PADDING_LEFT,
-	paddingRight  = PADDING_RIGHT,
-	height        = rain:var( 'HEIGHT' ),
+	meter         = meter( 'graphic' ),
+	points        = 40,
+	paddingTop    = 9,
+	paddingBottom = 8,
+	paddingLeft   = 90,
+	paddingRight  = 20,
+	height        = rain:var( 'HEIGHT' ) - 35,
 	width         = rain:var( 'WIDTH' ),
 
-	lines         = {
+	series        = {
 		{
 			strokewidth = 1,
-			strokecolor = '102,219,252',
-			fill = '102,219,252',
+			strokecolor = '180 | 102,219,252,20 ; 0 | 102,219,252,180 ; 0.2 | 102,219,252,180 ; 0.85 | 102,219,252,20 ; 1',
+			fill = '-90 | 102,219,252,86 ; 0 | 102,219,252,20 ; 1',
 			data = { 0 }
 		},
 		{
 			strokewidth = 1,
-			strokecolor = '255,80,220',
+			strokecolor = '180 | 255,80,220,20 ; 0 | 255,80,220,255 ; 0.2 | 255,80,220,255 ; 0.85 | 255,80,220,20 ; 1',
 			strokedashes = { 5, 3 },
 			strokedashcap = 'round',
 			fill = false,
@@ -68,10 +42,6 @@ local grapth = chart({
 		}
 	}
 })
-
-
--- Forward declarations
-local addPoint
 
 
 
@@ -115,98 +85,11 @@ netIn:event( 'update', function( self, response )
 	local download = self:value()
 	local upload   = netout:value()
 
-	addPoint( download, upload )
+	local max = grapth:addPoint({ download, upload })
+	valueMax:text( fmt_bytes( max )):update()
 
 	value:text(
 		fmt_bytes( upload ) ..' ↑\n'..
 		fmt_bytes( download ) ..' ↓'
 	):update()
 end)
-
-
-
-local function calcY( value, max, height )
-	if max == 0 then
-		return ( height - PADDING_BOTTOM )
-	end
-
-	local y = ( height - PADDING_BOTTOM ) - ( value / max ) * ( height - ( PADDING_TOP + PADDING_BOTTOM ))
-	return math.min( height, math.max( 0, y ))
-end
-
-
-
-local function redrawPath()
-	local lastX
-	local MAX = math.max( MAX_DOWNLOAD, MAX_UPLOAD )
-
-	valueMax:text( fmt_bytes( MAX )):update()
-
-	local dPath = {}
-	for index, value in ipairs( DOWNLOAD_ARRAY ) do
-		local x = PADDING_LEFT + ( index * SPACING )
-		local y = calcY( value, MAX, HEIGHT )
-
-		if index == 1 then
-			lastX = PADDING_LEFT
-		else
-			lastX = x
-		end
-
-		table.insert( dPath, x )
-		table.insert( dPath, y )
-	end
-
-	-- Tabela para upload
-	local uPath = {}
-	for index, value in ipairs( UPLOAD_ARRAY ) do
-		local x = PADDING_LEFT + ( index * SPACING )
-		local y = calcY( value, MAX, HEIGHT )
-		table.insert( uPath, x )
-		table.insert( uPath, y )
-	end
-
-
-	local bgPath = {
-		PADDING_LEFT,
-		HEIGHT - PADDING_BOTTOM
-	}
-
-	for _, v in ipairs( dPath ) do
-		table.insert( bgPath, v )
-	end
-
-	table.insert( bgPath, lastX )
-	table.insert( bgPath, HEIGHT - PADDING_BOTTOM )
-
-
-	downGraph:polyline( dPath )
-	upGraph:polyline( uPath )
-	downGraphBG:polyline( bgPath )
-
-	downGraph:update()
-end
-
-
-
-function addPoint( download, upload )
-	table.insert( DOWNLOAD_ARRAY, download )
-	table.insert( UPLOAD_ARRAY  , upload   )
-
-	table.insert( grapth.lines[1].data, download )
-	table.insert( grapth.lines[2].data, upload )
-
-	if #DOWNLOAD_ARRAY > MAX_POINTS then
-		table.remove( DOWNLOAD_ARRAY, 1 )
-		table.remove( UPLOAD_ARRAY  , 1 )
-
-		table.remove( grapth.lines[1].data, 1 )
-		table.remove( grapth.lines[2].data, 1 )
-	end
-
-	MAX_DOWNLOAD = math.maximo( DOWNLOAD_ARRAY )
-	MAX_UPLOAD   = math.maximo( UPLOAD_ARRAY )
-
-	redrawPath()
-	grapth:update()
-end

@@ -257,7 +257,6 @@ end
 -- @return string|table Returns option value when used as getter or meter instance when used as setter.
 --
 -- @see https://docs.rainmeter.net/manual/bangs/#SetOption
---
 function meter:option( option, value, config )
 	-- print( option, value  )
 	if value ~= nil then

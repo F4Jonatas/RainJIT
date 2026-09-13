@@ -46,8 +46,8 @@ end
 
 
 
--- @param (int)   au number accumulated Updates
--- @param (float) dt number deltaTime
+-- @param (int)   au - number accumulated Updates
+-- @param (float) dt - number deltaTime
 function rain:update( au, dt )
 	if math.fmod( au, reload ) == 0 then
 		upgrade( gatherResults())
@@ -130,6 +130,10 @@ function gatherResults()
 
 	else
 		local data = current:json()
+		if not data then
+			error( 'Falha ao analisar os dados JSON.\nError: '.. current.error )
+		end
+
 		local dict = mapWeather(
 			data.current.weather_code,
 			data.current.is_day == 1,

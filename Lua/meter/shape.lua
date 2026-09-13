@@ -1,5 +1,4 @@
 --- Shape meter extension.
---
 -- Provides a **builder-style API** for constructing and manipulating
 -- Rainmeter **Shape meters** programmatically.
 --
@@ -46,11 +45,10 @@
 -- `meter` methods such as `update()`, `event()`, and `option()`.
 --
 -- @submodule meter.shape
--- @release 0.2.3
+-- @release 0.2.4
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 -- @see https://docs.rainmeter.net/manual/meters/shape/
--- @see https://docs.rainmeter.net/manual/bangs/#SetOption
 --
 -- @usage
 -- local meter = require("meter")
@@ -61,6 +59,11 @@
 -- local shape2 = shape1:add()
 -- shape2:ellipse(100,25,30,30):fill(255,0,0)
 --
+
+
+local M   = {}
+M.__index = M
+
 
 local DRAWS    = 0
 local GRADIENT = 0
@@ -81,14 +84,34 @@ local REGEX_SHAPE = '^(%s*%w+%s*)'
 
 
 
+--- Calculate a percentage of a given value.
+-- Used to resolve percentage-based parameters (e.g. `"50%"`) into
+-- absolute pixel values, rounded to two decimal places.
+--
+-- @param (number) value - Base value (e.g. meter width/height).
+-- @param (number) percent - Percentage to apply (0-100).
+-- @return (number) Resulting value, rounded to 2 decimal places.
+--
+-- @usage percentOf(200, 50) --> 100
 local percentOf = function( value, percent )
 	local multi = 10 ^ 2
 	return math.floor(( value * percent / 100 ) * multi + 0.5 ) / multi
 end
 
 
--- Copia todos os métodos (funções) de 'super' para 'class'.
--- Se quiser também copiar campos não-função, basta remover o if.
+
+
+--- Copy all inherited methods from a "super" instance onto a new class.
+-- Iterates over `super`'s metatable and wraps every method so calls are
+-- delegated to `super`, while preserving chainability: if the wrapped
+-- call succeeds, `class` itself is returned (for method chaining);
+-- otherwise the original result is returned (useful for getters).
+--
+-- @param (table) class - Target table that will receive the wrapped methods.
+-- @param (table) super - Source instance (e.g. the base `meter` object) to inherit from.
+-- @return (table) The `class` table with inherited methods attached.
+--
+-- @usage local shape = clone( {}, meterInstance )
 local function clone( class, super )
 	for key, value in pairs( getmetatable( super )) do
 		if type( value ) == 'function' then
@@ -132,6 +155,24 @@ end
 
 
 
+--- Normalize color arguments into Rainmeter's comma-separated format.
+-- Accepts either a single hex string (`"transparent"`, 3-digit or
+-- 6-digit hex) or separate R, G, B, (A) numeric components, and
+-- returns them pre-formatted with leading commas so they can be
+-- concatenated directly into a `Fill`/`StrokeColor` option string.
+--
+-- @param (number|string) r - Red value, or a hex/"transparent" string.
+-- @param (number) [g] - Green value (ignored when `r` is a string).
+-- @param (number) [b] - Blue value (ignored when `r` is a string).
+-- @param (number) [a] - Alpha value (ignored when `r` is a string).
+-- @return (string) r - Red value or expanded hex.
+-- @return (string) g - Green value, prefixed with `,` (or empty for hex).
+-- @return (string) b - Blue value, prefixed with `,` (or empty for hex).
+-- @return (string) a - Alpha value, prefixed with `,` (or empty if absent/hex).
+--
+-- @usage parseColor(255, 0, 0, 120)  --> "255", ",0", ",0", ",120"
+-- @usage parseColor("f00")           --> "ff0000", "", "", ""
+-- @usage parseColor("transparent")   --> "0,0,0,0", "", "", ""
 local function parseColor( r, g, b, a )
 	-- if hex or transparent
 	if r and not g and not b and not a then
@@ -163,13 +204,21 @@ end
 
 
 
-local shape   = {}
-shape.__index = shape
-shape.paths   = 0
 
-
-
-
+--- Construct a new Shape instance bound to a meter.
+-- Builds a shape wrapper (inheriting the base `meter` methods via `clone`)
+-- for a specific `Shape`/`Shape2`/`Shape3`... option. If the option does
+-- not yet exist in the meter, it is initialized with a default rectangle
+-- and a placeholder value, avoiding a Rainmeter error state. If it
+-- already exists, its current type is detected from the stored content.
+--
+-- @param (table) super - The base meter instance (from `meter()` factory).
+-- @param (string) name - The meter's name (unused directly, kept for reference).
+-- @param (number|string) [index] - Numeric suffix for indexed shapes (`""`, `2`, `3`, ...).
+-- @return (table) New Shape instance bound to the given option slot.
+--
+-- @usage local shape = construct( meterInstance, "Graph" )      -- Shape
+-- @usage local shape2 = construct( meterInstance, "Graph", 2 )  -- Shape2
 local function construct( super, name, index )
 	local class = clone( {}, super )
 	class.name = 'shape'.. ( index and index or '' )
@@ -178,7 +227,7 @@ local function construct( super, name, index )
 	class.content = class.meter:option( class.name )
 	if not class.content then
 		class.content = 'rectangle 0,0,0,0|strokeWidth 0'
-		class.meter:option( class.name, 'none' )
+		class.meter:option( class.name, 'rectangle 0,0,0,0' )
 		class.type = 'rectangle'
 
 	else
@@ -186,14 +235,13 @@ local function construct( super, name, index )
 
 	end
 
-	return setmetatable( class, shape )
+	return setmetatable( class, M )
 end
 
 
 
 
 --- Create or modify a rectangle shape.
---
 -- Defines the rectangle geometry for the current shape entry.
 -- If called without arguments, returns the current rectangle parameters.
 --
@@ -204,17 +252,15 @@ end
 -- @param (number|string) top    - Top coordinate
 -- @param (number|string) width  - Rectangle width
 -- @param (number|string) height - Rectangle height
---
 -- @return (table) Shape instance
--- @return[2] (string|nil) When used as getter.
+-- @return (string|nil) When used as getter.
 --
 -- @usage
 -- shape:rectangle(0,0,200,100)
 -- shape:rectangle("10%","10%","80%","50%")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Rectangle
---
-function shape:rectangle( left, top, width, height, radiusX, radiusY )
+function M:rectangle( left, top, width, height, radiusX, radiusY )
 	local value = self.content:lower():match( 'rectangle%s*'.. SHAPE_PARAM )
 	height = height and height or width
 	radiusX = radiusX and radiusX or 0
@@ -253,7 +299,6 @@ end
 
 
 --- Create or modify an ellipse shape.
---
 -- Defines an ellipse primitive with center coordinates
 -- and horizontal/vertical radii.
 --
@@ -264,16 +309,13 @@ end
 -- @param (number|string) y Center Y coordinate.
 -- @param (number|string) radiusX Horizontal radius.
 -- @param (number|string) radiusY Vertical radius.
---
 -- @return (table) Shape instance
--- @return[2] (string|nil) When used as getter.
+-- @return (string|nil) When used as getter.
 --
--- @usage
--- shape:ellipse(100,50,40,40)
+-- @usage shape:ellipse(100,50,40,40)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Ellipse
---
-function shape:ellipse( left, top, radiusX, radiusY )
+function M:ellipse( left, top, radiusX, radiusY )
 	local value = self.content:lower():match( 'ellipse%s*'.. SHAPE_PARAM )
 	radiusY = radiusY and radiusY or radiusX
 
@@ -294,7 +336,7 @@ function shape:ellipse( left, top, radiusX, radiusY )
 
 
 	self.type = 'ellipse'
-	self.meter:option( self.meter.name, self.name, self.content )
+	self.meter:option( self.name, self.content )
 	return self
 end
 
@@ -317,18 +359,16 @@ end
 --   `A` → Elliptical arc
 --   `Z` → Close path
 --
--- @param[opt] string path Path definition string.
---
+-- @param (string) path - Path definition string.
 -- @return (table) Shape instance
--- @return[2] (string|nil) When used as getter.
+-- @return (string|nil) When used as getter.
 --
 -- @usage
 -- shape:path("0,0 L 100,0 L 100,50 Z")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Path
 -- @see https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Paths
---
-function shape:path( inner )
+function M:path( inner )
 	local Name = self.content:lower():match( 'path%s*([%d%w]+)' )
 
 	-- Getter
@@ -344,11 +384,11 @@ function shape:path( inner )
 	inner =
 		inner:gsub( '|', ' ' )
 		:gsub( '^%s*[Mm]%s*'  , '' )
-		:gsub( '%s*[Ll]%s*'  , '|lineTo ' )
+		:gsub( '%s*[MmLl]%s*'  , '|lineTo ' )
 		:gsub( '%s*[QqCc]%s*', '|curveTo ' )
 		:gsub( '%s*[Aa]%s*'  , '|arcTo ' )
-		:gsub( '([%.%+%-%d]+)%s+([%.%+%-%d]+)%s*[Vv]%s*([%.%+%-%d]+)', '%1 %2|lineTo %1 %3' )
-		:gsub( '([%.%+%-%d]+)%s+([%.%+%-%d]+)%s*[Hh]%s*([%.%+%-%d]+)', '%1 %2|lineTo %3 %2' )
+		:gsub( '([%.%+%-%d]+)%s*([%.%+%-%d]+)%s*[Vv]%s*([%.%+%-%d]+)', '%1 %2|lineTo %1 %3' )
+		:gsub( '([%.%+%-%d]+)%s*([%.%+%-%d]+)%s*[Hh]%s*([%.%+%-%d]+)', '%1 %2|lineTo %3 %2' )
 		:gsub( '%s*[Zz]%s*'  , '|closePath 1' )
 		-- :gsub( '(%d%.)[^%d]', '%10' )
 		:gsub( '(%d)%s+(%d)' , '%1,%2' )
@@ -372,41 +412,33 @@ end
 
 
 --- Define a polyline shape.
---
 -- Creates a sequence of connected line segments.
 --
 -- @param (string) points - List of points `"x1,y1 x2,y2 x3,y3"`.
---
 -- @return (table) Shape instance
 --
--- @usage
--- shape:polyline("0,0 50,20 100,0")
+-- @usage shape:polyline("0,0 50,20 100,0")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Path
---
-function shape:polygon( points )
+function M:polygon( points )
 	return self:polyline( points, true )
 end
 
 
 
 --- Define a polyline shape.
---
 -- Creates a path using a flat numeric coordinate array.
---
 -- Similar to `polygon`, but does not automatically close the path.
 --
 -- @param (table) points - Flat coordinate array.
 -- @param (boolean) [close=false] - Close the path automatically.
---
 -- @return (table) Shape instance
 --
 -- @usage
 -- shape:polyline({0,0, 50,50, 100,0})
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Path
---
-function shape:polyline( points, close )
+function M:polyline( points, close )
 	local name = self.content:lower():match( 'path%s*(%w+)' )
 	local out = {}
 
@@ -447,19 +479,16 @@ end
 
 
 --- Create or modify an line shape.
---
 -- Basic shape used to create a line connecting two points.
 --
 -- @param (number) startx - Coordinate of the starting point of the line.
 -- @param (number) starty - Coordinate of the starting point of the line.
 -- @param (number) endx - Coordinate of the ending point of the line.
 -- @param (number) Y - Coordinate of the ending point of the line.
---
 -- @return (table) Shape instance
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Line
---
-function shape:line( startx, starty, endx, endy )
+function M:line( startx, starty, endx, endy )
 	local value = self.content:lower():match( 'line%s*'.. SHAPE_PARAM )
 
 	print( value )
@@ -468,16 +497,12 @@ end
 
 
 
---[[
-	https://docs.rainmeter.net/manual/meters/shape/#Arc
---]]
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Arc
 -- shape:arc
 
 
 
---[[
-	https://docs.rainmeter.net/manual/meters/shape/#Curve
---]]
+-- @see https://docs.rainmeter.net/manual/meters/shape/#Curve
 -- shape:curve
 
 
@@ -491,13 +516,12 @@ end
 --   Short hex   → fill("f00")
 --   Transparent → fill("transparent")
 --
--- @param (number|string) r Red value or hex string.
--- @param (number) g Green value.
--- @param (number) b Blue value.
--- @param (number) a Alpha value (0-255).
---
+-- @param (number|string) r - Red value or Hex string.
+-- @param (number) [g] - Green value.
+-- @param (number) [b] - Blue value.
+-- @param (number) [a] - Alpha value (0-255).
 -- @return (table) Shape instance
--- @return[2] (string|nil) When used as getter.
+-- @return (string|nil) When used as getter.
 --
 -- @usage
 -- shape:fill(255,0,0)
@@ -505,8 +529,18 @@ end
 -- shape:fill("FF0000")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Fill
---
-function shape:fill( red, green, blue, alpha )
+function M:fill( red, green, blue, alpha )
+	-- Detects whether gradients will be used and redirects to another function.
+	if type( red ) == 'string' then
+		if red:match( '^[%d%s-]+|' ) then
+			return self:lgradient( red )
+
+		elseif red:match( '^[%d%s-]+,[%d%s-]+|' ) then
+			return self:rgradient( red )
+		end
+	end
+
+
 	local value = self.content:lower():match( 'fill%s+[colringadet]+%s+([%s,%.%d%w]+)' )
 
 	-- Getter
@@ -545,22 +579,29 @@ end
 
 
 --- Set or get the stroke color.
---
 -- Defines the outline color of the shape.
 --
--- @param (number) r Red component.
--- @param (number) g Green component.
--- @param (number) b Blue component.
--- @param (number) a Alpha component.
---
+-- @param (number) r - Red component.
+-- @param (number) g - Green component.
+-- @param (number) b - Blue component.
+-- @param (number) a - Alpha component.
 -- @return (table) Shape instance
 --
--- @usage
--- shape:strokecolor(255,255,255)
+-- @usage shape:strokecolor(255,255,255)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Stroke
---
-function shape:strokecolor( red, green, blue, alpha )
+function M:strokecolor( red, green, blue, alpha )
+	-- Detects whether gradients will be used and redirects to another function.
+	if type( red ) == 'string' then
+		if red:match( '^[%d%s-]+|' ) then
+			return self:lgradient( red, 'stroke' )
+
+		elseif red:match( '^[%d%s-]+,[%d%s-]+|' ) then
+			return self:rgradient( red, 'stroke' )
+		end
+	end
+
+
 	local param = self.content:lower():match( 'stroke%s*[colringadet]+%s*([%s,%.%d%w]+)' )
 
 	if not red and not green and not blue and not alpha then
@@ -599,19 +640,15 @@ end
 
 
 --- Set or get the stroke width.
---
 -- Defines the thickness of the shape outline.
 --
--- @param[opt] (number) width Stroke width in pixels.
---
+-- @param (number) [width] - Stroke width in pixels.
 -- @return (table) Shape instance
 --
--- @usage
--- shape:strokewidth(2)
+-- @usage shape:strokewidth(2)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeWidth
---
-function shape:strokewidth( width )
+function M:strokewidth( width )
 	local value = self.content:lower():match( 'strokewidth%s*(%d+)' )
 
 	if width == nil then
@@ -638,31 +675,24 @@ end
 
 
 --- Set the stroke line join style.
---
 -- Determines how two connected stroke segments join.
 --
--- Common values:
---   "miter"
---   "bevel"
---   "round"
---
--- @param (string) join Join style.
--- @param limit
---
+-- @param ("miter"|"bevel"|"round") type - Join style.
+-- @param (float) limit - Specify how sharp the miter joints can be (the default is 10.0).
 -- @return (table) Shape instance
 --
 -- @usage
 -- shape:strokelinejoin("round")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeLineJoin
---
-function shape:strokelinejoin( type, limit )
+function M:strokelinejoin( type, limit )
 	local value = self.content:lower():match( 'strokelinejoin%s*([%.,%s%d%w]+)' )
 
-	-- Get and return values
+	-- Getter
 	if not type and not limit then
 		return value:match( '[%d%w]+' ), value:match( ',%s*([%d%.]+)' )
 	end
+
 
 	if not limit then
 		limit = ''
@@ -691,19 +721,15 @@ end
 
 
 --- Set the starting cap style for strokes.
---
 -- Defines the cap applied to the beginning of stroke segments.
 --
--- @param (string) cap Cap style (`"round"`, `"square"`, `"butt"`).
---
+-- @param ("round"|"square"|"butt") captype - Cap style.
 -- @return (table) Shape instance
 --
--- @usage
--- shape:strokestartcap("round")
+-- @usage shape:strokestartcap("round")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeStartCap
---
-function shape:strokestartcap( captype )
+function M:strokestartcap( captype )
 	local Value = self.content:lower():match( 'strokestartcap%s*(%d+)' )
 
 	if Value then
@@ -724,10 +750,18 @@ end
 
 
 
----
--- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashOffset
+--- Set or get the stroke dash offset.
+-- Defines the starting offset into the dash pattern, useful for
+-- animating dashed strokes.
 --
-function shape:strokedashoffset( offset )
+-- @param (number) [offset] - Offset in pixels. Omit to use as getter.
+-- @return (table) Shape instance
+-- @return (string|nil) When used as getter.
+--
+-- @usage shape:strokedashoffset(10)
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashOffset
+function M:strokedashoffset( offset )
 	local value = self.content:lower():match( 'strokedashoffset%s*(%d+)' )
 
 	if value then
@@ -748,10 +782,17 @@ end
 
 
 
----
--- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashCap
+--- Set or get the stroke dash cap style.
+-- Defines the cap style applied to the ends of each dash segment.
 --
-function shape:strokedashcap( dashType )
+-- @param ("round"|"square"|"butt") [dashType] - Dash cap style. Omit to use as getter.
+-- @return (table) Shape instance
+-- @return (string|nil) When used as getter.
+--
+-- @usage shape:strokedashcap("round")
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashCap
+function M:strokedashcap( dashType )
 	local value = self.content:lower():match( 'strokedashcap%s*(%w+)' )
 
 	if value then
@@ -772,10 +813,18 @@ end
 
 
 
----
--- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashes
+--- Set or get the stroke dash pattern.
+-- Defines the length of dashes and gaps to create a dashed stroke line.
 --
-function shape:strokedashes( dashSize, gapSize )
+-- @param (number) [dashSize] - Length of each dash, in pixels.
+-- @param (number) [gapSize] - Length of each gap, in pixels.
+-- @return (table) Shape instance
+-- @return (number|nil) dashSize, (number|nil) gapSize - When used as getter.
+--
+-- @usage shape:strokedashes(4, 2)
+--
+-- @see https://docs.rainmeter.net/manual/meters/shape/#StrokeDashes
+function M:strokedashes( dashSize, gapSize )
 	local val1, val2 = self.content:lower():match( 'strokedashes%s*(%d+)%s*,%s*(%d+)' )
 
 	if not dashSize and not gapSize then
@@ -802,14 +851,12 @@ end
 
 
 --- Apply a scale transformation.
---
 -- Scales the shape relative to an anchor point.
 --
--- @param (number) scaleX Horizontal scale factor.
--- @param (number) scaleY Vertical scale factor.
--- @param (number) anchorX Anchor X coordinate.
--- @param (number) anchorY Anchor Y coordinate.
---
+-- @param (number) axisX - Horizontal scale factor.
+-- @param (number) axisY - Vertical scale factor.
+-- @param (number) anchorX - Anchor X coordinate.
+-- @param (number) anchorY - Anchor Y coordinate.
 -- @return (table) Shape instance
 --
 -- @usage
@@ -818,8 +865,7 @@ end
 -- shape:scale(1.5,1.5,50,50)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Scale
---
-function shape:scale( axisX, axisY, anchorX, anchorY )
+function M:scale( axisX, axisY, anchorX, anchorY )
 	local value = self.content:lower():match( 'scale%s*([%s,%d]+)' )
 	axisY = axisY and axisY or axisX
 	anchorY = anchorY and anchorY or anchorX
@@ -848,30 +894,32 @@ end
 
 
 --- Create a linear gradient fill.
---
 -- Defines a Rainmeter gradient option and applies it
 -- to the current shape fill.
 --
--- @param (number) x1 Start X.
--- @param (number) y1 Start Y.
--- @param (number) x2 End X.
--- @param (number) y2 End Y.
--- @param (string) ... Gradient color stops.
---
+-- @param (string) value - Gradient color stops
+-- @param ("fill"|"stroke") [modifier="fill"] - You reference this in the shape Fill or Stroke modifiers.
 -- @return (table) Shape instance
 --
--- @usage
--- shape:lgradient(0,0,100,0,"255,0,0;0","0,0,255;1")
---
 -- @see https://docs.rainmeter.net/manual/meters/shape/#DefiningGradients
---
-function shape:gradient( attr )
-	local value = self.content:lower():match( 'fill%s+lringadet]+%s+([%s,%d%w]+)' )
+function M:gradient( value, modifier )
+	modifier = modifier:lower() or 'fill'
+
+	-- local find = self.content:lower():match( modifier.. '%s+[lringadet]+%s+([%s,%d%w]+)' )
+	local tipo = 'LinearGradient'
+	if value:match( '^[%d%s-]+,[%d%s-]+|' ) then
+		tipo = 'radial'
+	end
+
 
 	if attr then
 		-- Remove fill attribute
-		self.content = self.content:lower():gsub( '|%s*fill%s+[lringadet]+%s+[%s,%d%w]+%s*', '' )
-		self.content = self.content ..'| Fill'.. attr:lower():gsub( '^[linear]+%s+', 'LinearGradient ' )
+		self.content = self.content:lower():gsub( '|%s*'.. modifier ..'%s+[lringadet]+%s+[%s,%d%w]+%s*', '' )
+
+		GRADIENT = GRADIENT + 1
+		value = 'gradient'.. GRADIENT
+
+		self.content = self.content ..'|'.. modifier .. ' ' ..tipo.. ' gradient' ..GRADIENT
 		self.meter:option( self.name, self.content )
 	end
 end
@@ -879,7 +927,6 @@ end
 
 
 --- Create a linear gradient fill.
---
 -- Defines a Rainmeter gradient option and applies it
 -- to the current shape fill.
 --
@@ -888,33 +935,42 @@ end
 -- @param (number) x2 End X.
 -- @param (number) y2 End Y.
 -- @param (string) ... Gradient color stops.
---
 -- @return (table) Shape instance
 --
 -- @usage
--- shape:lgradient( 90, "0 255, 10, 10", ".9 20, 20, 255, 250" )
--- shape:lgradient( 90, "0% 10, 10, 10", "90% 20, 20, 20, 254" )
--- shape:lgradient( "90 | 10, 10, 10 ; 0.0 | 20, 20, 20, 254 ; 1.0" )
+-- shape:lgradient(90, "0 255, 10, 10", ".9 20, 20, 255, 250")
+-- shape:lgradient(90, "0% 10, 10, 10", "90% 20, 20, 20, 254")
+-- shape:lgradient("90 | 10, 10, 10 ; 0.0 | 20, 20, 20, 254 ; 1.0")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#LinearGradient
---
-function shape:lgradient( angle, ... )
-	local value  = self.content:lower():match( 'fill%s+[lringadet]+%s+([%s,%d%w]+)' )
+function M:lgradient( angle, ... )
 	local result = ''
 	local new    = false
 	local arg    = { ... }
+	local tipo   = 'fill'
+
+	if arg[ #arg ] == 'fill' then
+		table.remove( arg, 1 )
+	elseif arg[ #arg ] == 'stroke' then
+		tipo   = 'stroke'
+		table.remove( arg, 1 )
+	end
+
+	local value  = self.content:lower():match( tipo.. '%s+[lringadet]+%s+([%s,%d%w]+)' )
 
 	-- If not exists gradient.
 	if not value then
 		new = true
 		GRADIENT = GRADIENT + 1
 		value = 'gradient'.. GRADIENT
+
 		-- Remove fill attribute
-		self.content = self.content:lower():gsub( '%s*|%s*fill%s*color%s*[%s,%d%w]+%s*', '' )
+		self.content = self.content:lower():gsub( '%s*|%s*' ..tipo.. '%s*color%s*[%s,%d%w]+%s*', '' )
 	end
 
 
-	for index = 1, #arg do -- organize syntax.
+	-- organize syntax
+	for index = 1, #arg do
 		local percentage = arg[ index ]:match( '([%-%d]+)%%' )
 		if percentage then
 			percentage = percentage / 100
@@ -939,7 +995,7 @@ function shape:lgradient( angle, ... )
 		self.content =
 			self.content ..
 			( self.content:find( '|$' ) and '' or '|' ) ..
-			'fill linearGradient '.. value
+			tipo ..' linearGradient '.. value
 
 		self.meter:option( self.name, '' )
 		self.meter:option( self.name, self.content )
@@ -951,22 +1007,18 @@ end
 
 
 --- Create a radial gradient fill.
---
 -- Similar to `lgradient` but produces a radial gradient.
 --
 -- @param (number) x Center X.
 -- @param (number) y Center Y.
 -- @param (number) radius Gradient radius.
 -- @param (string) ... Gradient stops.
---
 -- @return (table) Shape instance
 --
--- @usage
--- shape:rgradient(50,50,40,"255,0,0;0","0,0,255;1")
+-- @usage shape:rgradient(50,50,40,"255,0,0;0","0,0,255;1")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#RadialGradient
---
-function shape:rgradient( ... )
+function M:rgradient( ... )
 	local value   = self.content:lower():match( 'fill%s+[radilgent]+%s+([%s,%d%w]+)' )
 	local result  = ''
 	local new     = false
@@ -1016,7 +1068,7 @@ function shape:rgradient( ... )
 		GRADIENT = GRADIENT + 1
 		value = 'gradient'.. GRADIENT
 		-- Remove fill attribute
-		self.content = self.content:lower():gsub( '%s*|%s*fill%s*color]%s*[%s,%d%w]+%s*', '' )
+		self.content = self.content:lower():gsub( '%s*|%s*fill%s*color%s*[%s,%d%w]+%s*', '' )
 	end
 
 
@@ -1043,8 +1095,19 @@ end
 
 
 
---- !!!TESTING!!!
-function shape:trasnlatey( move )
+--- Get or translate the minimum Y coordinate of a shape.
+-- Intended to read (getter) or shift (setter) all Y coordinates found
+-- in the shape's path/polygon data or inline parameters.
+-- NOTE: experimental/incomplete — the setter branch computes new Y
+-- values locally but does not persist them back to `self.content`
+-- or the meter option.
+--
+-- @param (number) [move] - Amount to add to each Y coordinate. Omit to use as getter.
+-- @return (number) Minimum Y coordinate found, when used as getter.
+-- @return (table) Shape instance, when used as setter (see note above).
+--
+-- @usage local minY = shape:trasnlatey()
+function M:trasnlatey( move )
 	local result
 	local content
 
@@ -1081,20 +1144,16 @@ end
 
 
 --- Change the current shape type.
---
 -- Replaces the primitive type in the internal shape definition.
 -- This allows converting an existing shape (for example `rectangle`)
 -- into another type such as `path` or `ellipse` while preserving
 -- the remaining parameters.
 --
--- @param (string) newtype New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
---
+-- @param (string) newtype - New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
 -- @return shape Returns the shape instance for chaining.
 --
--- @usage
--- shape:changeType("ellipse")
---
-function shape:changeType( newType )
+-- @usage shape:changeType("ellipse")
+function M:changeType( newType )
 	local shapeType = self.content:lower():match( REGEX_SHAPE ):gsub( '%s*$', '' )
 	assert( REGEX[ shapeType ], 'The Shape type is probably wrong: "'..  shapeType ..'".' )
 
@@ -1105,7 +1164,6 @@ end
 
 
 --- Create a new shape entry in the meter.
---
 -- Automatically finds the first available shape slot, including the base
 -- `Shape` (no index) and subsequent indexed shapes (`Shape2`, `Shape3`, etc.).
 --
@@ -1120,24 +1178,26 @@ end
 -- shape2:ellipse(50,25,20,20)
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
---
-function shape:add()
+function M:add()
 	local index = self:length() +1
+	local key =
+		index == 1
+		and 'shape'
+		or ( 'shape'.. index )
+
 	return construct( self.meter, self.meter.name, index ~= 1 and index or '' )
 end
 
 
 
 --- Retrieve an existing shape by index.
---
 -- Returns a shape instance corresponding to the given index if it exists.
 -- The base `Shape` is represented by index `1` or `nil`.
 --
 -- This method does not create new shapes. If the requested shape does not
 -- exist, it returns `nil`.
 --
--- @param[opt=1] number index Shape index (`1` for base `Shape`, `2+` for `Shape2`, etc.).
---
+-- @param (number) index - Shape index (`1` for base `Shape`, `2+` for `Shape2`, etc.).
 -- @return (table|nil) Existing shape instance, or `nil` if not found.
 --
 -- @usage
@@ -1149,8 +1209,7 @@ end
 -- end
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
---
-function shape:shape( index )
+function M:shape( index )
 	index = index or 1
 
 	local key =
@@ -1167,8 +1226,14 @@ end
 
 
 
-
-function shape:length()
+--- Count how many shape entries currently exist in the meter.
+-- Walks the `Shape`, `Shape2`, `Shape3`... options sequentially and
+-- stops at the first one that is missing.
+--
+-- @return (number) Number of active shape entries found.
+--
+-- @usage local total = shape:length()
+function M:length()
 	local index = 1
 
 	while true do
@@ -1178,13 +1243,13 @@ function shape:length()
 			or 'shape'.. index
 		)
 
-		if self.meter:option( key ) then
+		local exist = self.meter:option( key )
+		if exist and exist ~= 'none' then
 			index = index + 1
 		else
 			break
 		end
 	end
-
 
 	return index -1
 end

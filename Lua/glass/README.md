@@ -1,16 +1,18 @@
+
 <div align="center">
 
-  # Module Glass
+  # Glass Module
 
   <br>
 
+  <img src="../../assets/images/glass-logo.png" alt="LOGO" height="200">
 </div>
-
 
 
 ## Overview
 
 A lightweight Lua module that applies modern Windows visual effects (Mica, Acrylic, Blur, Dark Mode, Rounded Corners, Border, Shadow) to any window using FFI and native Windows APIs.
+
 
 _**How It Works**_<br>
 The module uses LuaJIT's FFI to call three Windows API functions:

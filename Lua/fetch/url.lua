@@ -30,6 +30,7 @@ local function encodeValue( val )
 end
 
 
+
 -- Metatable for query parameters to add dynamic getters
 local QUERY_MT = {
 	__index = function( self, key )

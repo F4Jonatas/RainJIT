@@ -13,6 +13,7 @@ assets/images/*.*
 !assets/images/fetch-logo.png
 !assets/images/com-logo.png
 !assets/images/depot-logo.png
+!assets/images/glass-logo.png
 
 private.md
 .obsidian

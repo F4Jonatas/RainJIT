@@ -50,3 +50,9 @@ string.titleCase = function( text )
 		return first:upper() .. rest:lower()
 	end))
 end
+
+
+
+string.trim = function( text )
+	return text:match( '^%s*(.-)%s*$' )
+end
