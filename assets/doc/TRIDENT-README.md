@@ -37,11 +37,6 @@
 
 </details>
 
-
-<br>
-<br>
-
-
 <br>
 <br>
 
@@ -54,9 +49,9 @@ The module is designed for simple desktop UI workloads where low memory usage, f
 
 Trident also includes optional HTML sanitization, JavaScript-to-Lua communication, navigation interception, and transparent layered window support, making it suitable for lightweight widgets, overlays, and interactive desktop components.
 
+<br>
+<br>
 
-<br>
-<br>
 
 ## :green_book: Features
 
@@ -131,7 +126,7 @@ COM is initialized using `OleInitialize` on the first `trident.create()` call in
 
 `EventSink::Invoke()` is called by Trident on the skin thread (same STA). It pushes a `MshtmlEvent` struct into a `std::queue` protected by `std::mutex`. `ProcessMessages()`, called from Rainmeter's Update cycle, drains the queue and calls the Lua callback. Because everything runs on the skin thread, no cross-thread Lua calls are ever made.
 
-The `BeforeNavigate2`, `NewWindow2`, and `WindowClosing` events are dispatched **synchronously** (not via the queue) so that the Lua callback's return value can set the COM `Cancel` flag before MSHTML reads it. See [Link Navigation](#link-navigation).
+The `BeforeNavigate2`, `NewWindow2`, and `WindowClosing` events are dispatched **synchronously** (not via the queue) so that the Lua callback's return value can set the COM `Cancel` flag before MSHTML reads it. See [**Link Navigation**](#link-navigation).
 
 ### Window Lifecycle
 
@@ -139,7 +134,7 @@ Each browser occupies a `WS_POPUP` window (not a child window). This is necessar
 
 ### JavaScript Bridge
 
-`IDocHostUIHandler::GetExternal()` is connected via `ICustomDoc::SetUIHandler` on every `DocumentComplete` event. This exposes an `IDispatch` object to JavaScript as `window.external`, enabling bidirectional communication between the page and Lua. See [JavaScript Bridge](#javascript-bridge).
+`IDocHostUIHandler::GetExternal()` is connected via `ICustomDoc::SetUIHandler` on every `DocumentComplete` event. This exposes an `IDispatch` object to JavaScript as `window.external`, enabling bidirectional communication between the page and Lua. See [**JavaScript Bridge**](#javascript-bridge).
 
 ### Local Security Manager
 
@@ -303,8 +298,8 @@ end
 | `hide`         | boolean  | `false`         | Create the window initially hidden.                                 |
 | `padding`      | table    | `{0,0,0,0}`     | `{left, top, widthReduction, heightReduction}`                      |
 | `cornerRadius` | number   | `0`             | Rounded corner radius in pixels.                                    |
-| `sanitize`     | any      | `true`          | HTML sanitization mode. See [Sanitization](#sanitization).          |
-| `callback`     | function | `nil`           | Event handler. See [Event System](#event-system).                   |
+| `sanitize`     | any      | `true`          | HTML sanitization mode. See [**Sanitization**](#sanitization).          |
+| `callback`     | function | `nil`           | Event handler. See [**Event System**](#event-system).                   |
 
 ---
 
@@ -683,4 +678,12 @@ These are inherent constraints of the approach, not implementation bugs:
 
 GPL v2.0. See `LICENSE` file in the repository root.
 
+<br>
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
+
+<br>
 <br>

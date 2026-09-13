@@ -199,3 +199,11 @@ Gumbo is distributed under the Apache License 2.0.
 ---
 
 _Contributions and bug reports welcome._
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
+
+<br>
+<br>

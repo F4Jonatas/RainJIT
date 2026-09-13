@@ -36,7 +36,6 @@ The **Hotkey module** for **RainJIT** is a low-level input detection system that
 - **Automatic lifecycle management**: hooks are installed/uninstalled on demand.
 - **Callback can block the event**: returning `false` from a callback swallows the underlying OS event.
 
-
 <br>
 <br>
 
@@ -197,7 +196,7 @@ The `vk` field accepts several formats (`string`|`table`|`"all"`) and **is requi
 > [!IMPORTANT]
 > Using `vk="all"` mode
 > - Combinations are ignored.
-> - [`event.keys`](#diamond_shape_with_a_dot_inside-keyboard-event-object) contains only the triggering key.
+> - [**`event.keys`**](#diamond_shape_with_a_dot_inside-keyboard-event-object) contains only the triggering key.
 
 **Supported formats:**
 
@@ -498,6 +497,7 @@ The callback receives a single table with the following fields:
 
 <br>
 
+
 **Click, Double-Click & Long-Press Detection:**
 - `press` and `release` fire on every button-down / button-up, independently of the events below.
 - A `click` fires on `release` if the cursor stayed within a small tolerance of the press position **and** the press was shorter than `holdTime`.
@@ -526,6 +526,7 @@ The callback receives a single table with the following fields:
 - Raw numeric codes (`"0x41"` or `"65"`)
 
 <br>
+
 
 <details>
 
@@ -767,6 +768,14 @@ If needed, implement it in Lua.
 Licensed under the **GPL v2.0 License**.
 
 ---
+
+<br>
+<br>
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
 
 <br>
 <br>

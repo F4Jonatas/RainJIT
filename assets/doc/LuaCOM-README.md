@@ -1,5 +1,3 @@
-<!-- https://web.tecgraf.puc-rio.br/~rcerq/luacom/pub/1.3/luacom-htmldoc/ -->
-<!-- https://web.tecgraf.puc-rio.br/~rcerq/luacom/ -->
 
 <div align="center">
 
@@ -49,6 +47,7 @@
   - [Method `luacom.StartLog()`](#large_orange_diamond-method-luacomstartlog)
   - [Method `luacom.EndLog()`](#large_orange_diamond-method-luacomendlog)
   - [Method `luacom.GetEnumerator()`](#large_orange_diamond-method-luacomgetenumerator)
+- [Links](#paperclip-links)
 - [License](#scroll-license)
 
 </details>
@@ -59,7 +58,7 @@
 
 ## Overview
 
-LuaCOM is an add-on library to the [**Lua language**](http://www.lua.org/) that allows Lua programs to use and implement objects that follow **Microsoft Component Object Model (COM)** specification and use the **ActiveX technology** for property access and method calls.<br>
+LuaCOM is an add-on library to the [**Lua language**](http://www.lua.org/) that allows Lua programs to use and implement objects that follow **Microsoft Component Object Model (COM)** specification and use the [**ActiveX technology**](https://learn.microsoft.com/en-us/windows/win32/com/activex-controls) for property access and method calls.<br>
 
 <br>
 
@@ -108,7 +107,7 @@ player.uiMode = "invisible"
 ```
 
 
-**If there is an already running instance of the object you want, [`GetObject`](#large_orange_diamond-method-luacomgetobject) must be used to use it. The following code illustrates this.**
+**If there is an already running instance of the object you want, [**`GetObject`**](#large_orange_diamond-method-luacomgetobject) must be used to use it. The following code illustrates this.**
 
 ```lua
 -- @see https://github.com/F4Jonatas/RainJIT#large_orange_diamond-method-import
@@ -636,6 +635,16 @@ end
 <br>
 
 
+## :paperclip: Links
+
+- [**_Original_ LuaCOM User Manual**](https://web.tecgraf.puc-rio.br/~rcerq/luacom/pub/1.3/luacom-htmldoc/)
+- [**_Original_ The LuaCOM Library**](https://web.tecgraf.puc-rio.br/~rcerq/luacom/)
+
+---
+
+<br>
+<br>
+
 ## :scroll: License
 
 <a href="../images/logo-gpl-v2.png">
@@ -649,6 +658,14 @@ If you are contributing documentation or changes to the source code, please ensu
 <br>
 
 ---
+
+<br>
+<br>
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
 
 <br>
 <br>

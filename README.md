@@ -111,7 +111,7 @@ I found myself needing simple Windows features, such as a [**MessageBox**](https
 
 ## :package: Installation
 
-Install the package [`RainJIT.rmskin`](https://github.com/F4Jonatas/RainJIT/releases/latest)<br>
+Install the package [**`RainJIT.rmskin`**](https://github.com/F4Jonatas/RainJIT/releases/latest)<br>
 
 > [!IMPORTANT]
 > After installation, it is highly recommended to move the [**Lua folder**](#file-locations) to the Rainmeter [**@Vault folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/); this gives you access to all installed Skins, preventing file duplication.
@@ -282,7 +282,7 @@ Get the window identifier (**HWND**). Based on the Skin name of current Skin.
 ```lua
 -- @usage rain:getSkin(skin)
 -- @param (string) skin
--- @return (boolean|nil)
+-- @return (userdata|nil)
 
 rain:getSkin("illustro\\Clock")
 ```
@@ -292,12 +292,12 @@ rain:getSkin("illustro\\Clock")
 
 ### :large_orange_diamond: Method `rain:getRect()`
 
-Returns Skin window rectangle using WinAPI.<br>
+Returns Skin window rectangle using [**WinAPI**](https://learn.microsoft.com/pt-br/windows/win32/api/winuser/nf-winuser-getwindowrect).<br>
 You can also obtain the rectangle from another **Skin** by specifying **HWND**.
 
 > [!NOTE]
 > To obtain a correct value, you must use this function after the Skin has fully started.<br>
-> You can use it in [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
+> You can use it in [**`rain:init`**](#large_orange_diamond-method-raininit) or [**`rain:update`**](#large_orange_diamond-method-rainupdate).
 
 ```lua
 -- @usage rain:getRect([hwnd])
@@ -328,9 +328,9 @@ end
 Get the section option and converts the value to the appropriate Lua type (`boolean`/`number`/`string`) or `nil` if don't exist or empty.
 
 > [!IMPORTANT]
-> If you want to obtain a `boolean` value, it must be in lowercase (`true`/`false`), otherwise it will be converted as a string.<br>
-> If you try to get the value of the options (`X`/`Y`/`W`/`H`) and it contains letters, such as [`10R`](https://docs.rainmeter.net/manual/meters/general-options/#XY), it will return `string`.<br><br>
-> Whenever you try to get the Rect value from the section, this needs to be done after the Skin has fully loaded, and for that you will need to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
+> If you want to obtain a `boolean` value, it must be in lowercase (`true`/`false`), otherwise it will be converted as a `string`.<br>
+> If you try to get the value of the options (`X`/`Y`/`W`/`H`) and it contains letters, such as [**`10R`**](https://docs.rainmeter.net/manual/meters/general-options/#XY), it will return `string`.<br><br>
+> Whenever you try to get the Rect value from the section, this needs to be done after the Skin has fully loaded, and for that you will need to use [**`rain:init`**](#large_orange_diamond-method-raininit) or [**`rain:update`**](#large_orange_diamond-method-rainupdate).
 
 ```lua
 -- @usage rain:option(section, option [, default])
@@ -358,7 +358,7 @@ end
 Get the position and size of the current Skin using **Rainmeter** [**Built-in variables**](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTCONFIGXYWH).
 
 > [!IMPORTANT]
-> The correct value will only be displayed after the Skin has fully loaded. Remember to use [`rain:init`](#large_orange_diamond-method-raininit) or [`rain:update`](#large_orange_diamond-method-rainupdate).
+> The correct value will only be displayed after the Skin has fully loaded. Remember to use [**`rain:init`**](#large_orange_diamond-method-raininit) or [**`rain:update`**](#large_orange_diamond-method-rainupdate).
 
 ```lua
 -- @usage rain:getX()
@@ -435,7 +435,7 @@ end
 
 ### :large_orange_diamond: Method `rain:init()`
 
-If the [`rain:init()`](#large_orange_diamond-method-raininit) method is defined, it will be called once when the Skin is activated or refreshed. This happens even if the script Measure is disabled.
+If the [**`rain:init()`**](#large_orange_diamond-method-raininit) method is defined, it will be called once when the Skin is activated or refreshed. This happens even if the script Measure is disabled.
 
 > [!TIP]
 > Unlike the traditional **Rainmeter** [**Lua Initialize function**](https://docs.rainmeter.net/manual/lua-scripting/#Initialize), this function is only called after the Skin is fully loaded, including the [**Fade Duration**](https://docs.rainmeter.net/manual/settings/skin-sections/#FadeDuration).<br>
@@ -454,11 +454,11 @@ end
 
 ### :large_orange_diamond: Method `rain:update()`
 
-If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defined, it will be called whenever the Skin is updated.
+If the [**`rain:update()`**](#large_orange_diamond-method-rainupdate) method is defined, it will be called whenever the Skin is updated.
 
 > [!NOTE]
 > This method does not return a value to the Measure, unlike the **Rainmeter** [**Lua Update function**](https://docs.rainmeter.net/manual/lua-scripting/#Update).<br>
-> If you need a value for the Measure, use the [`eval`](#large_orange_diamond-method-eval) function, but the idea is to maintain greater control in Lua scripts.
+> If you need a value for the Measure, use the [**`eval`**](#large_orange_diamond-method-eval) function, but the idea is to maintain greater control in Lua scripts.
 
 > [!TIP]
 > **Param `au`:** accumulated updates (resets every ~9 quadrillion seconds)<br>
@@ -476,8 +476,8 @@ If the [`rain:update()`](#large_orange_diamond-method-rainupdate) method is defi
 > during each frame.
 
 > [!WARNING]
-> To ensure smooth animation, it's necessary to set the Skin to [`Update=1`](https://docs.rainmeter.net/manual/skins/rainmeter-section/#Update). However, this setting can be risky as it may result in an overload of updates.
-> Therefore, it's recommended to keep all `Meter` and `Measure` elements set to [`UpdateDivider=-1`](https://docs.rainmeter.net/manual/meters/general-options/#UpdateDivider) _(except the **RainJIT Measure**)_. This approach prevents **Rainmeter** from updating them with every update, allowing you to manually update only when necessary. This not only improves performance but also provides greater control over the flow of animations and updates in the Skin.
+> To ensure smooth animation, it's necessary to set the Skin to [**`Update=1`**](https://docs.rainmeter.net/manual/skins/rainmeter-section/#Update). However, this setting can be risky as it may result in an overload of updates.
+> Therefore, it's recommended to keep all `Meter` and `Measure` elements set to [**`UpdateDivider=-1`**](https://docs.rainmeter.net/manual/meters/general-options/#UpdateDivider) _(except the **RainJIT Measure**)_. This approach prevents **Rainmeter** from updating them with every update, allowing you to manually update only when necessary. This not only improves performance but also provides greater control over the flow of animations and updates in the Skin.
 
 ```lua
 --- Called every frame
@@ -555,7 +555,7 @@ Execute Lua code received via [**!CommandMeasure**](https://docs.rainmeter.net/m
 The script is treated as inline Lua code and executed immediately in the Lua state associated with the Measure.
 
 > [!NOTE]
-> Unlike [`eval()`](#large_orange_diamond-method-eval), this function does not return a value.
+> Unlike [**`eval()`**](#large_orange_diamond-method-eval), this function does not return a value.
 
 ```ini
 [Rainmeter]
@@ -610,9 +610,9 @@ This function allows **Rainmeter** to execute Lua code via variable substitution
 
 | Type                                                                                               | Folder Path              | Info                                                        |
 | :--:                                                                                               | :--:                     | :---                                                        |
-| [@Vault Folder](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)                | `#SKINSPATH#@Vault\lua\` | :trophy: ⠀**Recommended** – Shared by all Skins             |
-| [@Resources Folder](https://docs.rainmeter.net/manual/skins/resources-folder/)                     | `#@#\lua\`               | :thumbsup: ⠀**Works well** – Good for Skin-specific modules |
-| [Current Skin Folder](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTPATH) | `#CURRENTPATH#\lua\`     | :warning: ⠀**Restricted** – Limited to current Skin         |
+| [**@Vault Folder**](https://docs.rainmeter.net/manual/distributing-skins/vault-folder/)                | `#SKINSPATH#@Vault\lua\` | :trophy: ⠀**Recommended** – Shared by all Skins             |
+| [**@Resources Folder**](https://docs.rainmeter.net/manual/skins/resources-folder/)                     | `#@#\lua\`               | :thumbsup: ⠀**Works well** – Good for Skin-specific modules |
+| [**Current Skin Folder**](https://docs.rainmeter.net/manual/variables/built-in-variables/#CURRENTPATH) | `#CURRENTPATH#\lua\`     | :warning: ⠀**Restricted** – Limited to current Skin         |
 
 ---
 
@@ -797,6 +797,6 @@ D --> D1[LuaJIT Compatible Modules]
 
 <div align="center">
 
-  #### Made with :heart: for the [_community_](https://forum.rainmeter.net/).
+  #### Made with :heart: for the [**_community_**](https://forum.rainmeter.net/).
 
 </div>

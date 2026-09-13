@@ -39,8 +39,6 @@ end
 
 
 function rain:init()
-	-- meter.group( 'themeWide' ):hidden( true ):update()
-
 	upgrade( gatherResults())
 end
 
@@ -131,7 +129,7 @@ function gatherResults()
 	else
 		local data = current:json()
 		if not data then
-			error( 'Falha ao analisar os dados JSON.\nError: '.. current.error )
+			error( 'Failed to parse JSON data.\nError: '.. current.error )
 		end
 
 		local dict = mapWeather(

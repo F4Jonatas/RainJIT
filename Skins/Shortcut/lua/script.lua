@@ -76,7 +76,7 @@ redraw = function()
 	local sortDesc = dict.sortvalue( info.groups, false )
 	for index, item in ipairs( sortDesc ) do
 		print( index,item.key, item.value )
-		if index == 5 break end
+		if index == 5 then break end
 	end
 end
 

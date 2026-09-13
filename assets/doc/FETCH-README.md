@@ -994,3 +994,11 @@ This section summarizes the intended semantics of standard HTTP methods to help 
 
 <br>
 <br>
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
+
+<br>
+<br>

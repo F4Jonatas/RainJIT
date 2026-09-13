@@ -870,3 +870,11 @@ end
 ## License
 
 GPL v2.0 — see the `LICENSE` file in the repository root.
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
+
+<br>
+<br>

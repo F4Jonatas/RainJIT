@@ -161,7 +161,7 @@ Controls the DWM border drawn around the window frame.
 > [!IMPORTANT]
 > Requires Windows 11 build ≥ 22000. Ignored silently on older builds.
 
-Values: (`false`|`true`|[`Hexadecimal Colors`](https://htmlcolorcodes.com/))<br>
+Values: (`false`|`true`|[**`Hexadecimal Colors`**](https://htmlcolorcodes.com/))<br>
 Type: (`boolean`|`number`)
 
 <br>
@@ -217,7 +217,15 @@ Type: `boolean`
 
 ## :scroll: License
 
-Licensed under the **GPL v2.0 License**.
+<a href="../../assets/images/logo-gpl-v2.png">
+  <img src="../../assets/images/logo-gpl-v2.png" alt="LOGO-GPL-V2" width="150" height="150" align="right">
+</a>
+
+The **RainJIT** Plugin is licensed under the [**GPL v2.0 license**](../../LICENSE).<br>
+This project also relies on external libraries that may use different open-source licenses.<br>
+If you are contributing documentation or changes to the source code, please ensure that your contributions comply with the project's licensing guidelines.
+
+<br>
 
 ---
 

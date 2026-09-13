@@ -3,6 +3,8 @@ bin/imagemagick/
 
 meter/modl.lua
 
+string/*
+
 paleta
 
 xcgui
