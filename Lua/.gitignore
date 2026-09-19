@@ -1,12 +1,8 @@
 
-bin/imagemagick/
-
-meter/modl.lua
-
-string/*
-
-paleta
-
-xcgui
-
+/bin/imagemagick/
+/meter/modl.lua
+/string/*
+/paleta
+/xcgui
+/dotenv
 gdip.lua

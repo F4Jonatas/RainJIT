@@ -343,7 +343,6 @@ end
 
 
 --- Define a path-based shape.
---
 -- Accepts a simplified path syntax similar to SVG commands.
 -- The method automatically converts commands to Rainmeter
 -- path segments such as LineTo, CurveTo, and ArcTo.
@@ -363,11 +362,13 @@ end
 -- @return (table) Shape instance
 -- @return (string|nil) When used as getter.
 --
--- @usage
--- shape:path("0,0 L 100,0 L 100,50 Z")
+-- @usage shape:path("0,0 L 100,0 L 100,50 Z")
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Path
 -- @see https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Paths
+--
+-- Path Editor
+-- @see https://github.com/Yqnn/svg-path-editor
 function M:path( inner )
 	local Name = self.content:lower():match( 'path%s*([%d%w]+)' )
 
@@ -1202,11 +1203,11 @@ end
 -- @return (table|nil) Existing shape instance, or `nil` if not found.
 --
 -- @usage
--- local base = shape:shape()     -- retrieves Shape
--- local s2   = shape:shape(2)    -- retrieves Shape2 (if it exists)
+-- local base = shape:shape()   -- retrieves Shape
+-- local s2   = shape:shape(2)  -- retrieves Shape2 (if it exists)
 --
 -- if not s2 then
---     s2 = shape:add()           -- explicitly create Shape2
+--   s2 = shape:add()  -- explicitly create Shape2
 -- end
 --
 -- @see https://docs.rainmeter.net/manual/meters/shape/#Shape
