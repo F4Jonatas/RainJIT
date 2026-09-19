@@ -1,5 +1,8 @@
 
--- https://github.com/luapower/winapi/blob/master/winapi/messagebox.lua
+
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+-- @see https://github.com/luapower/winapi/blob/master/winapi/messagebox.lua
 
 local ffi = require( 'ffi' )
 require( 'string.utf8' )

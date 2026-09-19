@@ -1,3 +1,7 @@
+
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+
 -- Windows basic types
 local ffi = require( 'ffi' )
 

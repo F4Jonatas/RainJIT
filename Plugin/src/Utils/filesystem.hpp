@@ -92,47 +92,65 @@ namespace fs {
 
 
 
-/**
- * @brief Reads a text file into a UTF-8 string.
- *
- * Handles UTF-8 BOM stripping automatically.
- * Rejects files larger than 10 MB as a safety guard.
- *
- * @param path  Absolute file path (UTF-16).
- * @param out   Output string in UTF-8.
- * @return true on success, false on error.
- */
-inline bool ReadTextFile( const std::wstring &path, std::string &out ) {
-    HANDLE hFile = CreateFileW( path.c_str(), GENERIC_READ, FILE_SHARE_READ,
-                                nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
-    if ( hFile == INVALID_HANDLE_VALUE )
-        return false;
+	/**
+	* @brief Reads a text file into a UTF-8 string.
+	*
+	* Handles UTF-8 BOM stripping automatically.
+	* Rejects files larger than 10 MB as a safety guard.
+	*
+	* @param path  Absolute file path (UTF-16).
+	* @param out   Output string in UTF-8.
+	* @return true on success, false on error.
+	*/
+	inline bool ReadTextFile( const std::wstring &path, std::string &out ) {
+		// clang-format off
+		HANDLE hFile = CreateFileW(
+			path.c_str(),
+			GENERIC_READ,
+			FILE_SHARE_READ,
+			nullptr,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL,
+			nullptr
+		);
+		// clang-format on
 
-    LARGE_INTEGER size;
-    if ( !GetFileSizeEx( hFile, &size ) || size.QuadPart > 10 * 1024 * 1024 ) {
-        CloseHandle( hFile );
-        return false;
-    }
+		if ( hFile == INVALID_HANDLE_VALUE )
+			return false;
 
-    out.resize( static_cast<size_t>( size.QuadPart ) );
-    DWORD bytesRead = 0;
-    BOOL  ok        = ::ReadFile( hFile, out.data(),
-                                  static_cast<DWORD>( size.QuadPart ),
-                                  &bytesRead, nullptr );
-    CloseHandle( hFile );
+		LARGE_INTEGER size;
+		if ( !GetFileSizeEx( hFile, &size ) || size.QuadPart > 10 * 1024 * 1024 ) {
+			CloseHandle( hFile );
+			return false;
+		}
 
-    if ( !ok || bytesRead != static_cast<DWORD>( size.QuadPart ) ) {
-        out.clear();
-        return false;
-    }
+		out.resize( static_cast<size_t>( size.QuadPart ) );
+		DWORD bytesRead = 0;
 
-    // Strip UTF-8 BOM if present
-    if ( out.size() >= 3 &&
-         (unsigned char)out[0] == 0xEF &&
-         (unsigned char)out[1] == 0xBB &&
-         (unsigned char)out[2] == 0xBF )
-        out.erase( 0, 3 );
+		// clang-format off
+		BOOL ok = ::ReadFile(
+			hFile, out.data(),
+			static_cast<DWORD>( size.QuadPart ),
+			&bytesRead, nullptr
+		);
+		// clang-format on
 
-    return true;
-}
+		CloseHandle( hFile );
+
+		if ( !ok || bytesRead != static_cast<DWORD>( size.QuadPart ) ) {
+			out.clear();
+			return false;
+		}
+
+		// Strip UTF-8 BOM if present
+		// clang-format off
+		if ( out.size() >= 3
+		&& (unsigned char)out[0] == 0xEF
+		&& (unsigned char)out[1] == 0xBB
+		&& (unsigned char)out[2] == 0xBF )
+			out.erase( 0, 3 );
+		// clang-format on
+
+		return true;
+	}
 } // namespace fs

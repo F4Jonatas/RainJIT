@@ -23,7 +23,6 @@
 --
 -- @usage
 -- local meter = require("meter")
---
 -- local shape = meter("Background")
 --
 -- shape:rectangle(0, 0, 200, 100)
@@ -45,20 +44,10 @@
 -- `meter` methods such as `update()`, `event()`, and `option()`.
 --
 -- @submodule meter.shape
--- @release 0.2.4
+-- @release 0.2.5
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 -- @see https://docs.rainmeter.net/manual/meters/shape/
---
--- @usage
--- local meter = require("meter")
---
--- local shape1 = meter("Graph")
--- shape1:rectangle(0,0,200,50):fill(20,20,20)
---
--- local shape2 = shape1:add()
--- shape2:ellipse(100,25,30,30):fill(255,0,0)
---
 
 
 local M   = {}
@@ -131,6 +120,27 @@ local function clone( class, super )
 end
 
 
+
+--- Change the current shape type.
+-- Replaces the primitive type in the internal shape definition.
+-- This allows converting an existing shape (for example `rectangle`)
+-- into another type such as `path` or `ellipse` while preserving
+-- the remaining parameters.
+--
+-- @param (table) self - Shape instance
+-- @param (string) newtype - New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
+-- @return shape Returns the shape instance for chaining.
+--
+-- @usage changeType( shape, "ellipse")
+local function changeType( self, newType )
+	local shapeType = self.content:lower():match( REGEX_SHAPE ):gsub( '%s*$', '' )
+	assert( REGEX[ shapeType ], 'The Shape type is probably wrong: "'..  shapeType ..'".' )
+
+	self.content = self.content:lower():gsub( REGEX[ shapeType ], newType )
+	return self
+end
+
+
 -- local clone = function( self, super )
 -- 	self.id = super.id
 
@@ -156,41 +166,41 @@ end
 
 
 --- Normalize color arguments into Rainmeter's comma-separated format.
--- Accepts either a single hex string (`"transparent"`, 3-digit or
--- 6-digit hex) or separate R, G, B, (A) numeric components, and
+-- Accepts either a single Hex string (`"transparent"`, 3-digit or
+-- 6-digit Hex) or separate R, G, B, (A) numeric components, and
 -- returns them pre-formatted with leading commas so they can be
 -- concatenated directly into a `Fill`/`StrokeColor` option string.
 --
--- @param (number|string) r - Red value, or a hex/"transparent" string.
+-- @param (number|string|"transparent") r - Red value, or a Hex/"transparent" string.
 -- @param (number) [g] - Green value (ignored when `r` is a string).
 -- @param (number) [b] - Blue value (ignored when `r` is a string).
 -- @param (number) [a] - Alpha value (ignored when `r` is a string).
--- @return (string) r - Red value or expanded hex.
--- @return (string) g - Green value, prefixed with `,` (or empty for hex).
--- @return (string) b - Blue value, prefixed with `,` (or empty for hex).
--- @return (string) a - Alpha value, prefixed with `,` (or empty if absent/hex).
+-- @return (string) r - Red value or expanded Hex.
+-- @return (string) g - Green value, prefixed with `,` (or empty for Hex).
+-- @return (string) b - Blue value, prefixed with `,` (or empty for Hex).
+-- @return (string) a - Alpha value, prefixed with `,` (or empty if absent/Hex).
 --
 -- @usage parseColor(255, 0, 0, 120)  --> "255", ",0", ",0", ",120"
 -- @usage parseColor("f00")           --> "ff0000", "", "", ""
 -- @usage parseColor("transparent")   --> "0,0,0,0", "", "", ""
 local function parseColor( r, g, b, a )
-	-- if hex or transparent
+	-- if Hex or transparent
 	if r and not g and not b and not a then
 		g = ''
 		b = ''
 		a = ''
 
-		if r == 'transparent' then
+		if r:lower() == 'transparent' then
 			r = '0,0,0,0'
 
-		-- using hex color 3 digits
+		-- using Hex color 3 digits
 		elseif r:len() == 3 then
 			r = r:sub( 1, 1 ):rep( 2 ) ..
 			      r:sub( 2, 2 ):rep( 2 ) ..
 			      r:sub( 3, 3 ):rep( 2 )
 		end
 
-	-- rgb/a
+	-- RGB/A
 	else
 		g = ','.. g
 		b = ','.. b
@@ -289,7 +299,7 @@ function M:rectangle( left, top, width, height, radiusX, radiusY )
 		)
 
 	else -- Add/Change
-		self:changeType( 'rectangle ' ..left.. ',' ..top.. ',' ..width.. ',' ..height.. ',' ..radiusX.. ',' ..radiusY )
+		changeType( self, 'rectangle ' ..left.. ',' ..top.. ',' ..width.. ',' ..height.. ',' ..radiusX.. ',' ..radiusY )
 	end
 
 	self.meter:option( self.name, self.content )
@@ -331,7 +341,7 @@ function M:ellipse( left, top, radiusX, radiusY )
 		)
 
 	else -- add
-		self:changeType( 'ellipse '.. left ..','.. top ..','.. radiusX ..','.. radiusY )
+		changeType( self, 'ellipse '.. left ..','.. top ..','.. radiusX ..','.. radiusY )
 	end
 
 
@@ -400,7 +410,7 @@ function M:path( inner )
 
 	else
 		DRAWS = DRAWS + 1
-		self:changeType( 'path paths' .. DRAWS )
+		changeType( self, 'path paths' .. DRAWS )
 		self.meter:option( 'paths' .. DRAWS, inner )
 		self.meter:option( self.name, self.content )
 	end
@@ -469,7 +479,7 @@ function M:polyline( points, close )
 		DRAWS = DRAWS + 1
 		local pathName = 'paths'.. DRAWS
 
-		self:changeType( 'path ' .. pathName )
+		changeType( self, 'path ' .. pathName )
 		self.meter:option( pathName, inner )
 		self.meter:option( self.name, self.content )
 	end
@@ -1140,26 +1150,6 @@ function M:trasnlatey( move )
 		end
 	end
 
-	return self
-end
-
-
-
---- Change the current shape type.
--- Replaces the primitive type in the internal shape definition.
--- This allows converting an existing shape (for example `rectangle`)
--- into another type such as `path` or `ellipse` while preserving
--- the remaining parameters.
---
--- @param (string) newtype - New shape type (e.g. `"rectangle"`, `"ellipse"`, `"path"`).
--- @return shape Returns the shape instance for chaining.
---
--- @usage shape:changeType("ellipse")
-function M:changeType( newType )
-	local shapeType = self.content:lower():match( REGEX_SHAPE ):gsub( '%s*$', '' )
-	assert( REGEX[ shapeType ], 'The Shape type is probably wrong: "'..  shapeType ..'".' )
-
-	self.content = self.content:lower():gsub( REGEX[ shapeType ], newType )
 	return self
 end
 

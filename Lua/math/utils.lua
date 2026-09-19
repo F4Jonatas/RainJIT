@@ -1,4 +1,4 @@
---
+
 -- Extensions to the Lua math library providing common numerical operations.
 --
 -- This module adds utility functions for rounding, percentage calculations,
@@ -9,39 +9,38 @@
 --
 -- @submodule math.utils
 -- @author F4Jonatas
--- @version 1.3.0
+-- @license GPL v2.0 License
+-- @release 1.3.0
 --
 -- @see https://github.com/likerRr/mathf-js
 -- @see https://www.codecademy.com/resources/docs/lua/mathematical-library
 -- @see https://www.lua.org/manual/5.1/manual.html#2.8
---
+
+-- https://github.com/ToxicFrog/luautil/blob/master/math.lua
 
 
 
 --- Largest integer representable exactly in double-precision float (2^53 - 1).
 -- Provided for compatibility with Lua versions prior to 5.3.
---
 math.maxinteger = math.pow( 2, 53 ) - 1
 
 
 
 --- Rounds a number to a specified number of decimal places.
---
 -- Uses the **round half away from zero** method. Values exactly at the
 -- midpoint (.5) are rounded away from zero.
 --
 -- Due to IEEE-754 floating-point representation, some decimal values
 -- may produce slightly unexpected results when rounding (e.g., 2.675).
 --
--- @tparam number numb The number to be rounded.
--- @tparam[opt=0] number decimal Number of decimal places to round to.
+-- @param (number) numb - The number to be rounded.
+-- @param (number) [decimal=0] - Number of decimal places to round to.
 --   If omitted, the number is rounded to the nearest integer.
--- @treturn number The rounded value.
+-- @return (number) The rounded value.
 -- @usage
 --   math.round(12.345, 2) --> 12.35
 --   math.round(10.4)      --> 10
 --   math.round(-2.5)      --> -3
---
 math.round = function( numb, decimal )
 	if numb == nil then return nil end
 	local multi = 10 ^ ( decimal or 0 )
@@ -51,22 +50,21 @@ end
 
 
 --- Calculates a percentage of a given value.
---
 -- Equivalent to `(value * percent) / 100`, rounded to the specified number
 -- of decimal places (default 2). Useful for financial or statistical calculations.
 --
--- @tparam number value The base value.
--- @tparam number percent The percentage to apply (e.g., 15 for 15%).
--- @tparam[opt=2] number decimals Number of decimal places for rounding.
--- @treturn number The resulting percentage value.
+-- @param (number) value - The base value.
+-- @param (number) percent - The percentage to apply (e.g., 15 for 15%).
+-- @param (number) [decimals=2] - Number of decimal places for rounding.
+-- @return (number) The resulting percentage value.
+--
 -- @usage
 --   math.percentOf(200, 15)    --> 30
 --   math.percentOf(200, 15, 0) --> 30
 --   math.percentOf(250, 33.3)  --> 83.25
---
-math.percentOf = function(value, percent, decimals)
+math.percentOf = function( value, percent, decimals )
 	decimals = decimals or 2
-	return math.round(value * percent / 100, decimals)
+	return math.round( value * percent / 100, decimals )
 end
 
 
@@ -74,15 +72,14 @@ end
 --- Formats an integer number with leading zeros to have at least `digits` digits.
 -- If `numb` is not an integer, it is truncated toward zero.
 --
--- @tparam number numb The number to format (will be converted to integer).
--- @tparam[opt=1] number digits Minimum number of digits (must be a positive integer). Defaults to 1.
--- @treturn string The formatted number with leading zeros.
+-- @param (number) numb - The number to format (will be converted to integer).
+-- @param (number) [digits=1] - Minimum number of digits (must be a positive integer). Defaults to 1.
+-- @return (string) The formatted number with leading zeros.
 -- @raise Error if `digits` is not a positive integer.
 -- @usage
 --   math.digit(42, 3)    --> "042"
 --   math.digit(-7, 3)    --> "-07"
 --   math.digit(5.8, 2)   --> "05"   (truncated toward zero)
---
 math.digit = function(numb, digits)
 	-- Default and validate digits
 	digits = digits or 1
@@ -106,21 +103,19 @@ end
 
 
 --- Shortens a number using metric prefixes (k, M, G, T, P, E, Z, Y).
---
 -- For numbers with absolute value >= 1000, the function returns a string
 -- with the appropriate prefix and the number rounded to the specified digits.
 -- Otherwise, the original number is returned unchanged.
 --
--- @tparam number num The number to shorten.
--- @tparam[opt=0] number digits Number of digits after the decimal point.
--- @treturn string|number Shortened representation or original number.
+-- @param (number) num - The number to shorten.
+-- @param (number) [digits=0] - Number of digits after the decimal point.
+-- @return (string|number) Shortened representation or original number.
 -- @usage
 --   math.shorten(12543, 1)   --> "12.5k"
 --   math.shorten(-12567)     --> "-13k"
 --   math.shorten(51000000)   --> "51M"
 --   math.shorten(651)        --> 651
 --   math.shorten(0.12345)    --> 0.12345
---
 math.shorten = function( num, digits )
 	local units = { 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y' }
 	local decimal
@@ -140,22 +135,21 @@ end
 
 
 --- Converts a number in scientific notation to a plain decimal string without exponent.
---
 -- Useful for environments that do not support scientific notation (e.g., Rainmeter).
 -- Handles both positive and negative exponents correctly.
 -- If the input is a string, it is converted to a number first; if conversion fails, returns nil.
 -- The output is always a string, even for numbers that were not in scientific notation.
 --
--- @tparam number|string value The number (or numeric string) to convert.
--- @treturn string|nil The decimal representation without exponent, or nil if conversion fails.
+-- @param (number|string) value - The number (or numeric string) to convert.
+-- @return (string|nil) The decimal representation without exponent, or nil if conversion fails.
+--
 -- @usage
 --   math.toDecimalString(1.23e4)      --> "12300"
 --   math.toDecimalString(1.23e-5)     --> "0.0000123"
 --   math.toDecimalString(123)         --> "123"
 --   math.toDecimalString("5.67e+2")   --> "567"
 --   math.toDecimalString("not a number") --> nil
---
-math.toDecimalString = function(value)
+math.toDecimalString = function( value )
 	-- Ensure we have a number
 	if type( value ) ~= 'number' then
 		value = tonumber( value )
@@ -177,7 +171,7 @@ math.toDecimalString = function(value)
 		return s
 	end
 
-	exp = tonumber(sign .. exp)  -- exponent with sign
+	exp = tonumber( sign .. exp )  -- exponent with sign
 
 	-- Split mantissa into integer and fractional parts
 	local intPart, fracPart = mantissa:match( '^(%d*)%.?(%d*)$' )
@@ -210,20 +204,22 @@ end
 
 --- Clamps a value between a minimum and maximum (inclusive).
 --
--- @tparam number value The value to clamp.
--- @tparam number min The lower bound.
--- @tparam number max The upper bound.
--- @treturn number The clamped value: `min` if `value < min`, `max` if `value > max`, otherwise `value`.
+-- @param (number) value - The value to clamp.
+-- @param (number) min - The lower bound.
+-- @param (number) max - The upper bound.
+-- @return (number) The clamped value: `min` if `value < min`, `max` if `value > max`, otherwise `value`.
+--
 -- @usage
 --   math.clamp(5, 1, 10)   --> 5
 --   math.clamp(-2, 1, 10)  --> 1
 --   math.clamp(15, 1, 10)  --> 10
---
 math.clamp = function( value, min, max )
 	if value < min then
 		return min
+
 	elseif value > max then
 		return max
+
 	else
 		return value
 	end
@@ -232,7 +228,6 @@ end
 
 
 --- Computes the median of a list of numbers.
---
 -- The function accepts any number of arguments, which can be numbers or tables.
 -- Tables are expected to contain only numbers (they are traversed via ipairs).
 -- If any argument is not a number or a table, or if any table contains a non-number,
@@ -240,8 +235,9 @@ end
 -- For an odd count, returns the middle element; for an even count, returns
 -- the average of the two central elements.
 --
--- @param ... Numbers or tables of numbers.
--- @treturn number|nil The median value, or `nil` if no valid numbers are provided.
+-- @param (number|table) ... - Numbers or tables of numbers.
+-- @return (number|nil) The median value, or `nil` if no valid numbers are provided.
+--
 -- @usage
 --   math.median(3, 1, 4, 1, 5)                 --> 3
 --   math.median({10, 20, 30, 40})              --> 25
@@ -250,11 +246,10 @@ end
 --   math.median({1, 2}, 3)                     --> 2
 --   math.median(42)                            --> 42
 --   math.median()                              --> nil
---
 math.median = function( ... )
 	local numbers = {}
 
-	for _, arg in ipairs( {...} ) do
+	for _, arg in ipairs({ ... }) do
 		if type( arg ) == 'number' then
 			table.insert( numbers, arg )
 
@@ -273,7 +268,7 @@ math.median = function( ... )
 	end
 
 
-	table.sort(numbers)
+	table.sort( numbers )
 
 	local n = #numbers
 	if n == 0 then
@@ -293,15 +288,15 @@ end
 
 
 --- Computes the arithmetic mean (average) of a list of numbers.
---
 -- The function accepts any number of arguments, which can be numbers or tables.
 -- Tables are expected to contain only numbers (they are traversed via ipairs).
 -- If any argument is not a number or a table, or if any table contains a non-number,
 -- an error is raised.
 -- Returns `nil` if no valid numbers are provided.
 --
--- @param ... Numbers or tables of numbers.
--- @treturn number|nil The average, or `nil` if no numbers are given.
+-- @param (number|table) ... - Numbers or tables of numbers.
+-- @return (number|nil) The average, or `nil` if no numbers are given.
+--
 -- @usage
 --   math.average(1, 2, 3, 4, 5)                --> 3
 --   math.average({10, 20})                     --> 15
@@ -311,19 +306,18 @@ end
 --   math.average()                             --> nil
 --   math.average({1, "foo", 2})                --> error: non-number in table
 --   math.average(1, "bar")                     --> error: argument must be number or table
---
 math.average = function( ... )
 	local sum   = 0
 	local count = 0
 
-	for _, arg in ipairs( {...} ) do
+	for _, arg in ipairs({ ... }) do
 		if type( arg ) == 'number' then
 			sum   = sum + arg
 			count = count + 1
 
 		elseif type( arg ) == 'table' then
 			for _, v in ipairs( arg ) do
-				if type(v) ~= 'number' then
+				if type( v ) ~= 'number' then
 					error( 'math.average: table contains non-number value' )
 				end
 
@@ -336,6 +330,7 @@ math.average = function( ... )
 		end
 	end
 
+
 	if count > 0 then
 		return sum / count
 	else
@@ -346,15 +341,15 @@ end
 
 
 --- Finds the maximum value among a set of numbers.
---
 -- The function accepts any number of arguments, which can be numbers or tables.
 -- Tables are expected to contain only numbers (they are traversed via ipairs).
 -- If any argument is not a number or a table, or if any table contains a non-number,
 -- an error is raised.
 -- Returns `nil` if no valid numbers are provided.
 --
--- @param ... Numbers or tables of numbers.
--- @treturn number|nil The maximum value, or `nil` if no numbers are given.
+-- @param (number|table) ... - Numbers or tables of numbers.
+-- @return (number|nil) The maximum value, or `nil` if no numbers are given.
+--
 -- @usage
 --   math.maximo(3, 1, 4, 1, 5)                 --> 5
 --   math.maximo({10, 20, 30, 40})              --> 40
@@ -364,26 +359,28 @@ end
 --   math.maximo()                              --> nil
 --   math.maximo({1, "foo", 2})                 --> error: non-number in table
 --   math.maximo(1, "bar")                      --> error: argument must be number or table
---
-math.maximo = function(...)
+math.maximo = function( ... )
 	local max = nil
 
-	for _, arg in ipairs({...}) do
-		if type(arg) == 'number' then
+	for _, arg in ipairs({ ... }) do
+		if type( arg ) == 'number' then
 			if max == nil or arg > max then
 				max = arg
 			end
-		elseif type(arg) == 'table' then
-			for _, v in ipairs(arg) do
-				if type(v) ~= 'number' then
-					error("math.maximo: table contains non-number value")
+
+		elseif type( arg ) == 'table' then
+			for _, v in ipairs( arg ) do
+				if type( v ) ~= 'number' then
+					error( 'math.maximo: table contains non-number value' )
 				end
+
 				if max == nil or v > max then
 					max = v
 				end
 			end
+
 		else
-			error("math.maximo: argument must be a number or a table, got " .. type(arg))
+			error( 'math.maximo: argument must be a number or a table, got ' .. type( arg ))
 		end
 	end
 
@@ -393,44 +390,46 @@ end
 
 
 --- Finds the minimum value among a set of numbers.
---
 -- The function accepts any number of arguments, which can be numbers or tables.
 -- Tables are expected to contain only numbers (they are traversed via ipairs).
 -- If any argument is not a number or a table, or if any table contains a non-number,
 -- an error is raised.
 -- Returns `nil` if no valid numbers are provided.
 --
--- @param ... Numbers or tables of numbers.
--- @treturn number|nil The minimum value, or `nil` if no numbers are given.
--- @usage
---   math.minimo(3, 1, 4, 1, 5)                 --> 1
---   math.minimo({10, 20, 30, 40})              --> 10
---   math.minimo({1, 2}, {3, 4})                --> 1
---   math.minimo({1, 2}, 3)                     --> 1
---   math.minimo(42)                            --> 42
---   math.minimo()                              --> nil
---   math.minimo({1, "foo", 2})                 --> error: non-number in table
---   math.minimo(1, "bar")                      --> error: argument must be number or table
+-- @param (number|table) ... - Numbers or tables of numbers.
+-- @return (number|nil) The minimum value, or `nil` if no numbers are given.
 --
-math.minimo = function(...)
+-- @usage
+--   math.minimo(3, 1, 4, 1, 5)       --> 1
+--   math.minimo({10, 20, 30, 40})    --> 10
+--   math.minimo({1, 2}, {3, 4})      --> 1
+--   math.minimo({1, 2}, 3)           --> 1
+--   math.minimo(42)                  --> 42
+--   math.minimo()                    --> nil
+--   math.minimo({1, "foo", 2})       --> error: non-number in table
+--   math.minimo(1, "bar")            --> error: argument must be number or table
+math.minimo = function( ... )
 	local min = nil
 
-	for _, arg in ipairs({...}) do
-		if type(arg) == 'number' then
+	for _, arg in ipairs({ ... }) do
+		if type( arg ) == 'number' then
 			if min == nil or arg < min then
 				min = arg
 			end
-		elseif type(arg) == 'table' then
-			for _, v in ipairs(arg) do
-				if type(v) ~= 'number' then
-					error("math.minimo: table contains non-number value")
+
+		elseif type( arg ) == 'table' then
+			for _, v in ipairs( arg ) do
+				if type( v ) ~= 'number' then
+					error( 'math.minimo: table contains non-number value' )
 				end
+
 				if min == nil or v < min then
 					min = v
 				end
 			end
+
 		else
-			error("math.minimo: argument must be a number or a table, got " .. type(arg))
+			error( 'math.minimo: argument must be a number or a table, got ' .. type( arg ))
 		end
 	end
 

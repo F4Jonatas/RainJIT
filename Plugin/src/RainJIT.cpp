@@ -476,4 +476,5 @@ PLUGIN_EXPORT void Finalize( void *data ) {
 	}
 
 	delete rain;
+	rain = nullptr;
 }

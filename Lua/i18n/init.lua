@@ -38,14 +38,16 @@
 --
 -- @module i18n
 -- @author F4Jonatas
--- @version 1.3.7
---
+-- @license GPL v2.0 License
+-- @release 1.3.7
+
+
+
 local ffi = require( 'ffi' )
 
 
 
 --- FFI bindings to required Win32 and CRT functions.
---
 -- `GetUserDefaultUILanguage` retrieves the current user's UI language ID.
 ffi.cdef[[
 
@@ -57,27 +59,15 @@ ffi.cdef[[
 
 --- Module table.
 -- Acts as both a namespace and metatable for instances.
--- @table M
 local M = {}
-
-
 
 --- Metatable index.
 -- Enables method lookup on the module instance.
 M.__index = M
 
-
-
 --- Current locale code.
---
 -- Default fallback locale used when detection fails.
---
--- @field locale
--- @string
--- @default "en-us"
 M.locale = 'en-us'
-
-
 
 --- Base path for locale modules.
 --
@@ -85,11 +75,7 @@ M.locale = 'en-us'
 --   i18n.path = "myproject."
 --
 -- Resulting require:
---
 --   require("myproject.locales.en-us")
---
--- @field path
--- @string
 M.path = ''
 
 
@@ -103,8 +89,8 @@ M.path = ''
 -- If the key is not present in the dictionary,
 -- the original text is returned.
 --
--- @tparam string text Source string
--- @treturn string translated string or original text
+-- @param (string) text - Source string
+-- @return (string) translated string or original text
 M.__call = function( self, text )
 	return self.dict and self.dict[ text ] or text
 end
@@ -126,10 +112,9 @@ end
 -- @usage
 --   local i18n = require("i18n")
 --   i18n.language()
---
 --   print(i18n("Hello"))
 --
--- @return nil
+-- @return (nil)
 M.language = function()
 	local dict   = require( 'i18n.dictionary' )
 	local code   = ffi.C.GetUserDefaultUILanguage()
@@ -147,8 +132,7 @@ end
 
 
 
---- Module return.
---
+--- Module return
 -- The module returns a table configured with `M` as its metatable,
 -- enabling callable behavior and method access.
 --
@@ -157,5 +141,5 @@ end
 --   i18n.language()
 --   print(i18n("Hello"))
 --
--- @return table i18n module instance
-return setmetatable({}, M )
+-- @return (table) i18n module instance
+return setmetatable( {}, M )

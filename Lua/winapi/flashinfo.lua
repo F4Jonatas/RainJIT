@@ -1,7 +1,10 @@
 
 
-local ffi = require("ffi")
-local bit = require("bit")
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+
+local ffi = require( 'ffi' )
+local bit = require( 'bit' )
 
 ffi.cdef[[
 /**
@@ -90,56 +93,51 @@ typedef struct {
 BOOL FlashWindowEx(FLASHWINFO* pfwi);
 ]]
 
-local user32 = ffi.load("user32")
 
-----------------------------------------------------------------
--- WinAPI constants
-----------------------------------------------------------------
 
-local GWL_EXSTYLE			= -20
+local user32 = ffi.load( 'user32' )
 
-local WS_EX_TOOLWINDOW		= 0x00000080
-local WS_EX_APPWINDOW		= 0x00040000
 
-local FLASHW_STOP			= 0x00000000
-local FLASHW_TRAY			= 0x00000002
 
-----------------------------------------------------------------
+local GWL_EXSTYLE       = -20
+local WS_EX_TOOLWINDOW  = 0x00000080
+local WS_EX_APPWINDOW   = 0x00040000
+local FLASHW_STOP     ''= 0x00000000
+local FLASHW_TRAY     ''= 0x00000002
+
+
 -- Shared FLASHWINFO instance
-----------------------------------------------------------------
-
-local fwi = ffi.new("FLASHWINFO")
-fwi.cbSize	= ffi.sizeof(fwi)
+local fwi = ffi.new( 'FLASHWINFO' )
+fwi.cbSize	= ffi.sizeof( fwi )
 fwi.dwFlags	= FLASHW_TRAY
 
-----------------------------------------------------------------
--- Internal helpers
-----------------------------------------------------------------
+
+
 
 
 --- Adds WS_EX_APPWINDOW and removes WS_EX_TOOLWINDOW.
--- @param hwnd Target window handle.
---
-local function applyAppWindowStyle(hwnd)
-	local exStyle = user32.GetWindowLongPtrA(hwnd, GWL_EXSTYLE)
-	exStyle = bit.band(exStyle, bit.bnot(WS_EX_TOOLWINDOW))
-	exStyle = bit.bor(exStyle, WS_EX_APPWINDOW)
-	user32.SetWindowLongPtrA(hwnd, GWL_EXSTYLE, exStyle)
+-- @param hwnd - Target window handle.
+local function applyAppWindowStyle( hwnd )
+	local exStyle = user32.GetWindowLongPtrA( hwnd, GWL_EXSTYLE )
+	exStyle = bit.band( exStyle, bit.bnot( WS_EX_TOOLWINDOW ))
+	exStyle = bit.bor( exStyle, WS_EX_APPWINDOW )
+	user32.SetWindowLongPtrA( hwnd, GWL_EXSTYLE, exStyle )
 end
+
+
 
 --- Restores WS_EX_TOOLWINDOW and removes WS_EX_APPWINDOW.
--- @param hwnd Target window handle.
---
-local function restoreToolWindowStyle(hwnd)
-	local exStyle = user32.GetWindowLongPtrA(hwnd, GWL_EXSTYLE)
-	exStyle = bit.band(exStyle, bit.bnot(WS_EX_APPWINDOW))
-	exStyle = bit.bor(exStyle, WS_EX_TOOLWINDOW)
-	user32.SetWindowLongPtrA(hwnd, GWL_EXSTYLE, exStyle)
+-- @param hwnd - Target window handle.
+local function restoreToolWindowStyle( hwnd )
+	local exStyle = user32.GetWindowLongPtrA( hwnd, GWL_EXSTYLE )
+	exStyle = bit.band( exStyle, bit.bnot( WS_EX_APPWINDOW ))
+	exStyle = bit.bor( exStyle, WS_EX_TOOLWINDOW )
+	user32.SetWindowLongPtrA( hwnd, GWL_EXSTYLE, exStyle )
 end
 
-----------------------------------------------------------------
--- Public API
-----------------------------------------------------------------
+
+
+
 
 --- Flashes the window taskbar icon.
 --
@@ -148,49 +146,41 @@ end
 --   Adds WS_EX_APPWINDOW
 --   Requests a taskbar flash
 --
--- @param hwnd Window handle.
--- @param count Number of flashes (default: 999).
--- @param timeout Flash timeout in milliseconds (default: system).
---
-local function flash(hwnd, count, timeout)
-	applyAppWindowStyle(hwnd)
+-- @param hwnd - Window handle.
+-- @param count - Number of flashes (default: 999).
+-- @param timeout - Flash timeout in milliseconds (default: system).
+local function flash( hwnd, count, timeout )
+	applyAppWindowStyle( hwnd )
 
-	fwi.hwnd		= hwnd
-	fwi.uCount		= 999
-	fwi.dwTimeout	=  0
+	fwi.hwnd      = hwnd
+	fwi.uCount    = 999
+	fwi.dwTimeout =  0
 
-	user32.FlashWindowEx(fwi)
+	user32.FlashWindowEx( fwi )
 end
+
+
 
 -- @brief Stops flashing and restores TOOLWINDOW behavior.
---
 -- This function:
--- - Stops any active flashing
--- - Restores WS_EX_TOOLWINDOW
--- - Removes WS_EX_APPWINDOW
--- 
--- @param hwnd Window handle.
--- 
-local function remove(hwnd)
-	fwi.hwnd	= hwnd
-	fwi.dwFlags	= FLASHW_STOP
-	fwi.uCount	= 0
+--   Stops any active flashing
+--   Restores WS_EX_TOOLWINDOW
+--   Removes WS_EX_APPWINDOW
+--
+-- @param hwnd - Window handle.
+local function remove( hwnd )
+	fwi.hwnd      = hwnd
+	fwi.dwFlags   = FLASHW_STOP
+	fwi.uCount    = 0
 	fwi.dwTimeout = 0
 
-	user32.FlashWindowEx(fwi)
-	restoreToolWindowStyle(hwnd)
+	user32.FlashWindowEx( fwi )
+	restoreToolWindowStyle( hwnd )
 end
 
-----------------------------------------------------------------
--- Module exports
-----------------------------------------------------------------
+
 
 return {
-	flash	= flash,
-	remove	= remove
+	flash  = flash,
+	remove = remove
 }
-
-
-
-
-

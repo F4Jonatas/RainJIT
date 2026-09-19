@@ -20,7 +20,8 @@
 -- reported back to the caller without suppressing internal state.
 --
 -- @submodule fetch.promiseAll
-
+-- @author F4Jonatas
+-- @license GPL v2.0 License
 
 local fetch = require( 'fetch' )
 

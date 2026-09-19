@@ -1,7 +1,7 @@
 
 /bin/imagemagick/
 /meter/modl.lua
-/string/*
+/string/utils.lua
 /paleta
 /xcgui
 /dotenv

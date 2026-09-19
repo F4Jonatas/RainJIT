@@ -20,50 +20,52 @@ local next   = meter( 'controls-next', 2 )
 local prev   = meter( 'controls-prev', 2 )
 
 next:path([[
-M11.935 7.87
-H 8.695
-V 19.21
-H 11.935
-V 7.87
-Z
-M 21.7524 12.4617
-C 22.2933 12.8222 22.5637 13.0025 22.658 13.2298
-C 22.7403 13.4284 22.7403 13.6516 22.658 13.8502
-C 22.5637 14.0775 22.2933 14.2578 21.7524 14.6183
-L 15.665 18.6767
-C 15.0103 19.1131 14.6831 19.3313 14.4117 19.3151
-C 14.1754 19.3009 13.9568 19.1841 13.8139 18.9952
-C 13.65 18.7784 13.65 18.3851 13.65 17.5984
-V 9.4816
-C 13.65 8.695 13.65 8.3016 13.8139 8.0848
-C 13.9568 7.8959 14.1754 7.779 14.4117 7.7649
-C 14.6831 7.7487 15.0103 7.9669 15.665 8.4032
-L 21.7524 12.4617
-Z
+	M11.935 7.87
+	H 8.695
+	V 19.21
+	H 11.935
+	V 7.87
+	Z
+	M 21.7524 12.4617
+	C 22.2933 12.8222 22.5637 13.0025 22.658 13.2298
+	C 22.7403 13.4284 22.7403 13.6516 22.658 13.8502
+	C 22.5637 14.0775 22.2933 14.2578 21.7524 14.6183
+	L 15.665 18.6767
+	C 15.0103 19.1131 14.6831 19.3313 14.4117 19.3151
+	C 14.1754 19.3009 13.9568 19.1841 13.8139 18.9952
+	C 13.65 18.7784 13.65 18.3851 13.65 17.5984
+	V 9.4816
+	C 13.65 8.695 13.65 8.3016 13.8139 8.0848
+	C 13.9568 7.8959 14.1754 7.779 14.4117 7.7649
+	C 14.6831 7.7487 15.0103 7.9669 15.665 8.4032
+	L 21.7524 12.4617
+	Z
 ]])
+
 prev:path([[
-M 17.6477 8.2295
-L 21.0211 8.2295
-L 21.0211 20.0363
-L 17.6477 20.0363
-L 17.6477 8.2295
-Z
-M 7.4254 13.0079
-C 6.8621 13.3856 6.5805 13.5712 6.4815 13.8094
-C 6.3979 14.0169 6.3979 14.249 6.4815 14.4562
-C 6.5805 14.6914 6.8621 14.8804 7.4254 15.2548
-L 13.7636 19.4823
-C 14.4445 19.9342 14.785 20.1632 15.0698 20.1446
-C 15.3142 20.1323 15.5432 20.0085 15.6916 19.8135
-C 15.8619 19.5876 15.8619 19.1759 15.8619 18.3589
-L 15.8619 9.9067
-C 15.8619 9.0867 15.8619 8.6782 15.6916 8.4523
-C 15.5432 8.2542 15.3142 8.1336 15.0698 8.118
-C 14.785 8.1025 14.4445 8.3285 13.7636 8.7834
-L 7.4254 13.0079
-Z
+	M 17.6477 8.2295
+	L 21.0211 8.2295
+	L 21.0211 20.0363
+	L 17.6477 20.0363
+	L 17.6477 8.2295
+	Z
+	M 7.4254 13.0079
+	C 6.8621 13.3856 6.5805 13.5712 6.4815 13.8094
+	C 6.3979 14.0169 6.3979 14.249 6.4815 14.4562
+	C 6.5805 14.6914 6.8621 14.8804 7.4254 15.2548
+	L 13.7636 19.4823
+	C 14.4445 19.9342 14.785 20.1632 15.0698 20.1446
+	C 15.3142 20.1323 15.5432 20.0085 15.6916 19.8135
+	C 15.8619 19.5876 15.8619 19.1759 15.8619 18.3589
+	L 15.8619 9.9067
+	C 15.8619 9.0867 15.8619 8.6782 15.6916 8.4523
+	C 15.5432 8.2542 15.3142 8.1336 15.0698 8.118
+	C 14.785 8.1025 14.4445 8.3285 13.7636 8.7834
+	L 7.4254 13.0079
+	Z
 ]])
--- print(next.contentPath)
+
+
 -- Forward declarations
 local radioTitle
 local keyboardEvent
@@ -151,18 +153,26 @@ local function loadTitle()
 		return buttonPlayPause( player.state )
 	end
 
-	-- Precisa ser o async metodo, caso contrário sempre vai ter um momento de freeze em todo processo do rainmeter
+	-- It needs to be an asynchronous method. Otherwise, the entire Rainmeter process will freeze for a moment.
 	fetch.async( 'https://api.radio.de/stations/now-playing?stationIds='.. radio[ iRadio ])
 		:callback( function( self, response )
-			local data = response:json()
-
-			if #data > 0 then
-				local music  = data[1].title:match( '%s*-%s*(.*)$' )
-				local artist = data[1].title:match( '^(.*)%s*-%s*' )
-				song:text( music ..'\n'.. artist ):update()
+			if not response.ok then
+				error( 'Failed to fetch radio.net data.\nError: '.. response.error )
 
 			else
-				song:text( 'Listening\n'.. radioTitle ):update()
+				local data = response:json()
+				if not data then
+					error( 'Failed to parse JSON data.\nError: '.. data.error )
+				end
+
+				if #data > 0 then
+					local music  = data[1].title:match( '%s*-%s*(.*)$' )
+					local artist = data[1].title:match( '^(.*)%s*-%s*' )
+					song:text( music ..'\n'.. artist ):update()
+
+				else
+					song:text( 'Listening\n'.. radioTitle ):update()
+				end
 			end
 		end)
 		:send()
@@ -194,7 +204,7 @@ end
 function loadRadio()
 	local request = fetch( 'https://prod.radio-api.net/stations/details?stationIds='.. radio[ iRadio ])
 	if not request.ok then
-		error( 'Failed to fetch current weather data.\nError: '.. current.error )
+		error( 'Failed to fetch radio.net data.\nError: '.. request.error )
 
 	else
 		local data = request:json()

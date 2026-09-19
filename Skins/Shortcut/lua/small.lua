@@ -118,13 +118,11 @@ redraw = function( item )
 		item = data[1]
 	end
 
-	meter( 'text' ):text( item.file ):update()
-	local iconPath = rain:var( '#CURRENTPATH#icons/' )
-
+	meter( 'text' ):text( item.name ):update()
 	if item.type == 'folder' then
 		meter( 'icon' ):image( iconPath .. 'folder' ):update()
 
-	elseif lfs.exists( iconPath .. item.ext ..'.png' ) then
+	elseif lfs.exists( iconPath .. item.ext  ..'.png' ) then
 		meter( 'icon' ):image( iconPath .. item.ext ..'.png' ):update()
 
 	elseif lfs.exists( iconPath .. 'cache/'.. item.ext ..'.png' ) then

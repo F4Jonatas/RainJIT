@@ -1,6 +1,4 @@
------------------------------------------------------------------------
--- @module popupmenu.lua
---
+
 -- Native Win32 popup menu helper using LuaJIT FFI.
 -- This module provides a safe abstraction over CreatePopupMenu,
 -- supporting icons via bitmap files, submenus, separators and callbacks,
@@ -8,7 +6,12 @@
 --
 -- Owner-draw, character icons and font manipulation are intentionally
 -- NOT supported to avoid layout breakage and WndProc dependencies.
------------------------------------------------------------------------
+--
+-- @module popupmenu.lua
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+
+
 
 local ffi = require("ffi")
 local bit = bit or require("bit")

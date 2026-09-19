@@ -52,8 +52,8 @@
 --
 -- @module tween
 -- @author F4Jonatas
--- @license MIT
--- @version 2.0.1
+-- @license GPL v2.0 License or MIT
+-- @release 2.0.1
 
 
 
@@ -96,9 +96,8 @@ M.__index = M
 
 
 --- Check if value is a number.
--- @tparam any value
--- @treturn boolean
---
+-- @param (any) value
+-- @return (boolean)
 local function isNumber( value )
 	return type( value ) == 'number'
 end
@@ -108,10 +107,9 @@ end
 --- Normalize input into table form.
 -- Numbers are converted to `{ value }`.
 --
--- @tparam number|table v
--- @treturn table normalized value
--- @treturn boolean isNumber original type flag
---
+-- @param (number|table) v
+-- @return (table) normalized value
+-- @return (boolean) isNumber original type flag
 local function normalize( v )
 	if isNumber( v ) then
 		return { v }, true
@@ -124,10 +122,9 @@ end
 
 --- Deep clone a table.
 --
--- @tparam table dest destination table
--- @tparam table src source table
--- @treturn table cloned table
---
+-- @param (table) dest destination table
+-- @param (table) src source table
+-- @return (table) cloned table
 local function clone( dest, src )
 	for k, v in pairs( src ) do
 		if type( v ) == 'table' then
@@ -143,13 +140,11 @@ end
 
 
 --- Validate structure compatibility between `from` and `to`.
---
 -- Ensures all numeric fields in `to` exist in `from`.
 --
--- @tparam table from
--- @tparam table to
--- @tparam[opt=""] string path
---
+-- @param (table) from
+-- @param (table) to
+-- @param (string) [path=""]
 local function checkSubject( from, to, path )
 	path = path or ''
 
@@ -174,14 +169,13 @@ end
 
 --- Internal recursive interpolation function.
 --
--- @tparam table current mutable output
--- @tparam table to target values
--- @tparam table from initial values
--- @tparam number t current time
--- @tparam number d duration
--- @tparam function easing easing function
--- @treturn table current
---
+-- @param (table) current mutable output
+-- @param (table) to target values
+-- @param (table) from initial values
+-- @param (number) t current time
+-- @param (number) d duration
+-- @param (function) easing easing function
+-- @return (table) current
 local function calc( current, to, from, t, d, easing )
 	for k, v in pairs( to ) do
 		if type( v ) == 'table' then
@@ -200,12 +194,10 @@ end
 
 
 --- Set tween to a specific time.
---
 -- Clamps the time between `0` and `duration` and updates values accordingly.
 --
--- @tparam number clock time position
--- @treturn number|table interpolated value
---
+-- @param (number) clock time position
+-- @return (number|table) interpolated value
 function M:set( clock )
 	assert( type( clock ) == 'number', 'clock must be number' )
 
@@ -233,12 +225,10 @@ end
 
 --- Advance the tween by delta time.
 --
--- @tparam number dt delta time
--- @treturn number|table interpolated value
+-- @param (number) dt delta time
+-- @return (number|table) interpolated value
 --
--- @usage
--- t:update(1/60)
---
+-- @usage t:update(1/60)
 function M:update( dt )
 	return self:set( self.clock + dt )
 end
@@ -249,8 +239,7 @@ end
 --
 -- Equivalent to `set(0)`.
 --
--- @treturn number|table initial value
---
+-- @return (number|table) initial value
 function M:reset()
 	return self:set(0)
 end
@@ -260,7 +249,6 @@ end
 
 --- Easing functions table.
 -- Loaded from `tween.easing`.
---
 local okEasing, easingModule = pcall( require, 'tween.easing' )
 if not okEasing then
 	print('[tween] ERROR: Failed to load module "tween.easing"\n[tween] Reason: '.. tostring( easingModule ))
@@ -282,24 +270,16 @@ end
 
 --- Create a new tween.
 --
--- @tparam number duration total duration
--- @tparam number|table from starting value(s)
--- @tparam number|table to target value(s)
--- @tparam[opt="linear"] string|function easing easing function
+-- @param (number) duration - total duration
+-- @param (number|table) from - starting value(s)
+-- @param (number|table) to - target value(s)
+-- @param (string|function) [easing="linear"] - easing function
 --
--- @treturn table tween instance
+-- @return (table) tween instance
 --
--- @usage
--- -- Number tween
--- local t = tween(1.0, 0, 100)
---
--- @usage
--- -- Array tween
--- local t = tween(1.0, {0, 10}, {100, 200})
---
--- @usage
--- -- Object tween
--- local t = tween(1.0, {x = 0, y = 0}, {x = 100, y = 50})
+-- @usage local t = tween(1.0, 0, 100)  -- Number tween
+-- @usage local t = tween(1.0, {0, 10}, {100, 200}) -- Array tween
+-- @usage local t = tween(1.0, {x = 0, y = 0}, {x = 100, y = 50}) -- Object tween
 --
 -- @usage
 -- -- Nested table tween
@@ -313,7 +293,6 @@ end
 -- local t = tween(1.0, 0, 100, function(t, b, c, d)
 --   return c * (t / d) + b
 -- end)
---
 return function( duration, from, to, easing )
 	assert( type( duration ) == 'number', 'duration must be number' )
 

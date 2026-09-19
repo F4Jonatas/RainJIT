@@ -15,6 +15,9 @@ Wallhaven/downloadfile/*
 Weather/images/inspiration
 Weather/*.ps1
 
+/Bundle
+/Finance-Market
+
 
 Radio.net/index.html
 Radio.net/43d2d8be9801d4615b447954c2daa250.webp
@@ -26,4 +29,3 @@ AudioWave
 Battery
 Downloader
 Tinta
-Bundle

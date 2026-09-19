@@ -6,7 +6,7 @@ local anima  = require( 'meter.animate' )
 local glass  = require( 'glass' )
 local fetch  = require( 'fetch.utils' )
 local msgbox = require( 'winapi.msgbox' )
-local menu   = require( 'winapi.popupmenu' )
+local menu   = require( 'menu.popupmenu' )
 
 
 local HEIGHT = rain:var( 'HEIGHT' )

@@ -5,8 +5,8 @@
 --
 -- @submodule fetch.url
 -- @author F4Jonatas
+-- @license GPL v2.0 License or MIT
 -- @release 1.6.0
--- @license MIT
 
 
 --- inspirations:

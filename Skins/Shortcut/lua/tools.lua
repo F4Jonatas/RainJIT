@@ -1,6 +1,9 @@
+
+
+require( 'string.utf8' )
+
 local ffi = require( 'ffi' )
 local lfs = require( 'lfs.utils' )
-
 
 local shell32  = ffi.load( 'shell32' )
 local user32   = ffi.load( 'user32' )
@@ -98,9 +101,6 @@ ffi.cdef[[
 	BOOL      FindNextFileW( HANDLE, WIN32_FIND_DATAW* );
 	BOOL      FindClose( HANDLE );
 
-	int       MultiByteToWideChar( UINT, DWORD, const char*, int, WCHAR*, int );
-	int       WideCharToMultiByte( UINT, DWORD, const WCHAR*, int, char*, int, const char*, BOOL* );
-
 	DWORD     GetFileAttributesW( const WCHAR* lpFileName );
 	DWORD     GetLastError(void);
 
@@ -144,28 +144,6 @@ end
 
 
 
--- Unicode helpers
-
---- Converte string UTF-8 do Lua para wchar_t* (UTF-16).
-local function utf8ToWide( str )
-	local len = kernel32.MultiByteToWideChar( 65001, 0, str, -1, nil, 0 )
-	if len <= 0 then return nil end
-	local buf = ffi.new( 'wchar_t[?]', len )
-	kernel32.MultiByteToWideChar( 65001, 0, str, -1, buf, len )
-	return buf
-end
-
---- Converte wchar_t* (UTF-16) para string UTF-8 do Lua.
-local function wideToUtf8( wstr )
-	local len = kernel32.WideCharToMultiByte( 65001, 0, wstr, -1, nil, 0, nil, nil )
-	if len <= 0 then return nil end
-	local buf = ffi.new( 'char[?]', len )
-	kernel32.WideCharToMultiByte( 65001, 0, wstr, -1, buf, len, nil, nil )
-	return ffi.string( buf, len - 1 )
-end
-
-
-
 -- Iterador seguro sobre entradas de uma pasta via FindFirstFileW / FindNextFileW.
 -- Uso:
 --   for data in iterDir( 'C:\\foo' ) do ... end
@@ -175,7 +153,7 @@ end
 --   • condição de parada via valor de retorno Lua (boolean), nunca cdata BOOL
 --   • não itera '.' nem '..'
 local function iterDir( dir )
-	local wpattern = utf8ToWide( dir .. '\\*' )
+	local wpattern = string.wcs( dir .. '\\*' )
 	if not wpattern then
 		return function() return nil end
 	end
@@ -377,248 +355,14 @@ end
 
 
 
--- @file contextMenu.lua
--- @brief Windows Explorer Context Menu integration for Rainmeter using LuaJIT FFI.
+--- Retrieves filesystem attributes for a physical Windows path.
 --
--- This script invokes the native Windows Explorer context menu for a given
--- filesystem path. It uses low-level COM interfaces (IShellFolder, IContextMenu)
--- and is designed to operate safely within Rainmeter constraints.
---
--- IMPORTANT:
--- - This code intentionally initializes and uninitializes COM per invocation.
--- - This is required to avoid Shell extension instability in non-Explorer hosts.
--- - Rainmeter is NOT a full Shell host; certain behaviors are expected.
---
--- @author F4Jonatas
--- @license MIT (implicit, no warranty)
-
-local ole32 = ffi.load( 'ole32' )
-
-
-
--- COM / Windows / Shell definitions
-ffi.cdef[[
-typedef long HRESULT;
-typedef unsigned long ULONG;
-typedef void* HWND;
-typedef void* HMENU;
-typedef void* HINSTANCE;
-typedef void* LPCITEMIDLIST;
-typedef void* LPITEMIDLIST;
-typedef void* PCIDLIST_ABSOLUTE;
-typedef void* PCUITEMID_CHILD;
-typedef void* PIDLIST_ABSOLUTE;
-
-typedef struct {
-	long x;
-	long y;
-} POINT;
-
-typedef struct {
-	unsigned long Data1;
-	unsigned short Data2;
-	unsigned short Data3;
-	unsigned char Data4[8];
-} GUID;
-
-typedef struct IUnknown IUnknown;
-typedef struct IContextMenu IContextMenu;
-typedef struct IShellFolder IShellFolder;
-
-typedef struct IUnknownVtbl {
-	HRESULT (__stdcall *QueryInterface)(IUnknown*, const GUID*, void**);
-	ULONG   (__stdcall *AddRef)(IUnknown*);
-	ULONG   (__stdcall *Release)(IUnknown*);
-} IUnknownVtbl;
-
-typedef struct IContextMenuVtbl {
-	HRESULT (__stdcall *QueryInterface)(IContextMenu*, const GUID*, void**);
-	ULONG   (__stdcall *AddRef)(IContextMenu*);
-	ULONG   (__stdcall *Release)(IContextMenu*);
-	HRESULT (__stdcall *QueryContextMenu)(IContextMenu*, HMENU, UINT, UINT, UINT, UINT);
-	HRESULT (__stdcall *InvokeCommand)(IContextMenu*, void*);
-	HRESULT (__stdcall *GetCommandString)(IContextMenu*, UINT, UINT, void*, char*, UINT);
-} IContextMenuVtbl;
-
-struct IContextMenu {
-	IContextMenuVtbl* lpVtbl;
-};
-
-typedef struct IShellFolderVtbl {
-	HRESULT (__stdcall *QueryInterface)(IShellFolder*, const GUID*, void**);
-	ULONG   (__stdcall *AddRef)(IShellFolder*);
-	ULONG   (__stdcall *Release)(IShellFolder*);
-	HRESULT (__stdcall *ParseDisplayName)(IShellFolder*, HWND, void*, const wchar_t*, UINT*, LPITEMIDLIST*, UINT*);
-	HRESULT (__stdcall *EnumObjects)(IShellFolder*, HWND, UINT, void**);
-	HRESULT (__stdcall *BindToObject)(IShellFolder*, LPCITEMIDLIST, void*, const GUID*, void**);
-	HRESULT (__stdcall *BindToStorage)(IShellFolder*, LPCITEMIDLIST, void*, const GUID*, void**);
-	HRESULT (__stdcall *CompareIDs)(IShellFolder*, long, LPCITEMIDLIST, LPCITEMIDLIST);
-	HRESULT (__stdcall *CreateViewObject)(IShellFolder*, HWND, const GUID*, void**);
-	HRESULT (__stdcall *GetAttributesOf)(IShellFolder*, UINT, LPCITEMIDLIST*, UINT*);
-	HRESULT (__stdcall *GetUIObjectOf)(IShellFolder*, HWND, UINT, LPCITEMIDLIST*, const GUID*, UINT*, void**);
-} IShellFolderVtbl;
-
-struct IShellFolder {
-	IShellFolderVtbl* lpVtbl;
-};
-
-typedef struct {
-	UINT cbSize;
-	UINT fMask;
-	HWND hwnd;
-	const char* lpVerb;
-	const char* lpParameters;
-	const char* lpDirectory;
-	int nShow;
-	DWORD dwHotKey;
-	void* hIcon;
-} CMINVOKECOMMANDINFO;
-
-HRESULT CoInitialize(void*);
-void CoUninitialize(void);
-
-HRESULT SHParseDisplayName(const wchar_t*,void*,PIDLIST_ABSOLUTE*,UINT,UINT*);
-HRESULT SHBindToParent(PCIDLIST_ABSOLUTE,const GUID*,void**,PCUITEMID_CHILD*);
-
-HMENU CreatePopupMenu(void);
-UINT TrackPopupMenu(HMENU, UINT, int, int, int, HWND, void*);
-HWND GetForegroundWindow(void);
-void GetCursorPos(POINT*);
-BOOL DestroyMenu(HMENU);
-void CoTaskMemFree(void*);
-]]
-
-
--- Constants
-local TPM_RETURNCMD = 0x0100
-local SW_SHOWNORMAL = 1
-
-
-
--- GUID helpers
-
---- Creates a GUID structure.
-local function GUID( d1, d2, d3, d4 )
-	local g = ffi.new( 'GUID' )
-	g.Data1 = d1
-	g.Data2 = d2
-	g.Data3 = d3
-	ffi.copy( g.Data4, d4, 8 )
-	return g
-end
-
-local IID_IShellFolder = GUID(
-	0x000214E6, 0x0000, 0x0000,
-	ffi.new( 'unsigned char[8]', { 0xC0, 0, 0, 0, 0, 0, 0, 0x46 } )
-)
-
-local IID_IContextMenu = GUID(
-	0x000214E4, 0x0000, 0x0000,
-	ffi.new( 'unsigned char[8]', { 0xC0, 0, 0, 0, 0, 0, 0, 0x46 } )
-)
-
-
-
--- UTF-8 → UTF-16 (mantida apenas para openContextMenu via SHParseDisplayName)
-local function toWide( str )
-	local w = ffi.new( 'wchar_t[?]', #str + 1 )
-	for i = 1, #str do
-		w[i - 1] = str:byte( i )
-	end
-	w[#str] = 0
-	return w
-end
-
-
-
---- Opens the native Windows Explorer context menu for a file or folder.
-function openContextMenu( windowHWND, filepath )
-	if not filepath or not windowHWND then
-		return
-	end
-
-	ole32.CoInitialize( nil )
-
-	local pidl = ffi.new( 'PIDLIST_ABSOLUTE[1]' )
-	local wide = toWide( filepath )
-
-	local hr = shell32.SHParseDisplayName( wide, nil, pidl, 0, nil )
-	if hr ~= 0 then
-		ole32.CoUninitialize()
-		return
-	end
-
-	local psf   = ffi.new( 'IShellFolder*[1]' )
-	local child = ffi.new( 'PCUITEMID_CHILD[1]' )
-
-	hr = shell32.SHBindToParent(
-		pidl[0],
-		IID_IShellFolder,
-		ffi.cast( 'void**', psf ),
-		child
-	)
-
-	if hr ~= 0 then
-		ole32.CoUninitialize()
-		return
-	end
-
-	local pcm = ffi.new( 'IContextMenu*[1]' )
-
-	hr = psf[0].lpVtbl.GetUIObjectOf(
-		psf[0],
-		nil,
-		1,
-		child,
-		IID_IContextMenu,
-		nil,
-		ffi.cast( 'void**', pcm )
-	)
-
-	if hr ~= 0 then
-		psf[0].lpVtbl.Release( psf[0] )
-		ole32.CoUninitialize()
-		return
-	end
-
-	local hMenu = user32.CreatePopupMenu()
-
-	pcm[0].lpVtbl.QueryContextMenu( pcm[0], hMenu, 0, 1, 0x7FFF, 0 )
-
-	local pt = ffi.new( 'POINT' )
-	user32.GetCursorPos( pt )
-
-	local cmd = user32.TrackPopupMenu( hMenu, TPM_RETURNCMD, pt.x, pt.y, 0, windowHWND, nil )
-
-	if cmd ~= 0 then
-		local ici = ffi.new( 'CMINVOKECOMMANDINFO' )
-		ici.cbSize       = ffi.sizeof( ici )
-		ici.fMask        = 0
-		ici.hwnd         = windowHWND
-		ici.lpVerb       = ffi.cast( 'const char*', cmd - 1 )
-		ici.lpParameters = nil
-		ici.lpDirectory  = nil
-		ici.nShow        = SW_SHOWNORMAL
-
-		pcm[0].lpVtbl.InvokeCommand( pcm[0], ici )
-	end
-
-	pcm[0].lpVtbl.Release( pcm[0] )
-	psf[0].lpVtbl.Release( psf[0] )
-
-	ole32.CoTaskMemFree( pidl[0] )
-	user32.DestroyMenu( hMenu )
-
-	ole32.CoUninitialize()
-end
-
-
-
--- @submodule listdir
-
+-- @param (string) fullpath Absolute filesystem path.
+-- @return (table|nil) Attributes table.
+-- @return (string|nil) Error message when the Win32 call fails.
 local function win_attributes( fullpath )
-	local wpath = utf8ToWide( fullpath )
-	local attrs = kernel32.GetFileAttributesW( wpath )
+	local wpath = string.wcs( fullpath )
+	local attrs = kernel32.GetFileAttributesW(wpath)
 
 	if attrs == ffi.C.INVALID_FILE_ATTRIBUTES then
 		return nil, 'GetFileAttributesW failed (' .. ffi.C.GetLastError() .. ')'
@@ -631,19 +375,417 @@ local function win_attributes( fullpath )
 end
 
 
-local iconPath = rain:var( '#CURRENTPATH#icons\\' )
+-- @submodule listdir
 
+ffi.cdef[[
+	typedef int32_t HRESULT;
+	typedef uint32_t ULONG;
+	typedef uint32_t UINT;
+	typedef uint32_t DWORD;
+	typedef uint16_t WCHAR;
+
+	typedef struct {
+		uint32_t Data1;
+		uint16_t Data2;
+		uint16_t Data3;
+		uint8_t Data4[8];
+	} GUID;
+
+	typedef struct {
+		UINT uType;
+
+		union {
+			WCHAR *pOleStr;
+			UINT uOffset;
+			char cStr[260];
+		};
+	} STRRET;
+
+	HRESULT CoInitializeEx(
+		void *pvReserved,
+		DWORD dwCoInit
+	);
+
+	void CoUninitialize(void);
+
+	void CoTaskMemFree(
+		void *pv
+	);
+
+	HRESULT SHGetDesktopFolder(
+		void **ppshf
+	);
+
+	HRESULT SHParseDisplayName(
+		const WCHAR *pszName,
+		void *pbc,
+		void **ppidl,
+		DWORD sfgaoIn,
+		DWORD *psfgaoOut
+	);
+
+	HRESULT SHBindToObject(
+		void *psf,
+		void *pidl,
+		void *pbc,
+		const GUID *riid,
+		void **ppv
+	);
+
+	HRESULT StrRetToBufW(
+		STRRET *pstr,
+		void *pidl,
+		WCHAR *pszBuf,
+		UINT cchBuf
+	);
+
+	/*
+	 * IShellFolder::ParseDisplayName
+	 */
+	typedef HRESULT (__stdcall *IShellFolder_ParseDisplayName)(
+		void *This,
+		void *hwnd,
+		void *pbc,
+		WCHAR *pszDisplayName,
+		ULONG *pchEaten,
+		void **ppidl,
+		ULONG *pdwAttributes
+	);
+
+	/*
+	 * IShellFolder::EnumObjects
+	 */
+	typedef HRESULT (__stdcall *IShellFolder_EnumObjects)(
+		void *This,
+		void *hwnd,
+		DWORD grfFlags,
+		void **ppEnumIDList
+	);
+
+	/*
+	 * IShellFolder::GetDisplayNameOf
+	 */
+	typedef HRESULT (__stdcall *IShellFolder_GetDisplayNameOf)(
+		void *This,
+		void *pidl,
+		DWORD uFlags,
+		STRRET *pName
+	);
+
+	/*
+	 * IUnknown::Release
+	 */
+	typedef ULONG (__stdcall *IUnknown_Release)(
+		void *This
+	);
+
+	/*
+	 * IEnumIDList::Next
+	 */
+	typedef HRESULT (__stdcall *IEnumIDList_Next)(
+		void *This,
+		ULONG celt,
+		void **rgelt,
+		ULONG *pceltFetched
+	);
+]]
+
+local shell32 = ffi.load( 'shell32' )
+local shlwapi = ffi.load( 'shlwapi' )
+local ole32   = ffi.load( 'ole32'   )
+
+local IID_ISHELL_FOLDER = ffi.new('GUID', {
+	Data1 = 0x000214E6,
+	Data2 = 0x0000,
+	Data3 = 0x0000,
+	Data4 = { 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 }
+})
+
+local COINIT_APARTMENTTHREADED = 0x2
+
+local SHCONTF_FOLDERS    = 0x20
+local SHCONTF_NONFOLDERS = 0x40
+
+local SHGDN_NORMAL     = 0x0000
+local SHGDN_FORPARSING = 0x8000
+
+local RPC_E_CHANGED_MODE = -2147417850
+
+--- Checks whether a path represents a Windows Shell namespace.
+--
+-- Shell namespaces are virtual locations and cannot be enumerated using the
+-- regular filesystem APIs used by iterDir().
+--
+-- @usage
+--   isShellNamespace( 'shell:AppsFolder' )
+--   isShellNamespace( 'shell:Desktop' )
+--   isShellNamespace( 'shell:ControlPanelFolder' )
+--   isShellNamespace( '::{20D04FE0-3AEA-1069-A2D8-08002B30309D}' )
+--
+-- @param (string) path - Path to inspect.
+-- @return (boolean) True when path is a Shell namespace.
+local function isShellNamespace( path )
+	if type( path ) ~= 'string' then
+		return false
+	end
+
+	local lower = path:lower()
+	return lower:sub(1, 6) == 'shell:' or path:sub(1, 2) == '::'
+end
+
+
+
+--- Releases a COM interface.
+--
+-- @param (cdata) object - COM interface pointer.
+-- @return (nil)
+local function releaseCom( object )
+	if object == nil then
+		return
+	end
+
+	local vtable  = ffi.cast( 'void***', object )[0]
+	local release = ffi.cast( 'IUnknown_Release', vtable[2] )
+
+	release( object )
+end
+
+
+
+--- Retrieves a display name from a Shell item.
+--
+-- @param (cdata) folder - IShellFolder interface.
+-- @param (cdata) pidl - Child PIDL relative to folder.
+-- @param (number) flags - SHGDN flags.
+-- @return (string|nil) Display name.
+local function shellDisplayName( folder, pidl, flags )
+	local vtable = ffi.cast( 'void***', folder )[0]
+
+	local getDisplayNameOf = ffi.cast( 'IShellFolder_GetDisplayNameOf', vtable[11] )
+	local strret           = ffi.new( 'STRRET' )
+	local buffer           = ffi.new( 'WCHAR[32768]' )
+
+	local hr = getDisplayNameOf( folder, pidl, flags, strret )
+	if tonumber( hr ) < 0 then
+		return nil
+	end
+
+	hr = shlwapi.StrRetToBufW( strret, pidl, buffer, 32768 )
+
+	if tonumber( hr ) < 0 then
+		return nil
+	end
+
+	return string.mbs( buffer )
+end
+
+
+
+--- Enumerates the contents of a Windows Shell namespace.
+-- This function uses the native IShellFolder/IEnumIDList interfaces instead
+-- of LuaCOM. LuaCOM cannot access the indexed FolderItems.Item property used
+-- by this particular Shell collection.
+--
+-- @param (string) dir - Shell namespace path.
+-- @param (boolean) [subfolder=false] - Recursively enumerate child folders.
+-- @return (table) Array containing Shell entries.
+local function listShellDirectory( dir, subfolder )
+	local result = {}
+
+	-- COM is usually already initialized by the host application.
+	-- We initialize it here only when necessary.
+	local comHr          = ole32.CoInitializeEx( nil, COINIT_APARTMENTTHREADED )
+	local comInitialized = ( comHr == 0 or comHr == 1 )
+
+	if comHr ~= 0 and comHr ~= 1 and comHr ~= RPC_E_CHANGED_MODE then
+		error(('CoInitializeEx failed (0x%08X)')
+			:format( tonumber( ffi.cast( 'uint32_t', comHr )))
+		)
+	end
+
+	local function cleanup()
+		if comInitialized then
+			ole32.CoUninitialize()
+		end
+	end
+
+	--- Obtain the Shell desktop folder.
+	-- The desktop folder is the root of the Shell namespace. From there,
+	-- ParseDisplayName can resolve shell: paths into PIDLs.
+	local desktop = ffi.new( 'void*[1]' )
+	local hr      = shell32.SHGetDesktopFolder( desktop )
+
+	if tonumber( hr ) < 0 then
+		cleanup()
+
+		error(('SHGetDesktopFolder failed (0x%08X)'):format( tonumber( ffi.cast( 'uint32_t', hr ))))
+	end
+
+	local desktopVtable    = ffi.cast( 'void***', desktop[0] )[0]
+	local parseDisplayName = ffi.cast( 'IShellFolder_ParseDisplayName', desktopVtable[3] )
+	local namespacePidl    = ffi.new( 'void*[1]' )
+	local eaten            = ffi.new( 'ULONG[1]' )
+
+	-- Parse the namespace path relative to the Shell desktop.
+	hr = parseDisplayName(
+		desktop[0],
+		nil,
+		nil,
+		string.wcs( dir ),
+		eaten,
+		namespacePidl,
+		nil
+	)
+
+	if tonumber( hr ) < 0 or namespacePidl[0] == nil then
+		releaseCom( desktop[0] )
+		cleanup()
+
+		error(('IShellFolder::ParseDisplayName failed for "%s" (0x%08X)')
+			:format( dir, tonumber( ffi.cast( 'uint32_t', hr )))
+		)
+	end
+
+	-- Bind the parsed PIDL to an IShellFolder object.
+	local folder = ffi.new( 'void*[1]' )
+	hr = shell32.SHBindToObject( desktop[0], namespacePidl[0], nil, IID_ISHELL_FOLDER, ffi.cast( 'void**', folder ))
+
+	ole32.CoTaskMemFree( namespacePidl[0] )
+	releaseCom( desktop[0] )
+
+	if tonumber( hr ) < 0 or folder[0] == nil then
+		cleanup()
+
+		error(('SHBindToObject failed for "%s" (0x%08X)')
+			:format( dir, tonumber( ffi.cast( 'uint32_t', hr )))
+		)
+	end
+
+	local folderVtable = ffi.cast( 'void***', folder[0] )[0]
+
+	-- IShellFolder::EnumObjects is vtable slot 4.
+	local enumObjects = ffi.cast( 'IShellFolder_EnumObjects', folderVtable[4] )
+	local enum = ffi.new('void*[1]')
+
+	hr = enumObjects( folder[0], nil, bit.bor( SHCONTF_FOLDERS, SHCONTF_NONFOLDERS ), enum )
+
+	if tonumber( hr ) < 0 then
+		releaseCom( folder[0] )
+		cleanup()
+
+		error(('IShellFolder::EnumObjects failed for "%s" (0x%08X)')
+			:format( dir, tonumber( ffi.cast( 'uint32_t', hr )))
+		)
+	end
+
+	-- S_FALSE is also a valid result indicating that no matching children
+	-- exist. In that case the enumerator pointer may be NULL.
+	if enum[0] == nil then
+		releaseCom( folder[0] )
+		cleanup()
+
+		return result
+	end
+
+	local enumObject = enum[0]
+	local enumVtable = ffi.cast( 'void***', enumObject )[0]
+
+	-- IEnumIDList::Next is vtable slot 3.
+	local nextItem = ffi.cast( 'IEnumIDList_Next', enumVtable[3] )
+
+	while true do
+		local pidl    = ffi.new( 'void*[1]' )
+		local fetched = ffi.new( 'ULONG[1]' )
+
+		hr = nextItem( enumObject, 1, pidl, fetched )
+
+		if tonumber( hr ) < 0 or fetched[0] == 0 then
+			break
+		end
+
+		local itemPidl = pidl[0]
+
+		-- Use the Shell folder itself to obtain the item name.
+		local nameUtf = shellDisplayName( folder[0], itemPidl, SHGDN_NORMAL )
+
+		-- Obtain the parsing name separately.
+		-- For AppsFolder this is commonly the application identifier,
+		-- which is what we need to reconstruct:
+		--
+		-- shell:AppsFolder\<identifier>
+		local parsingName = shellDisplayName( folder[0], itemPidl, SHGDN_FORPARSING )
+
+		-- Do not silently discard the item when the parsing name is unavailable.
+		-- The display name is sufficient for the returned item in that case.
+		if nameUtf or parsingName then
+			local displayName = nameUtf or parsingName
+			local itemPath    = dir
+
+			if parsingName and parsingName ~= '' then
+				itemPath = dir .. '\\' .. parsingName
+			end
+
+			local file = parsingName or displayName
+			local item = {
+				filePath         = itemPath,
+				path             = dir,
+				file             = file,
+				size             = 0,
+				name             = displayName,
+				dateCreated      = nil,
+				dateLastAccessed = nil,
+				hidden           = false,
+				system           = false,
+				directory        = false,
+				type             = 'application',
+				ext              = file:match( '^.+%.(.+)$' ) or nil
+			}
+
+			table.insert( result, item )
+		end
+
+		-- IEnumIDList::Next allocates each PIDL. Release it after use.
+		ole32.CoTaskMemFree( itemPidl )
+	end
+
+	releaseCom( enumObject )
+	releaseCom( folder[0] )
+	cleanup()
+
+	return result
+end
+
+
+local iconPath = rain:var( '#CURRENTPATH#icons\\\\' )
+
+
+
+--- Lists the contents of a filesystem directory or Windows Shell namespace.
+--
+-- Normal filesystem paths are enumerated through iterDir(). Virtual Windows
+-- Shell namespaces such as shell:AppsFolder are enumerated through the native
+-- Shell API.
+--
+-- @param (string) dir - Directory or Shell namespace to enumerate.
+-- @param (boolean) [subfolder=false] - Recursively enumerate subdirectories.
+-- @return (table) Array containing directory entries.
 local function listdir( dir, subfolder )
+	-- shell:... and ::{GUID} locations are not filesystem paths.
+	if isShellNamespace( dir ) then
+		return listShellDirectory( dir, subfolder )
+	end
+
 	local result = {}
 
 	for data in iterDir( dir ) do
-		local nameUtf = wideToUtf8( data.cFileName )
+		local nameUtf = string.mbs( data.cFileName )
+
 		if nameUtf and nameUtf ~= '.' and nameUtf ~= '..' then
-			local attrs  = data.dwFileAttributes
+			local attrs = data.dwFileAttributes
 			local hidden = bit.band( attrs, FILE_ATTR_HIDDEN ) ~= 0
 
 			if not hidden then
-				local isDir    = bit.band( attrs, FILE_ATTR_DIR )    ~= 0
+				local isDir = bit.band( attrs, FILE_ATTR_DIR ) ~= 0
 				local filePath = dir .. '\\' .. nameUtf
 
 				local item = {
@@ -663,14 +805,22 @@ local function listdir( dir, subfolder )
 					item.type = 'folder'
 					item.ext  = nil
 
-					if subfolder then listdir( filePath ) end
+					if subfolder then
+						local children = listdir( filePath, true )
+
+						for _, child in ipairs( children ) do
+							table.insert( result, child )
+						end
+					end
+
 				else
 					local ext = nameUtf:match( '^.+%.(.+)$' ) or nil
+
 					item.type = 'file'
 					item.ext  = ext
 
-					if ext and not lfs.exists( iconPath .. 'cache\\' .. ext .. '.png' ) then
-						ExtractAndSaveAssociatedIcon( filePath, iconPath .. 'cache\\' .. ext .. '.png' )
+					if ext and not lfs.exists( iconPath .. 'cache\\\\' .. ext .. '.png' ) then
+						ExtractAndSaveAssociatedIcon( filePath, iconPath .. 'cache\\\\' .. ext .. '.png' )
 					end
 				end
 
@@ -701,7 +851,7 @@ local function folderInfo( dir, _depth )
 	}
 
 	for data in iterDir( dir ) do
-		local nameUtf = wideToUtf8( data.cFileName )
+		local nameUtf = string.mbs( data.cFileName )
 		if nameUtf and nameUtf ~= '.' and nameUtf ~= '..' then
 			local attrs   = data.dwFileAttributes
 			local hidden  = bit.band( attrs, FILE_ATTR_HIDDEN )  ~= 0
@@ -759,7 +909,7 @@ end
 
 return {
 	saveICO     = ExtractAndSaveAssociatedIcon,
-	contextMenu = openContextMenu,
+	contextMenu = require( 'menu.contextmenu' ),
 	listdir     = listdir,
 	folderInfo  = folderInfo
 }

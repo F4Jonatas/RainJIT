@@ -24,7 +24,7 @@ strings:
 local meter = require("meter")
 local shape = meter("Background")
 
-SHAPE:RECTANGLE(0, 0, 200, 100)
+SHAPE:rectangle(0, 0, 200, 100)
   :fill(40, 40, 40)
   :strokecolor(255, 255, 255)
   :strokewidth(2)
@@ -164,17 +164,6 @@ shape:scale(1.5, 1.5, 50)        -- with anchor X
 shape:scale(1.5, 1.5, 50, 50)    -- with anchor X and Y
 
 local sx, sy = shape:scale()     -- getter, defaults to "1,1"
-```
-
-<br>
-<br>
-
-
-## Type Conversion
-```lua
--- Converts the shape's current primitive while keeping other
--- parameters (fill, stroke, etc.) intact.
-shape:changeType("ellipse")
 ```
 
 <br>

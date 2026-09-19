@@ -1,18 +1,19 @@
--- if not debug.getinfo(3) then
--- 	print("This is a module to load with `require('turtle')`.")
--- end
+
+-- @author F4Jonatas
+-- @license GPL v2.0 License or MIT
 
 
 --- Collection of easing functions.
 -- Each easing function follows the signature:
 --   easing(time, begin, change, duration [, extra parameters])
 --
--- DOCS:
---   https://joshondesign.com/2013/03/01/improvedEasingEquations
---   https://spicyyoghurt.com/tools/easing-functions
---   https://www.gizma.com/easing/
---
+-- @see https://joshondesign.com/2013/03/01/improvedEasingEquations
+-- @see https://spicyyoghurt.com/tools/easing-functions
+-- @see https://www.gizma.com/easing/
+
+
 local easing
+
 easing = {
 	calculatePAS = function( p, a, c, d )
 		p = p or d * 0.3
@@ -166,24 +167,24 @@ easing = {
 
 
 
-	outinquint = function( t, b, c, d )
-		if t < d / 2 then
-			return easing.outquint( t * 2, b, c / 2, d )
+	outinquint = function( time, begin, change, duration )
+		if time < duration / 2 then
+			return easing.outquint( time * 2, begin, change / 2, duration )
 		end
 
-		return easing.inquint(( t * 2 ) - d, b + c / 2, c / 2, d )
+		return easing.inquint(( time * 2 ) - duration, begin + change / 2, change / 2, duration )
 	end,
 
 
 
-	insine = function( t, b, c, d )
-		return -c * math.cos( t / d * ( math.pi / 2 )) + c + b
+	insine = function( time, begin, change, duration )
+		return -change * math.cos( time / duration * ( math.pi / 2 )) + change + begin
 	end,
 
 
 
-	outsine = function( t, b, c, d )
-		return c * math.sin( t / d * ( math.pi / 2 )) + b
+	outsine = function( time, begin, change, duration )
+		return change * math.sin( time / duration * ( math.pi / 2 )) + begin
 	end,
 
 

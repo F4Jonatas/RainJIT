@@ -2,7 +2,11 @@
 -- Applies visual effects (Mica, Acrylic, Blur, Dark mode, Rounded corners, Shadow, Border) to a window handle (HWND).
 -- Uses FFI to call Windows API functions from user32, dwmapi, and ntdll.
 -- Compatible with Windows 10/11, with version checks for specific features.
+--
 -- @module glass
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+
 
 local ffi = require( 'ffi' )
 

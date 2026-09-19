@@ -116,8 +116,20 @@ inline std::string char_to_string(const char* str) {
 	}
 
 	std::string utf8Str(utf8Len, '\0');
-	WideCharToMultiByte(CP_UTF8, 0, wideStr.c_str(), -1,
-											&utf8Str[0], utf8Len, nullptr, nullptr);
+
+	// clang-format off
+	WideCharToMultiByte(
+		CP_UTF8,
+		0,
+		wideStr.c_str(),
+		-1,
+		&utf8Str[0],
+		utf8Len,
+		nullptr,
+		nullptr
+	);
+	// clang-format on
+
 	// Remove the null terminator added by the API
 	if (!utf8Str.empty() && utf8Str.back() == '\0') {
 			utf8Str.pop_back();

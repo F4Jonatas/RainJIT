@@ -1,9 +1,10 @@
 
---[[
-	Author: F4Jonatas
-	Version: 2.6.2
-	https://docs.rainmeter.net/manual/measures/
---]]
+--
+-- @author F4Jonatas
+-- @license GPL v2.0 License
+-- @release 2.6.2
+-- @see https://docs.rainmeter.net/manual/measures/
+--
 
 local MEASUREEVENTS = {}
 function MEASUREONMESSAGE( target, action )
