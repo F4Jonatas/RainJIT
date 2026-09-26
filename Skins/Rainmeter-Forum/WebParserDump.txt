@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-gb">
+	<link rel="self" type="application/atom+xml" href="https://forum.rainmeter.net/feed" />
+
+	<title>Rainmeter Forums</title>
+	
+	<link href="https://forum.rainmeter.net/index.php" />
+	<updated>2026-05-23T12:17:18+00:00</updated>
+
+	<author><name><![CDATA[Rainmeter Forums]]></name></author>
+	<id>https://forum.rainmeter.net/feed</id>
+
+		<entry>
+		<author><name><![CDATA[jsmorley]]></name></author>
+		<updated>2026-05-23T12:17:18+00:00</updated>
+
+		<published>2026-05-23T12:17:18+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242614#p242614</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242614#p242614"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: How to disable Hand cursor / force Arrow cursor on LeftMouseDoubleClickAction?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242614#p242614"><![CDATA[
+<blockquote class="uncited"><div>Hi everyone,<br><br>I am currently using Rainmeter (v4.5.26.3894) on Windows 11. <br><br>I have a desktop calendar skin where each day cell has a `LeftMouseDoubleClickAction` configured to open an InputText measure (with a DefaultValue to fetch existing text). <br><br>Everything works perfectly, but I have one specific UI preference that I can't seem to solve: I want the mouse cursor to remain as the default **Arrow** when hovering over these day cells, instead of changing to the **Hand** cursor. <br><br>Since Rainmeter automatically forces the Hand cursor on any meter with active mouse actions, is there any known workaround, trick, or plugin to force the default Arrow cursor back while retaining the double-click functionality? <br><br>Any help or advice would be greatly appreciated. Thank you!<br><br>Part of the code is as follows:<br><div class="codebox"><p>Code: </p><pre><code>[SuperStyle]H=(#ultraheight#/6)-35W=(#ultrawidth#/7)-1SolidColor=#mondaycolor#FontSize=#writefontsize#FontColor=#writefontcolor#AntiAlias=1DynamicVariables=1ClipString=1CursorName=Arrow[Monday 1]Meter=Stringy=(#posy#+35)MeterStyle=SuperStyleursorName=ArrowText=#1#LeftMouseDoubleClickAction=[!SetOption MeasureInput DefaultValue "#1#"][!CommandMeasure "MeasureInput" "ExecuteBatch 1"]</code></pre></div></div></blockquote><a href="https://docs.rainmeter.net/manual/mouse-actions/#MouseCursorOptions" class="postlink">https://docs.rainmeter.net/manual/mouse-actions/#MouseCursorOptions</a><br><div class="codebox"><p>Code: </p><pre><code>[Monday 1]Meter=Stringy=(#posy#+35)MeterStyle=SuperStyleMouseActionCursor=0Text=#1#LeftMouseDoubleClickAction=[!SetOption MeasureInput DefaultValue "#1#"][!CommandMeasure "MeasureInput" "ExecuteBatch 1"]</code></pre></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=85">jsmorley</a> — Today, 12:17 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[kokfpeirkpo92]]></name></author>
+		<updated>2026-05-23T12:05:38+00:00</updated>
+
+		<published>2026-05-23T12:05:38+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242613#p242613</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242613#p242613"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • How to disable Hand cursor / force Arrow cursor on LeftMouseDoubleClickAction?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242613#p242613"><![CDATA[
+Hi everyone,<br><br>I am currently using Rainmeter (v4.5.26.3894) on Windows 11. <br><br>I have a desktop calendar skin where each day cell has a `LeftMouseDoubleClickAction` configured to open an InputText measure (with a DefaultValue to fetch existing text). <br><br>Everything works perfectly, but I have one specific UI preference that I can't seem to solve: I want the mouse cursor to remain as the default **Arrow** when hovering over these day cells, instead of changing to the **Hand** cursor. <br><br>Since Rainmeter automatically forces the Hand cursor on any meter with active mouse actions, is there any known workaround, trick, or plugin to force the default Arrow cursor back while retaining the double-click functionality? <br><br>Any help or advice would be greatly appreciated. Thank you!<br><br>Part of the code is as follows:<br><div class="codebox"><p>Code: </p><pre><code>[SuperStyle]H=(#ultraheight#/6)-35W=(#ultrawidth#/7)-1SolidColor=#mondaycolor#FontSize=#writefontsize#FontColor=#writefontcolor#AntiAlias=1DynamicVariables=1ClipString=1CursorName=Arrow[Monday 1]Meter=Stringy=(#posy#+35)MeterStyle=SuperStyleursorName=ArrowText=#1#LeftMouseDoubleClickAction=[!SetOption MeasureInput DefaultValue "#1#"][!CommandMeasure "MeasureInput" "ExecuteBatch 1"]</code></pre></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=78028">kokfpeirkpo92</a> — Today, 12:05 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Rooky_89]]></name></author>
+		<updated>2026-05-23T08:51:52+00:00</updated>
+
+		<published>2026-05-23T08:51:52+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242612#p242612</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242612#p242612"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Radio Stations]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242612#p242612"><![CDATA[
+Apologies for the late reply. I wanted to make sure my change worked before writing back.<br>Yes, you are right: The first code I posted didn't work correctly—because, as you pointed out, something was missing: the parentheses. The passing of data—from Lua is correct. What is your opinion about this code sniped?<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none"><div class="codebox"><p>Code: </p><pre><code>[!SetVariable Stream "[&amp;MeasureRadioLua:ReadURL(([#ItemListIndex]=1 ? [#ItemIndexT] : ([#ItemListIndex]=2 ? [#ItemIndexM] : ([#ItemListIndex]=3 ? [#ItemIndexB] : 0))))]"]</code></pre></div></div></div></div> <blockquote class="uncited"><div>(fun fact, the ancients really used to do that back in the day, if I'm not mistaken).</div></blockquote>who was the ancients?   <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ab.gif" width="20" height="24" alt=":)" title="Smiler"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=74221">Rooky_89</a> — Today, 8:51 am</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[jake2456]]></name></author>
+		<updated>2026-05-22T22:59:30+00:00</updated>
+
+		<published>2026-05-22T22:59:30+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242611#p242611</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242611#p242611"/>
+		<title type="html"><![CDATA[Feeds &amp; Internet Data • Re: MLB Scoreboard]]></title>
+
+					<category term="Feeds &amp; Internet Data" scheme="https://forum.rainmeter.net/viewforum.php?f=135" label="Feeds &amp; Internet Data"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242611#p242611"><![CDATA[
+Question or opinion for you guys.<br><br>Instead of this: (Enabling image downloads on main webparse)<div class="codebox"><p>Code: </p><pre><code>[MeasureGame2]Measure=WebParserUpdateRate=5Disabled=1URL=https://statsapi.mlb.com/api/v1.1/game/[&amp;MeasureGameId1]/feed/liveRegExp=(?siU)"dateTime":"(.*)",.*"ampm":"(.*)".*"detailedState":"(.*)",.*"allStarStatus":"N","id":(.*),.*"teamName":"(.*)",.*"wins":(.*),"losses":(.*),.*"franchiseName":"(.*)",.*"allStarStatus":"N","id":(.*),.*"teamName":"(.*)",.*"wins":(.*),"losses":(.*),.*"franchiseName":"(.*)",(?(?=.*"probablePitchers":{"away":{"id":.*,"fullName":".*","link":".*"},"home":{"id":.*,"fullName":".*",).*"probablePitchers":{"away":{"id":(.*),"fullName":"(.*)","link":".*"},"home":{"id":(.*),"fullName":"(.*)",)(?(?=.*"linescore":{"currentInning":.*,"currentInningOrdinal":".*","inningState":".*",).*"linescore":{"currentInning":(.*),"currentInningOrdinal":".*","inningState":"(.*)",)(?(?=.*"num":1,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":1,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":2,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":2,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":3,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":3,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":4,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":4,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":5,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":5,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":6,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":6,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":7,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":7,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":8,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":8,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":9,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":9,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":10,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":10,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"teams":{"home":{"runs":.*,"hits":.*,"errors":.*,"leftOnBase":.*},"away":{"runs":.*,"hits":.*,"errors":.*,"leftOnBase":.*}},).*"teams":{"home":{"runs":(.*),"hits":(.*),"errors":(.*),"leftOnBase":.*},"away":{"runs":(.*),"hits":(.*),"errors":(.*),"leftOnBase":.*}},)(?(?=.*"defense":{"pitcher":{"id":.*,"fullName":".*",).*"defense":{"pitcher":{"id":(.*),"fullName":"(.*)",)(?(?=.*"offense":{"batter":{"id":.*,"fullName":".*",).*"offense":{"batter":{"id":(.*),"fullName":"(.*)",)(?(?=.*"first":{".*").*"first":{"(.*)")(?(?=.*"second":{".*").*"second":{"(.*)")(?(?=.*"third":{".*").*"third":{"(.*)")(?(?=.*"link":".*"}},"balls":.*,"strikes":.*,"outs":.*},).*"link":".*"}},"balls":(.*),"strikes":(.*),"outs":(.*)},)(?(?=.*"winner":{"id":.*,"fullName":".*",).*"winner":{"id":(.*),"fullName":"(.*)",)(?(?=.*"loser":{"id":.*,"fullName":".*",).*"loser":{"id":(.*),"fullName":"(.*)",)(?(?=.*"save":{"id":.*,"fullName":".*",).*"save":{"id":(.*),"fullName":"(.*)",)LogSubstringErrors=0FinishAction=[!SetOption MeasureProbAImage Disabled "0"][!UpdateMeasure "MeasureProbAImage"][!SetOption MeasureProbHImage Disabled "0"][!UpdateMeasure "MeasureProbHImage"][!UpdateMeasure MeasureInningandState][!SetOption MeasurePitcherImage Disabled "0"][!UpdateMeasure "MeasurePitcherImage"][!SetOption MeasureBatterImage Disabled "0"][!UpdateMeasure "MeasureBatterImage"][!SetOption MeasureWPitcherImage Disabled "0"][!UpdateMeasure "MeasureWPitcherImage"][!SetOption MeasureLPitcherImage Disabled "0"][!UpdateMeasure "MeasureLPitcherImage"][!SetOption MeasureSPitcherImage Disabled "0"][!UpdateMeasure "MeasureSPitcherImage"][!SetOption MeasureOuts Disabled "0"][!UpdateMeasure "MeasureOuts"][!SetOption MeasurePlayer Disabled "0"][!UpdateMeasure "MeasurePlayer"][!SetOption MeasureAPlayerLNameHP Disabled "0"][!UpdateMeasure "MeasureAPlayerLNameHP"][!SetOption MeasureHPlayerLNameHP Disabled "0"][!UpdateMeasure "MeasureHPlayerLNameHP"]DynamicVariables=1</code></pre></div>Would this be the best way to go about it? (enabling or disabling all the image downloads depending on game state)<br><div class="codebox"><p>Code: </p><pre><code>[MeasureGame1]Measure=WebParserUpdateRate=5Disabled=1URL=https://statsapi.mlb.com/api/v1.1/game/[&amp;MeasureGameId1]/feed/liveRegExp=(?siU)"dateTime":"(.*)",.*"ampm":"(.*)".*"detailedState":"(.*)",.*"allStarStatus":"N","id":(.*),.*"teamName":"(.*)",.*"wins":(.*),"losses":(.*),.*"franchiseName":"(.*)",.*"allStarStatus":"N","id":(.*),.*"teamName":"(.*)",.*"wins":(.*),"losses":(.*),.*"franchiseName":"(.*)",(?(?=.*"probablePitchers":{"away":{"id":.*,"fullName":".*","link":".*"},"home":{"id":.*,"fullName":".*",).*"probablePitchers":{"away":{"id":(.*),"fullName":"(.*)","link":".*"},"home":{"id":(.*),"fullName":"(.*)",)(?(?=.*"linescore":{"currentInning":.*,"currentInningOrdinal":".*","inningState":".*",).*"linescore":{"currentInning":(.*),"currentInningOrdinal":".*","inningState":"(.*)",)(?(?=.*"num":1,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":1,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":2,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":2,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":3,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":3,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":4,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":4,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":5,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":5,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":6,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":6,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":7,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":7,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":8,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":8,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":9,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":9,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"num":10,.*"home".*(?:"runs":.*|),.*"away".*(?:"runs":.*|),).*"num":10,.*"home".*(?|"runs":(.*)|()),.*"away".*(?|"runs":(.*)|()),)(?(?=.*"teams":{"home":{"runs":.*,"hits":.*,"errors":.*,"leftOnBase":.*},"away":{"runs":.*,"hits":.*,"errors":.*,"leftOnBase":.*}},).*"teams":{"home":{"runs":(.*),"hits":(.*),"errors":(.*),"leftOnBase":.*},"away":{"runs":(.*),"hits":(.*),"errors":(.*),"leftOnBase":.*}},)(?(?=.*"defense":{"pitcher":{"id":.*,"fullName":".*",).*"defense":{"pitcher":{"id":(.*),"fullName":"(.*)",)(?(?=.*"offense":{"batter":{"id":.*,"fullName":".*",).*"offense":{"batter":{"id":(.*),"fullName":"(.*)",)(?(?=.*"first":{".*").*"first":{"(.*)")(?(?=.*"second":{".*").*"second":{"(.*)")(?(?=.*"third":{".*").*"third":{"(.*)")(?(?=.*"link":".*"}},"balls":.*,"strikes":.*,"outs":.*},).*"link":".*"}},"balls":(.*),"strikes":(.*),"outs":(.*)},)(?(?=.*"winner":{"id":.*,"fullName":".*",).*"winner":{"id":(.*),"fullName":"(.*)",)(?(?=.*"loser":{"id":.*,"fullName":".*",).*"loser":{"id":(.*),"fullName":"(.*)",)(?(?=.*"save":{"id":.*,"fullName":".*",).*"save":{"id":(.*),"fullName":"(.*)",)LogSubstringErrors=0FinishAction=[!UpdateMeasure MeasureInningandState][!SetOption MeasureOuts Disabled "0"][!UpdateMeasure "MeasureOuts"][!SetOption MeasurePlayer Disabled "0"][!UpdateMeasure "MeasurePlayer"][!SetOption MeasureAPlayerLNameHP Disabled "0"][!UpdateMeasure "MeasureAPlayerLNameHP"][!SetOption MeasureHPlayerLNameHP Disabled "0"][!UpdateMeasure "MeasureHPlayerLNameHP"]DynamicVariables=1[MeasureStatus]Measure=WebParserUrl=[MeasureGame#Game#]StringIndex=3IfMatch=ScheduledIfMatchAction=[!ShowMeterGroup ProbPitchers][!HideMeterGroup Innings][!HideMeterGroup BR][!HideMeterGroup WLS][!HideMeterGroup PitcherBatter][!HideMeterGroup Save][!SetOption MeasureProbAImage Disabled "0"][!UpdateMeasure "MeasureProbAImage"][!SetOption MeasureProbHImage Disabled "0"][!UpdateMeasure "MeasureProbHImage"][!SetOption MeasurePitcherImage Disabled "1"][!UpdateMeasure "MeasurePitcherImage"][!SetOption MeasureBatterImage Disabled "1"][!UpdateMeasure "MeasureBatterImage"][!SetOption MeasureWPitcherImage Disabled "1"][!UpdateMeasure "MeasureWPitcherImage"][!SetOption MeasureLPitcherImage Disabled "1"][!UpdateMeasure "MeasureLPitcherImage"][!SetOption MeasureSPitcherImage Disabled "1"][!UpdateMeasure "MeasureSPitcherImage"]IfNotMatchAction=[!HideMeterGroup ProbPitchers][!HideMeterGroup Innings][!HideMeterGroup BR]IfMatch2=Preview|Pre-Game|WarmupIfMatchAction2=[!ShowMeterGroup ProbPitchers][!HideMeterGroup Innings][!HideMeterGroup BR][!HideMeterGroup WLS][!HideMeterGroup PitcherBatter][!HideMeterGroup Save][!SetOption MeasureProbAImage Disabled "0"][!UpdateMeasure "MeasureProbAImage"][!SetOption MeasureProbHImage Disabled "0"][!UpdateMeasure "MeasureProbHImage"][!SetOption MeasurePitcherImage Disabled "1"][!UpdateMeasure "MeasurePitcherImage"][!SetOption MeasureBatterImage Disabled "1"][!UpdateMeasure "MeasureBatterImage"][!SetOption MeasureWPitcherImage Disabled "1"][!UpdateMeasure "MeasureWPitcherImage"][!SetOption MeasureLPitcherImage Disabled "1"][!UpdateMeasure "MeasureLPitcherImage"][!SetOption MeasureSPitcherImage Disabled "1"][!UpdateMeasure "MeasureSPitcherImage"]IfNotMatchAction2=[!HideMeterGroup ProbPitchers][!HideMeterGroup Innings][!HideMeterGroup BR]IfMatch3=In ProgressIfMatchAction3=[!ShowMeterGroup PitcherBatter][!ShowMeterGroup BR][!HideMeterGroup WLS][!HideMeterGroup ProbPitchers][!HideMeterGroup Save][!SetOption MeasureProbAImage Disabled "1"][!UpdateMeasure "MeasureProbAImage"][!SetOption MeasureProbHImage Disabled "1"][!UpdateMeasure "MeasureProbHImage"][!SetOption MeasurePitcherImage Disabled "0"][!UpdateMeasure "MeasurePitcherImage"][!SetOption MeasureBatterImage Disabled "0"][!UpdateMeasure "MeasureBatterImage"][!SetOption MeasureWPitcherImage Disabled "1"][!UpdateMeasure "MeasureWPitcherImage"][!SetOption MeasureLPitcherImage Disabled "1"][!UpdateMeasure "MeasureLPitcherImage"][!SetOption MeasureSPitcherImage Disabled "1"][!UpdateMeasure "MeasureSPitcherImage"]IfNotMatchAction3=[!HideMeterGroup PitcherBatter][!HideMeterGroup BR]IfMatch4=Game Over|FinalIfMatchAction4=[!ShowMeterGroup WLS][!HideMeterGroup BR][!HideMeterGroup Outs][!SetOption MeasureProbAImage Disabled "1"][!UpdateMeasure "MeasureProbAImage"][!SetOption MeasureProbHImage Disabled "1"][!UpdateMeasure "MeasureProbHImage"][!SetOption MeasurePitcherImage Disabled "1"][!UpdateMeasure "MeasurePitcherImage"][!SetOption MeasureBatterImage Disabled "1"][!UpdateMeasure "MeasureBatterImage"][!SetOption MeasureWPitcherImage Disabled "0"][!UpdateMeasure "MeasureWPitcherImage"][!SetOption MeasureLPitcherImage Disabled "0"][!UpdateMeasure "MeasureLPitcherImage"][!SetOption MeasureSPitcherImage Disabled "0"][!UpdateMeasure "MeasureSPitcherImage"]IfNotMatch4=[!HideMeterGroup WLS][!HideMeterGroup Save]DynamicVariables=1</code></pre></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=34154">jake2456</a> — Yesterday, 10:59 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[RicardoTM]]></name></author>
+		<updated>2026-05-22T22:52:34+00:00</updated>
+
+		<published>2026-05-22T22:52:34+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242610#p242610</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242610#p242610"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Web Parser on Amazon]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242610#p242610"><![CDATA[
+<blockquote class="uncited"><div>Just wanted to let you know…<br><br>P.S. Very nice job, by the way.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ay.gif" width="26" height="23" alt=":thumbup:" title="Thumbs Up"></div></blockquote>Yeah, the script itself is pretty basic, it will execute as soon as the DOM loads, so if for any reason the DOM loads but the actual data is not available (yet), it will just say it’s not found and will immediately shutdown without retrying. The script can be further improved but I wanted to keep it simple for this example and just focus on the actual data extraction.<br><br>Thanks!<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Yesterday, 10:52 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[balala]]></name></author>
+		<updated>2026-05-22T20:08:18+00:00</updated>
+
+		<published>2026-05-22T20:08:18+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242609#p242609</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242609#p242609"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Similar skin (day and month) ?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242609#p242609"><![CDATA[
+<blockquote class="uncited"><div>I'll prefer Sonder personaly now. Thanks!</div></blockquote>As you wish.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=7491">balala</a> — Yesterday, 8:08 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[sypqys]]></name></author>
+		<updated>2026-05-22T19:06:52+00:00</updated>
+
+		<published>2026-05-22T19:06:52+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242608#p242608</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242608#p242608"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Similar skin (day and month) ?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242608#p242608"><![CDATA[
+I'll prefer Sonder personaly now. Thanks!<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=76048">sypqys</a> — Yesterday, 7:06 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[balala]]></name></author>
+		<updated>2026-05-22T19:03:09+00:00</updated>
+
+		<published>2026-05-22T19:03:09+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242607#p242607</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242607#p242607"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Similar skin (day and month) ?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242607#p242607"><![CDATA[
+Did you succeeded altering the skin? Is it ok this way?<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=7491">balala</a> — Yesterday, 7:03 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[sypqys]]></name></author>
+		<updated>2026-05-22T18:58:31+00:00</updated>
+
+		<published>2026-05-22T18:58:31+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242606#p242606</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242606#p242606"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Similar skin (day and month) ?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242606#p242606"><![CDATA[
+Thank you<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=76048">sypqys</a> — Yesterday, 6:58 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[balala]]></name></author>
+		<updated>2026-05-22T18:52:21+00:00</updated>
+
+		<published>2026-05-22T18:52:21+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=242605#p242605</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=242605#p242605"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Similar skin (day and month) ?]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=242605#p242605"><![CDATA[
+<blockquote class="uncited"><div>Here, the month and day are displayed in that order. I'd like to reverse them or find a similar skin that shows the day first and then the month... <br>Where can I find one?</div></blockquote>Two solutions, choose the one you like more:<ul><li>Replace the <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">Text=%<span style="color:#FF0000">1</span>    %<span style="color:#FF0000">2</span></span> option of the [MeterDate], [MeterDate-1] and [MeterDate+1] meters with <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">Text=%<span style="color:#008080">2</span>    %<span style="color:#008080">1</span></span>. Along with this, you have to replace the the X option of the [MeterLine] with (for instance): <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">X=((#Size#/10)*<span style="color:#FF0000">136</span>)</span>.</li><li>Swap the MeasureName and MeasureName2 options of the same [MeterDate], [MeterDate-1] and [MeterDate+1] meters:<div class="codebox"><p>Code: </p><pre><code>[MeterDate]...MeasureName=MeasureDay1MeasureName2=MeasureMonth1...[MeterDate-1]...MeasureName=MeasureDay-1MeasureName2=MeasureMonth-1...[MeterDate+1]...MeasureName=MeasureDay+1MeasureName2=MeasureMonth+1...</code></pre></div>Besides this, you have to replace the X option of the [MeterLine] with <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">X=((#Size#/10)*<span style="color:#FF0000">136</span>)</span> (same way as above).</li></ul>Additional tip: I'd also add a <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">BackgroundMode=2</span> and a <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">SolidColor=0,0,0,1</span> option to the [Rainmeter] section. This way the skin becomes easier clickable, because it gets a not visible background, which will be used to get the skin easier clickable.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=7491">balala</a> — Yesterday, 6:52 pm</p><hr />
+]]></content>
+	</entry>
+	</feed>

@@ -84,8 +84,16 @@ namespace luaWrapper {
 
 	-- Loads a native Lua module implemented as a DLL.
 	local path = {
-		x64 = '#SKINSPATH#@Vault\\lua\\bin\\x64\\',
-		x86 = '#SKINSPATH#@Vault\\lua\\bin\\x86\\'
+		x64 = {
+			'#SKINSPATH#@Vault\\lua\\bin\\x64\\',
+			'#CURRENTPATH#\\lua\\bin\\x64\\',
+			'#@#\\lua\\bin\\x64\\'
+		},
+		x86 = {
+			'#SKINSPATH#@Vault\\lua\\bin\\x86\\',
+			'#CURRENTPATH#\\lua\\bin\\x86\\',
+			'#@#\\lua\\bin\\x86\\'
+		}
 	}
 
 
@@ -96,24 +104,33 @@ namespace luaWrapper {
 			return package.loaded[ module ]
 		end
 
-
-		local file = rain:var(
-			path[ ffi.arch ] ..
-			module:gsub( '%.', '\\' ) ..
-			'.dll'
-		)
-
 		local init = 'luaopen_' .. module:gsub( '%.', '_' )
+		local rel = module:gsub( '%.', '\\' ) .. '.dll'
 
+		local paths = path[ ffi.arch ]
 
-		local ok, loader, err, when = pcall( package.loadlib, file, init )
+		local loader, lastErr, lastFile
 
-		if not ok then
-			error(( 'loadlib crashed for %q (file=%s): %s' ):format( module, tostring( file ), tostring( loader )))
+		for i = 1, #paths do
+			local file = rain:var( paths[ i ] .. rel )
+
+			local ok, l, err, when = pcall( package.loadlib, file, init )
+
+			if not ok then
+				lastErr = ( 'loadlib crashed for %q (file=%s): %s' ):format( module, tostring( file ), tostring( l ) )
+			elseif l then
+				loader = l
+				lastErr = nil
+				break
+			else
+				lastErr = ( 'loadlib failed for %q (file=%s, init=%s): %s [%s]' ):format( module, file, init, err, tostring( when ) )
+			end
+
+			lastFile = file
 		end
 
 		if not loader then
-			error(( 'loadlib failed for %q (file=%s, init=%s): %s [%s]' ):format( module, file, init, err, tostring( when )))
+			error( lastErr or ( 'module %q not found in any search path' ):format( module ) )
 		end
 
 		local result = loader()

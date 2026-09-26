@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-gb">
+	<link rel="self" type="application/atom+xml" href="https://forum.rainmeter.net/feed" />
+
+	<title>Rainmeter Forum</title>
+	
+	<link href="https://forum.rainmeter.net/index.php" />
+	<updated>2026-09-13T21:55:08+00:00</updated>
+
+	<author><name><![CDATA[Rainmeter Forum]]></name></author>
+	<id>https://forum.rainmeter.net/feed</id>
+
+		<entry>
+		<author><name><![CDATA[RicardoTM]]></name></author>
+		<updated>2026-09-13T21:55:08+00:00</updated>
+
+		<published>2026-09-13T21:55:08+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245443#p245443</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245443#p245443"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245443#p245443"><![CDATA[
+<blockquote class="uncited"><div><strong class="text-strong"><span style="text-decoration:underline"><span style="color:#0040BF">addendum</span></span></strong>: Where do you created this bmp? i need an stop button instead of a pause button  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"></div></blockquote>On Photoshop. First went to view -&gt; guides -&gt; guide layout -&gt; Number = 4. Then simply used shapes to make the icons. Then selected them all and made an Alpha mask, then Save Copy As — .bmp made sure Alpha is marked and then chose 32-bit.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — 8 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[DancingPelican]]></name></author>
+		<updated>2026-09-13T21:42:59+00:00</updated>
+
+		<published>2026-09-13T21:42:59+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245442#p245442</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245442#p245442"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Help me fake 3D!]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245442#p245442"><![CDATA[
+<blockquote class="uncited"><div><br>As for the mouse coordinate based animation, that will be for either someone else or some other day. In the meantime, you can play with it and why not, try to achieve it yourself if impatient - just careful with the measure updates, don't abuse them.<br></div></blockquote>ALRIGHT! thank you! this sorta works! i'm gonna try to see what can i do with this! i would have never found this!<br>i did found a <a href="https://forum.rainmeter.net/viewtopic.php?t=22900" class="postlink"> MouseXY</a> plugin, so i'm gonna be trying some stuff!! <img class="smilies" src="https://forum.rainmeter.net/images/smilies/yahoo.gif" width="42" height="27" alt=":yahoo:" title="Yahoo"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=70517">DancingPelican</a> — 20 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[RicardoTM]]></name></author>
+		<updated>2026-09-13T21:26:21+00:00</updated>
+
+		<published>2026-09-13T21:26:21+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245441#p245441</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245441#p245441"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245441#p245441"><![CDATA[
+<blockquote class="uncited"><div>yeah gotch yah  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ay.gif" width="26" height="23" alt=":thumbup:" title="Thumbs Up">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great"> got it to work</div></blockquote>Just in case, here's how it should look:<br><div class="inline-attachment"><!-- ia0 -->sdasdw.gif<!-- ia0 --></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — 37 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Rooky_89]]></name></author>
+		<updated>2026-09-13T21:33:34+00:00 </updated>
+
+		<published>2026-09-13T21:23:34+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245440#p245440</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245440#p245440"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245440#p245440"><![CDATA[
+yeah gotch yah  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ay.gif" width="26" height="23" alt=":thumbup:" title="Thumbs Up">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great"> got it to work<br><div class="inline-attachment"><!-- ia0 -->Screenshot 2026-09-14 012913.png<!-- ia0 --></div><strong class="text-strong"><span style="text-decoration:underline"><span style="color:#0040BF">addendum</span></span></strong>: Where do you created this bmp? i need an stop button instead of a pause button  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=74221">Rooky_89</a> — 39 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[RicardoTM]]></name></author>
+		<updated>2026-09-13T21:15:47+00:00</updated>
+
+		<published>2026-09-13T21:15:47+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245439#p245439</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245439#p245439"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245439#p245439"><![CDATA[
+<blockquote class="uncited"><div><img class="smilies" src="https://forum.rainmeter.net/images/smilies/ai.gif" width="20" height="20" alt="O.O" title="Shocked">  you drive me crazy! On positive way <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"> Now i can rework my RainRadio skin for this nice funktion  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ap.gif" width="25" height="25" alt=":lol:" title="LOL">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/angry.gif" width="20" height="20" alt=":x" title="Mad"> <br>Can you maybe prepare an working demo skin  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great"></div></blockquote>Well, in all fairness that’s on Windows lol<br><br>In any case, it’s easy to do once you know how to <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"><br><br>All features are implemented on the skins in that package<br><br>They are on ProgressBar skin. The icon overlay will show red when [Value] is greater than 0, and green when it's equal 100. You can click the buttons on the overlay to increase and decrease the progress bar. And to switch between the Paused and Error state. The "Play" icon will be replaced by the "Pause" button.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — 47 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Rooky_89]]></name></author>
+		<updated>2026-09-13T21:04:30+00:00</updated>
+
+		<published>2026-09-13T21:04:30+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245438#p245438</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245438#p245438"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245438#p245438"><![CDATA[
+<blockquote class="uncited"><div><img src="https://forum.rainmeter.net/download/file.php?id=37453" class="postimage" alt="Image"></div></blockquote> <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ai.gif" width="20" height="20" alt="O.O" title="Shocked">  you drive me crazy! On positive way <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"> Now i can rework my RainRadio skin for this nice funktion  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ap.gif" width="25" height="25" alt=":lol:" title="LOL">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/angry.gif" width="20" height="20" alt=":x" title="Mad"> <br>Can you maybe prepare an working demo skin  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=74221">Rooky_89</a> — 58 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Yincognito]]></name></author>
+		<updated>2026-09-13T20:47:42+00:00</updated>
+
+		<published>2026-09-13T20:47:42+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245437#p245437</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245437#p245437"/>
+		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Help me fake 3D!]]></title>
+
+					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245437#p245437"><![CDATA[
+<blockquote class="uncited"><div>i'm trying to animate the meter, like shrink/expand the image vertices or sides to acomplish that  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great"></div></blockquote>Well, strictly for the fake 3D perspective - animation on mouse over is a different thing, you'll need the <a href="https://forum.rainmeter.net/viewtopic.php?t=26030#p136100" class="postlink">Mouse</a> plugin for getting coordinates in relation to a backrgound meter bigger than your card meter, and some well computed math involving projecting to approximate 3D perspective (i.e. to know how much to add or subtract from the original dimensions of the image, like below) - I think there's a solution for it: the <a href="https://github.com/khanhas/MagickMeter" class="postlink">MagickMeter</a> plugin.<br><br>However, the process is a bit convoluted, since the plugin is badly outdated and won't work with newer versions of ImageMagick (which is the force powering that plugin). So, do the following (make sure to tick the "Add application directory to your system path" in the installation options of ImageMagick, as mentioned in the MagickMeter instructions from the above link):<br>- install the older ImageMagick 7.0.8-Q16 program from <a href="https://github.com/khanhas/MagickMeter/issues/10#issuecomment-3881101187" class="postlink">here</a><br>- install the skin <a href="https://forum.rainmeter.net/viewtopic.php?t=43773&amp;start=10#p222346" class="postlink">here</a>, for the latest 0.7.4.0 version of the MagickMeter plugin for Rainmeter<br>- after testing that skin and making sure it works as described there, use something like this:<div class="codebox"><p>Code: </p><pre><code>[Rainmeter]Update=1000AccurateText=1DynamicWindowSize=1[Perspective]Measure=PluginPlugin=MagickMeterImage=File #@#Card.png | Perspective (0+50),(0+25),(273-50),(0-25),(273-50),(408+25),(0+50),(408-25)UpdateDivider=-1DynamicVariables=1[Image]Meter=ImageMeasureName=PerspectiveUpdateDivider=-1</code></pre></div>on a card image like (this is just cropped from the screenshot you posted earlier):<div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none"><div class="inline-attachment"><!-- ia1 -->Card.png<!-- ia1 --></div></div></div></div>that you copy as the <span style="text-shadow:grey 0.1em 0.1em 0.1em">C:\Users\[YourName]\Documents\Rainmeter\Skins\[YourSkin]\@Resources\Card.png</span> file on your system.<br><br>It should result in something like this:<div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none"><div class="inline-attachment"><!-- ia0 -->Card Perspective - Preview.jpg<!-- ia0 --></div></div></div></div>Take into account that I intentionally set <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">UpdateDivider=-1</span> in the MagickMeter measure. The measure will consume a LOT of your CPU if <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">DynamicVariables=1</span> is set on it and any other update divider is used on the measure (it may even crash your Rainmeter because of that). Enabling dynamic variables on it will be needed for the animation based on the mouse coordinate values later on, so the measure should only be updated when needed.<br><br>As for the mouse coordinate based animation, that will be for either someone else or some other day. In the meantime, you can play with it and why not, try to achieve it yourself if impatient - just careful with the measure updates, don't abuse them.<br><br>Reference:<br>- <a href="https://github.com/khanhas/MagickMeter/wiki/Effects#perspective" class="postlink">https://github.com/khanhas/MagickMeter/wiki/Effects#perspective</a><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Today, 8:47 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[SilverAzide]]></name></author>
+		<updated>2026-09-13T20:35:45+00:00</updated>
+
+		<published>2026-09-13T20:35:45+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245436#p245436</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245436#p245436"/>
+		<title type="html"><![CDATA[Site Discussion • Re: New logo and colors]]></title>
+
+					<category term="Site Discussion" scheme="https://forum.rainmeter.net/viewforum.php?f=2" label="Site Discussion"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245436#p245436"><![CDATA[
++1 on the original "thin" proportions.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33554">SilverAzide</a> — Today, 8:35 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[RicardoTM]]></name></author>
+		<updated>2026-09-13T20:23:30+00:00</updated>
+
+		<published>2026-09-13T20:23:30+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245435#p245435</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245435#p245435"/>
+		<title type="html"><![CDATA[Site Discussion • Re: New logo and colors]]></title>
+
+					<category term="Site Discussion" scheme="https://forum.rainmeter.net/viewforum.php?f=2" label="Site Discussion"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245435#p245435"><![CDATA[
+Jokes aside, I would personally prefer the logo to return to its original proportions:<br><div class="inline-attachment"><!-- ia0 -->dwad.png<!-- ia0 --></div>That alone makes it look better to my eyes.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Today, 8:23 pm</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Todd1____2]]></name></author>
+		<updated>2026-09-13T20:12:54+00:00</updated>
+
+		<published>2026-09-13T20:12:54+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=245434#p245434</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=245434#p245434"/>
+		<title type="html"><![CDATA[Help: Rainmeter Application • Re: 3d rotating app ring around planet wallpaper]]></title>
+
+					<category term="Help: Rainmeter Application" scheme="https://forum.rainmeter.net/viewforum.php?f=103" label="Help: Rainmeter Application"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245434#p245434"><![CDATA[
+<blockquote class="uncited"><div>Ahhh, now I know what it is, thanks for the video - I managed to replicate it myself. It's the fact that the ellipse is so ellongated / flattened and the icons so many (both things increasing the likehood of icons overlapping), that the counter-clockwise circular order regularly used for such scenarios:<br>curve-arrow perspective.jpg<br>comes into "conflict" with how things are perceived in a "real" 3D space (which this is not, as mentioned before), of things drawn from afar to upclose, essentially replicable by two semicircle orders going into opposite directions from upwards to downwards:<br>two-arrows perspective.jpg<br><br>Imagine the above would be in 3D perspective, and notice that in the 1st image (which is the order in which things are drawn now), based on the arrow's direction (which replicates the back to front layout of the current meters), on both the left and the right, icons that would be supposedly far away (i.e. in the upper half of the arc) would be drawn in front of icons that would be supposedly up close (i.e. in the lower half of the arc), since the former are closer to the arrow's end (which indicates the frontmost parts). On the other hand, the 2nd image is more similar to how things are perceived in real 3D space, where the arrow ends corresponding to the frontmost parts are in the lower half of the arc, which corresponds to the up close part of that shape, as typically represented in 3D schematics.<br><br>I'll think about ways to deal with this situation tomorrow - nice catch!</div></blockquote><br>Sorry for the lack of response, got caught up in some stuff and ended up forgetting  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/bw.gif" width="27" height="24" alt=":???:" title="Confused"> <br><br>Did you come up with any ideas so far?<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=78594">Todd1____2</a> — Today, 8:12 pm</p><hr />
+]]></content>
+	</entry>
+	</feed>

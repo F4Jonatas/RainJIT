@@ -1,0 +1,133 @@
+body {
+	/* A cor principal que serve de ponto de partida para o navegador derivar outras cores, a menos que sejam explicitamente definidas. */
+	scrollbar-base-color: #131314;
+	/* Cor da superfície 3D (threedface) da caixa de rolagem (scroll box) e das setas. */
+	scrollbar-face-color: #C1C1C1;
+	/* Cor de fundo da área de arraste da barra (track). */
+	scrollbar-track-color: #131314;
+	/* Cor das setas direcionais localizadas nas pontas da barra. */
+	scrollbar-arrow-color: #C1C1C1;
+	/* Cor da borda de destaque superior e esquerda, e do trilho do slider (threedhighlight). */
+	scrollbar-highlight-color: #C1C1C1;
+	/* Cor da borda sombreada inferior e direita da caixa de rolagem e das setas (threedshadow). */
+	scrollbar-shadow-color: #131314;
+	/* Cor da borda de brilho 3D (threedlightshadow) externa da barra. */
+	scrollbar-3dlight-color: #C1C1C1;
+	/* Cor da borda de sombra 3D escura (threeddarkshadow) mais externa. */
+	scrollbar-darkshadow-color: #131314;
+}
+
+html, body {
+	margin: 0px;
+	padding: 0px;
+	background-color: #131314;
+	text-align: center;
+	cursor: default;
+	font-size: 12px;
+	-ms-user-select: none;
+	    user-select: none;
+}
+
+img {
+	/* Força o IE (MSHTML) a usar interpolação de alta qualidade */
+	-ms-interpolation-mode: bicubic;
+	/* Usa o algoritmo padrão de suavização (não força um modo que aumentaria o serrilhado) */
+	image-rendering: optimizeQuality;
+}
+
+#main {
+	margin: 0;
+	padding-right: 8px;
+	padding-left: 8px;
+	color: #fff;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	max-width: calc( 100%  - 16px );
+}
+
+a {
+	color: #7078df;
+	text-decoration: none;
+}
+
+
+.feed-group {
+	position: relative;
+	background-color: rgba(255,255,255,0.045);
+	border-radius: 8px;
+	padding: 10px 12px 9px 32px;
+	margin-bottom: 6px;
+	text-align: left;
+}
+
+.feed-group:first-child { margin-top: 8px; }
+.feed-group:last-child { margin-bottom: 8px; }
+
+.feed-group:hover {
+	background-color: rgba(255,255,255,0.075);
+}
+
+/* Pontinho indicador, alinhado com a primeira linha do título */
+.feed-group .ico {
+	position: absolute;
+	left: 13px;
+	top: 14px;
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background-color: #7078df;
+	box-shadow: 0 0 0 3px rgba(112,120,223,0.18);
+}
+
+.feed-group a {
+	display: block;
+}
+
+.feed-group .title {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	color: #fdfdfd;
+	line-height: 1.35;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin-bottom: 5px;
+}
+
+.feed-group a:hover {
+	color: #9aa1f2;
+}
+
+.feed-group .category {
+	display: inline-block;
+	font-size: 9px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #a7ade9;
+	background-color: rgba(112,120,223,0.16);
+	border-radius: 8px;
+	padding: 2px 8px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	margin-bottom: 5px;
+	max-width: 100%;
+}
+
+.feed-group .posted {
+	font-size: 11px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: rgba(255,255,255,0.4);
+}
+
+.feed-group .posted .author {
+	color: #7078df;
+	font-weight: 700;
+}
+
+.feed-group .posted .updated {
+	color: rgba(255,255,255,0.45);
+}
