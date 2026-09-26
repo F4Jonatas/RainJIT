@@ -13,17 +13,13 @@
 
 </div>
 
-# xml — Lua XML/HTML Parsing Module
 
-A read-only XML and HTML parsing module for **Rainmeter**, built as a LuaJIT ↔ C++ binding on top of [**pugixml**](https://pugixml.org/). It exposes a clean DOM API and full XPath 1.0 support directly to Lua scripts.
 
-# xml — Lua XML/HTML Parsing Module
+## Summary
 
-A read-only XML and HTML parsing module for **Rainmeter**, built as a LuaJIT ↔ C++ binding on top of [pugixml](https://pugixml.org/). It exposes a clean DOM API and full XPath 1.0 support directly to Lua scripts.
+<details>
 
----
-
-## Table of Contents
+<summary><ins>Table of contents</ins></summary>
 
 - [Overview](#overview)
 - [Architecture](#architecture)
@@ -49,9 +45,20 @@ A read-only XML and HTML parsing module for **Rainmeter**, built as a LuaJIT ↔
 - [Limitations](#limitations)
 - [Examples](#examples)
 
----
+<details>
 
-## Overview
+<br>
+<br>
+
+
+# Overview
+
+A read-only XML and HTML parsing module for **Rainmeter**, built as a **LuaJIT** ↔ C++ binding on top of [**pugixml**](https://pugixml.org/). It exposes a clean DOM API and full XPath 1.0 support directly to Lua scripts.
+
+<br>
+
+
+## Quick Example
 
 ```lua
 local xml = require("xml")
@@ -63,7 +70,7 @@ local root = doc:root()
 print(root:name())                          -- "rss", "feed", "root", …
 
 for item in doc:select("//item"):iter() do
-    print(item:select_single("title"):text())
+  print(item:select_single("title"):text())
 end
 ```
 
@@ -75,38 +82,8 @@ end
 - **Thread-safe per document** — each document is fully independent. The optional XPath cache is protected by a mutex.
 - **Zero-copy node references** — `Node` objects hold a lightweight `pugi::xml_node` handle plus a `weak_ptr` back to the owning `Document`. The document stays alive as long as any node or node set derived from it is reachable.
 
----
+<br>
 
-## Architecture
-
-```
-Lua script
-    │  require("xml")
-    ▼
-xml::RegisterModule()          ← called once at plugin startup
-    │  registers luaopen_xml into package.preload
-    ▼
-luaopen_xml()                  ← called by require()
-    │  registers 3 metatables in the Lua registry:
-    │    xml.document, xml.node, xml.nodeSet
-    │  returns module table { parse, parse_html }
-    ▼
-xml.parse(str) / xml.parse_html(str)
-    │  creates std::shared_ptr<Document>  (owns pugi::xml_document)
-    │  pushes userdata with metatable "xml.document"
-    ▼
-doc:root() / doc:select() / doc:select_single()
-    │  returns userdata with metatable "xml.node" or "xml.nodeSet"
-    │  Node holds pugi::xml_node + weak_ptr<Document>
-    ▼
-Garbage collection (__gc)
-    calls the C++ destructor of each userdata in-place
-    shared_ptr ref-count drops → Document freed when no nodes remain
-```
-
-The metatables use `__index = metatable` so that method calls (`doc:root()`, `node:text()`, etc.) are resolved correctly without an extra wrapper table per object.
-
----
 
 ## Registration
 
@@ -136,8 +113,8 @@ Parses a well-formed XML string. Returns a `Document` on success, or `nil` plus 
 ```lua
 local doc, err = xml.parse(data.text)
 if not doc then
-    print("Parse failed:", err)
-    return
+  print("Parse failed:", err)
+  return
 end
 ```
 
@@ -272,12 +249,12 @@ A collection of nodes returned by XPath queries. Keeps the source `Document` ali
 -- size + get
 local items = doc:select("//item")
 for i = 1, items:size() do
-    print(items:get(i):select_single("title"):text())
+  print(items:get(i):select_single("title"):text())
 end
 
 -- iter (preferred)
 for item in doc:select("//item"):iter() do
-    print(item:select_single("title"):text())
+  print(item:select_single("title"):text())
 end
 ```
 
@@ -370,9 +347,9 @@ local doc = xml.parse(data.text, { cache = true })
 
 -- These two queries are compiled once and reused on subsequent calls:
 for item in doc:select("//item"):iter() do
-    local title = item:select_single("title"):text()   -- compiled once
-    local link  = item:select_single("link"):text()    -- compiled once
-    print(title, link)
+  local title = item:select_single("title"):text()   -- compiled once
+  local link  = item:select_single("link"):text()    -- compiled once
+  print(title, link)
 end
 ```
 
@@ -501,38 +478,38 @@ local doc, err = xml.parse(data.text)
 if not doc then print("feed parse error:", err) return end
 
 for item in doc:select("//item"):iter() do
-    local title = item:select_single("title"):text()
+  local title = item:select_single("title"):text()
 
-    -- Get the <description> node; its content is a CDATA section.
-    local desc_node = item:select_single("description")
-    if not desc_node then
-        print(title, "— no description")
-        goto continue
-    end
+  -- Get the <description> node; its content is a CDATA section.
+  local desc_node = item:select_single("description")
+  if not desc_node then
+    print(title, "— no description")
+    goto continue
+  end
 
-    -- node:html() detects the CDATA automatically, repairs void tags
-    -- (<img> → <img/>), and returns a new queryable Document.
-    local hd, html_err = desc_node:html()
-    if not hd then
-        print(title, "— html parse failed:", html_err)
-        goto continue
-    end
+  -- node:html() detects the CDATA automatically, repairs void tags
+  -- (<img> → <img/>), and returns a new queryable Document.
+  local hd, html_err = desc_node:html()
+  if not hd then
+    print(title, "— html parse failed:", html_err)
+    goto continue
+  end
 
-    -- Now query the HTML document normally with XPath.
-    local img_node  = hd:select_single("//img")
-    local link_node = hd:select_single("//a[@href]")
-    local snip_node = hd:select_single("//*[contains(@class,'medium-feed-snippet')]")
+  -- Now query the HTML document normally with XPath.
+  local img_node  = hd:select_single("//img")
+  local link_node = hd:select_single("//a[@href]")
+  local snip_node = hd:select_single("//*[contains(@class,'medium-feed-snippet')]")
 
-    local image   = img_node  and img_node:attribute("src")  or ""
-    local href    = link_node and link_node:attribute("href") or ""
-    local snippet = snip_node and snip_node:text()           or ""
+  local image   = img_node  and img_node:attribute("src")  or ""
+  local href    = link_node and link_node:attribute("href") or ""
+  local snippet = snip_node and snip_node:text()           or ""
 
-    print(string.format(
-        "Title:   %s\nImage:   %s\nLink:    %s\nSnippet: %s\n",
-        title, image, href, snippet
-    ))
+  print(string.format(
+    "Title:   %s\nImage:   %s\nLink:    %s\nSnippet: %s\n",
+    title, image, href, snippet
+  ))
 
-    ::continue::
+  ::continue::
 end
 ```
 
@@ -585,24 +562,30 @@ local all_p = hd:select("//p")
 print("Total <p> elements:", all_p:size())
 
 for i = 1, all_p:size() do
-    local p = all_p:get(i)
-    print(string.format("  <p class=%q>  %s", p:attribute("class"), p:text()))
+  local p = all_p:get(i)
+  print(string.format("  <p class=%q>  %s", p:attribute("class"), p:text()))
 end
 
 -- contains() on @class works as expected.
 local snippet = hd:select_single("//*[contains(@class,'medium-feed-snippet')]")
 if snippet then
-    print("Snippet:", snippet:text())
+  print("Snippet:", snippet:text())
 end
 
 -- Images: attribute() works correctly after void-tag repair.
 for img in hd:select("//img"):iter() do
-    print("img src:", img:attribute("src"),
-          "width:", img:attribute("width"))
+  print(
+    "img src:", img:attribute("src"),
+    "width:"  , img:attribute("width")
+  )
 end
 ```
 
 ---
+
+<br>
+<br>
+
 
 ## Parse Options
 
@@ -610,8 +593,8 @@ Both `xml.parse` and `xml.parse_html` accept an optional table as their second a
 
 ```lua
 local doc = xml.parse(str, {
-    cache      = false,   -- enable XPath compilation cache (default: false)
-    parse_full = false,   -- use pugi::parse_full flags (default: false)
+  cache      = false,   -- enable XPath compilation cache (default: false)
+  parse_full = false,   -- use pugi::parse_full flags (default: false)
 })
 ```
 
@@ -621,6 +604,10 @@ local doc = xml.parse(str, {
 | `parse_full` | `boolean` | `false` | Enables pugixml's `parse_full` flag set, which preserves processing instructions, declarations, and doc-type nodes. |
 
 ---
+
+<br>
+<br>
+
 
 ## Error Handling
 
@@ -638,11 +625,14 @@ Always check the first return value before using the document:
 ```lua
 local doc, err = xml.parse(data.text)
 if not doc then
-    -- log the error, show a fallback, etc.
-    SKIN:Bang("!SetOption", "Status", "Text", "Feed unavailable: " .. err)
-    return
+  -- log the error, show a fallback, etc.
+  SKIN:Bang("!SetOption", "Status", "Text", "Feed unavailable: " .. err)
+  return
 end
 ```
+
+<br>
+
 
 ### Defensive access pattern
 
@@ -650,7 +640,7 @@ Because `select_single` returns `nil` for missing nodes, chain checks before cal
 
 ```lua
 local function safe_text(node)
-    return node and node:text() or ""
+  return node and node:text() or ""
 end
 
 local item  = doc:select_single("//item")
@@ -659,6 +649,10 @@ local link  = safe_text(item and item:select_single("link"))
 ```
 
 ---
+
+<br>
+<br>
+
 
 ## Namespaces
 
@@ -678,12 +672,16 @@ item:select_single("*[local-name()='creator']"):text()
 
 ```lua
 for name, value in pairs(root:attributes()) do
-    -- "xmlns:dc", "xmlns:atom", etc. are just normal attributes here
-    print(name, value)
+  -- "xmlns:dc", "xmlns:atom", etc. are just normal attributes here
+  print(name, value)
 end
 ```
 
 ---
+
+<br>
+<br>
+
 
 ## Debugging
 
@@ -694,9 +692,12 @@ local root = doc:root()
 print("tag:", root:name(), "| type:", root:type())
 
 for name, value in pairs(root:attributes()) do
-    print(string.format("  @%-20s = %q", name, value))
+  print(string.format("  @%-20s = %q", name, value))
 end
 ```
+
+<br>
+
 
 ### Inspect raw XML around a node
 
@@ -705,6 +706,9 @@ print(node:outer_xml())   -- full tag with children
 print(node:inner_xml())   -- children only
 ```
 
+<br>
+
+
 ### Verify what was actually received
 
 ```lua
@@ -712,6 +716,9 @@ print(node:inner_xml())   -- children only
 print(string.sub(data.text, 1, 300))
 print("total length:", #data.text)
 ```
+
+<br>
+
 
 ### Common pitfalls
 
@@ -724,6 +731,10 @@ print("total length:", #data.text)
 
 ---
 
+<br>
+<br>
+
+
 ## Limitations
 
 - **Read-only.** There are no methods to modify, add, or remove nodes or attributes. If you need to transform XML, do it as string manipulation before parsing.
@@ -735,6 +746,10 @@ print("total length:", #data.text)
 - **`node:html()` is not a full HTML5 parser.** It uses pugixml with tolerant flags and void-tag repair. Optional closing tags, named HTML entities (`&nbsp;`), and heavily malformed markup may cause incorrect trees or parse errors. See [Parser limitations](#parser-limitations) for the complete list.
 
 ---
+
+<br>
+<br>
+
 
 ## Examples
 
@@ -760,15 +775,18 @@ print("Feed:", feed_title, "—", feed_link)
 
 -- Items
 for item in doc:select("//item"):iter() do
-    local title   = item:select_single("title"):text()
-    local link    = item:select_single("link"):text()
-    local pubDate = item:select_single("pubDate"):text()
-    local creator = item:select_single("*[local-name()='creator']")
-    local author  = creator and creator:text() or "(unknown)"
+  local title   = item:select_single("title"):text()
+  local link    = item:select_single("link"):text()
+  local pubDate = item:select_single("pubDate"):text()
+  local creator = item:select_single("*[local-name()='creator']")
+  local author  = creator and creator:text() or "(unknown)"
 
-    print(string.format("[%s] %s\n  by %s\n  %s", pubDate, title, author, link))
+  print(string.format("[%s] %s\n  by %s\n  %s", pubDate, title, author, link))
 end
 ```
+
+<br>
+
 
 ### Parse an Atom feed
 
@@ -781,14 +799,19 @@ local root = doc:root()
 assert(root:name() == "feed", "Not an Atom feed")
 
 for entry in doc:select("//entry"):iter() do
-    local title = entry:select_single("title"):text()
-    -- Atom links are in attributes, not text content
-    local link_node = entry:select_single("link[@rel='alternate']")
-                   or entry:select_single("link")
-    local href = link_node and link_node:attribute("href") or ""
-    print(title, href)
+  local title = entry:select_single("title"):text()
+  -- Atom links are in attributes, not text content
+  local link_node =
+    entry:select_single("link[@rel='alternate']") or
+    entry:select_single("link")
+
+  local href = link_node and link_node:attribute("href") or ""
+  print(title, href)
 end
 ```
+
+<br>
+
 
 ### Parse HTML and scrape links
 
@@ -797,28 +820,34 @@ local doc, err = xml.parse_html(html_string)
 if not doc then return end
 
 for a in doc:select("//a[@href]"):iter() do
-    local href = a:attribute("href")
-    local text = a:text()
-    if href ~= "" then
-        print(string.format("%-50s  %s", text, href))
-    end
+  local href = a:attribute("href")
+  local text = a:text()
+  if href ~= "" then
+    print(string.format("%-50s  %s", text, href))
+  end
 end
 ```
+
+<br>
+
 
 ### Collect multiple categories per item
 
 ```lua
 for item in doc:select("//item"):iter() do
-    local title = item:select_single("title"):text()
+  local title = item:select_single("title"):text()
 
-    local cats = {}
-    for cat in item:select("category"):iter() do
-        table.insert(cats, cat:text())
-    end
+  local cats = {}
+  for cat in item:select("category"):iter() do
+    table.insert(cats, cat:text())
+  end
 
-    print(title, "→", table.concat(cats, ", "))
+  print(title, "→", table.concat(cats, ", "))
 end
 ```
+
+<br>
+
 
 ### Extract a fallback value for an optional attribute
 
@@ -828,33 +857,41 @@ local root = doc:root()
 -- Try direct attribute first, fall back to parsing the link URL
 local host = root:attribute("host")
 if host == "" then
-    local link_node = doc:select_single("/rss/channel/link")
-    if link_node then
-        host = link_node:text():match("https?://([^/?]+)") or ""
-    end
+  local link_node = doc:select_single("/rss/channel/link")
+  if link_node then
+    host = link_node:text():match("https?://([^/?]+)") or ""
+  end
 end
 
 print("Host:", host)
 ```
+
+<br>
+
+
 
 ### Use the XPath cache for a high-frequency update script
 
 ```lua
 -- Called by Rainmeter every N seconds
 function Update()
-    local doc, err = xml.parse(data.text, { cache = true })
-    if not doc then return end
+  local doc, err = xml.parse(data.text, { cache = true })
+  if not doc then return end
 
-    -- These XPath strings are compiled only once per document instance
-    local title = doc:select_single("//item[1]/title"):text()
-    local link  = doc:select_single("//item[1]/link"):text()
+  -- These XPath strings are compiled only once per document instance
+  local title = doc:select_single("//item[1]/title"):text()
+  local link  = doc:select_single("//item[1]/link"):text()
 
-    SKIN:Bang("!SetOption", "TitleMeter", "Text", title)
-    SKIN:Bang("!SetOption", "LinkMeter",  "Text", link)
+  SKIN:Bang("!SetOption", "TitleMeter", "Text", title)
+  SKIN:Bang("!SetOption", "LinkMeter",  "Text", link)
 end
 ```
 
 ---
+
+<br>
+<br>
+
 
 ## Dependencies
 
@@ -867,9 +904,23 @@ end
 
 ---
 
-## License
+<br>
+<br>
 
-GPL v2.0 — see the `LICENSE` file in the repository root.
+
+## :scroll: License
+
+Licensed under the **GPL v2.0 License**.<br>
+
+> [!NOTE]
+> This module uses [**pugixml**](https://pugixml.org/), distributed under the **MIT License**.
+>
+> Copyright (c) 2006-2026 **Arseny Kapoulkine**.
+
+---
+
+<br>
+<br>
 
 
 <div align="center">

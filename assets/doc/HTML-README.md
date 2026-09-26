@@ -14,6 +14,8 @@
 </div>
 
 
+
+
 ## Overview
 
 A lightweight, read‑only HTML parsing module for Lua, built on top of [Google’s **Gumbo** HTML5 parser](https://github.com/google/gumbo-parser).<br>
@@ -125,31 +127,27 @@ _(Future versions may add `__len` and `__index` for `ipairs` support.)_
 |`div > a`|`<a>` that is a direct child of a `<div>`.|
 |`div, a`|All `<div>` and all `<a>` elements (union).|
 
+<br>
+
+
 ## Limitations
 
 - **Read‑only** – No methods to modify the DOM. Use for scraping only.
-
 - **No support for**:
-
-    - Pseudo‑classes: `:nth-child`, `:not`, `:has`, `:contains`, etc.
-
-    - Attribute operators: `~=`, `|=`.
-
-    - Combinators: `+` (adjacent sibling), `~` (general sibling).
-
-    - Selector specificity or `:is()` / `:where()`.
-
+  - Pseudo‑classes: `:nth-child`, `:not`, `:has`, `:contains`, etc.
+  - Attribute operators: `~=`, `|=`.
+  - Combinators: `+` (adjacent sibling), `~` (general sibling).
+  - Selector specificity or `:is()` / `:where()`.
 - **Whitespace sensitivity** – Selectors should not contain extra spaces inside attribute brackets or around combinators (e.g., `div > a` works, but `div> a` may fail). Use spaces consistently.
-
 - **No XPath support**.
-
 - **Memory** – The entire DOM is kept in memory until the `HtmlDocument` is garbage collected. For huge documents, consider streaming parsers.
+
+<br>
 
 
 ## Example: Web Scraping
 
-lua
-
+```lua
 local html = require("html")
 local doc = html.parse([[
 <html>
@@ -164,41 +162,56 @@ local doc = html.parse([[
 </body>
 </html>
 ]])
+
 -- Find all links inside the items list
 local links = doc:find("ul.items li a")
 print("Found " .. links:count() .. " links")
+
 -- Extract each link's href and text
 for i = 1, links:count() do
-    local link = links:eq(i)
-    print(link:attr("href"), link:text())
+  local link = links:eq(i)
+  print(link:attr("href"), link:text())
 end
+
 -- Get the first heading text
 local heading = doc:find("h1"):first()
 print(heading:text())  -- "News"
+
 -- Direct child selector
 local direct_children = doc:root():find("body > div")
 print(direct_children:count())  -- 1
+```
+
+<br>
+
 
 ## Technical Notes
 
 - **Parsing** – Gumbo produces a read‑only tree. This module wraps it in lightweight userdata objects.
-
 - **Selector matching** – Implements a recursive descent matcher.
-    Results are automatically **deduplicated** to avoid duplicates caused by multiple matching paths.
-
+  Results are automatically **deduplicated** to avoid duplicates caused by multiple matching paths.
 - **Performance** – For small to medium documents (up to a few MB) it is very fast. For huge pages, consider limiting selector complexity.
-
 - **Garbage collection** – The underlying `GumboOutput` is freed when the `HtmlDocument` is collected. Node and node list objects hold only references to the document and raw pointers to tree nodes.
 
+<br>
 
-## License
 
-This module is provided under the **MIT License**.
-Gumbo is distributed under the Apache License 2.0.
+## :scroll: License
+
+Licensed under the **GPL v2.0 License**.
+
+> [!NOTE]
+> This module uses **Gumbo HTML Parser**, distributed under the **Apache License 2.0**.
+>
+> Copyright 2010 Google Inc.
+>
+> The Gumbo source code and its original license are available in the accompanying third-party license notices.
+
 
 ---
 
-_Contributions and bug reports welcome._
+<br>
+<br>
 
 
 <div align="center">

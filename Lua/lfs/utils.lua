@@ -8,9 +8,8 @@
 local lfs = import(  'lfs' )
 local ffi = require( 'ffi' )
 
-local windows = package.config:sub( 1, 1 ) == '\\'
-
 require( 'lfs.cdef' )
+
 
 local shell32  = ffi.load( 'shell32'  )
 local ole32    = ffi.load( 'ole32'    )
@@ -89,7 +88,7 @@ function lfs.attributes( path, ...)
 end
 
 
-
+-- @return (boolean)
 function lfs.exists( path )
 	return lfs.attributes( path, 'mode' ) ~= nil
 end

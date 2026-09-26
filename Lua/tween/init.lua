@@ -51,9 +51,14 @@
 -- ```
 --
 -- @module tween
--- @author F4Jonatas
--- @license GPL v2.0 License or MIT
+-- @author Enrique García Cota
+-- @author Jonatas Peclat
+-- @copyright 2011 Enrique García Cota
+-- @copyright 2026 Jonatas Peclat
 -- @release 2.0.1
+-- @license GPL-2.0-only
+--   SPDX-License-Identifier: GPL-2.0-only
+--   Modified by Jonatas Peclat in 2026.
 
 
 

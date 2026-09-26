@@ -676,8 +676,13 @@ These are inherent constraints of the approach, not implementation bugs:
 
 ## :scroll: License
 
-GPL v2.0. See `LICENSE` file in the repository root.
+Licensed under the **GPL v2.0 License**.
 
+> [!NOTE]
+> This module uses the legacy Internet Explorer/Trident browser engine provided by **Microsoft Windows**.
+---
+
+<br>
 <br>
 
 

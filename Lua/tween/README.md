@@ -115,6 +115,40 @@ t:set(0.5)
 - Duration of 0 is internally clamped to 1.
 
 
-# LICENSE
-MIT License.<br>
-Original concept by kikito, extended by ramake.
+## :scroll: License
+
+Licensed under the **GPL v2.0 License**.
+
+> [!IMPORTANT]
+> This file contains code derived from third-party software.<br>
+> The original copyright notices and license terms are preserved below.
+>
+> **tween Module**<br>
+> Copyright (c) 2011, Enrique García Cota<br>
+> <ins>Full original BSD-3-Clause license text</ins>
+>
+> **Easing functions**<br>
+> Tweener authors:<br>
+> Yuichi Tateno<br>
+> Emmanuel Oga
+>
+> Copyright (c) 2010, Emmanuel Oga.<br>
+> <ins>Full original MIT license text</ins>
+>
+> **Robert Penner's Easing Equations**<br>
+> Copyright © 2001 Robert Penner<br>
+> <ins>Full original BSD-3-Clause license text</ins>
+
+
+---
+
+<br>
+<br>
+
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
+
+<br>
+<br>

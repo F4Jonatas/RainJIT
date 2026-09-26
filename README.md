@@ -501,18 +501,30 @@ end
 ### :large_orange_diamond: Method `print()`
 
 Custom debug logger that overrides Lua default `print`.<br>
-This function formats all received arguments into a single string, replaces double quotes to avoid command parsing issues, and forwards the result to **Rainmeter** debug log via `!Log`.
+This function formats all received arguments into a single string, replaces double quotes to avoid command parsing issues, and forwards the result to [**Rainmeter Log**](https://docs.rainmeter.net/manual/user-interface/about/#LogTab) via [**`!Log`**](https://docs.rainmeter.net/manual/bangs/#Log).
 
+> [!IMPORTANT]
 > Differences from standard `print`:
 > - Arguments are separated by four spaces
-> - Output is sent to **Rainmeter** debug log
+> - Output is sent to [**Rainmeter Log**](https://docs.rainmeter.net/manual/user-interface/about/#LogTab)
 > - Double quotes (`"`) are replaced with typographic quotes (`”`)
+> - The function is a callable directly and provides severity-level subfunctions through a setmetatable trick:
+>   - `print()` — Generic debug output
+>   - `print.info()` — Informational messages
+>   - `print.warn()` — Recoverable problems
+>   - `print.error()` — Failures that need attention
 
 ```lua
--- @usage print(param [, param2, param3, ...])
+-- @usage print(param [, param2, param3, ...])        -- debug/generic
+-- @usage print.info(param [, param2, param3, ...])   -- notice
+-- @usage print.warn(param [, param2, param3, ...])   -- warning
+-- @usage print.error(param [, param2, param3, ...])  -- error
 -- @return (nil)
 
-print("Hello", "Rain JIT", 123, {x = 1})
+print("Hello", "RainJIT", 123, {x = 1})
+print.info("Skin loaded successfully")
+print.warn("Missing optional config file, using defaults")
+print.error("Failed to parse settings.ini at line 42")
 ```
 
 <br>

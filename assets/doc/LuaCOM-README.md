@@ -238,7 +238,6 @@ luacom_obj:MyMethod()
 print( luacom_obj.Property )
 ```
 
-
 <br>
 
 
@@ -627,8 +626,6 @@ while s do
 end
 ```
 
-<br>
-
 ---
 
 <br>
@@ -645,17 +642,16 @@ end
 <br>
 <br>
 
+
 ## :scroll: License
 
-<a href="../images/logo-gpl-v2.png">
-  <img src="../images/logo-gpl-v2.png" alt="LOGO-GPL-V2" width="150" height="150" align="right">
-</a>
+Licensed under the **GPL v2.0 License**.<br>
 
-The **RainJIT** Plugin is licensed under the [**GPL v2.0 license**](../../LICENSE).<br>
-This project also relies on external libraries that may use different open-source licenses.<br>
-If you are contributing documentation or changes to the source code, please ensure that your contributions comply with the project's licensing guidelines.
-
-<br>
+> [!NOTE]
+> LuaCOM is used as a third-party library and is distributed under the MIT License.
+>
+> Copyright © LuaCOM contributors.<br>
+> The original LuaCOM copyright notices and license terms are preserved in the distribution.
 
 ---
 

@@ -17,7 +17,7 @@
 -- Additional meter types can be supported through submodules.
 --
 -- @module meter
--- @release 2.4.3
+-- @release 2.4.4
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 
@@ -57,7 +57,7 @@ function METERONMESSAGE( target, action, mousex, mousey, mousexs, mouseys )
 		end
 
 
-		METEREVENTS[ target ]( METEREVENTS[ target ..'_OUT' ], response )
+		METEREVENTS[ target ]( METEREVENTS[ target ..'__cls' ], response )
 	end
 end
 
@@ -170,7 +170,7 @@ meter.__index = meter
 --
 -- @param (string) events - Event name or multiple events separated by spaces
 -- @param (function|nil) [callback] - Function executed when the event occurs
--- @return (string|table) Returns the callback identifier or meter instance
+-- @return (table) Meter instance
 --
 -- **Register event**
 -- @usage
@@ -204,7 +204,7 @@ function meter:event( events, callback )
 
 			if callID then
 				METEREVENTS[ callID           ] = nil
-				METEREVENTS[ callID .. '_OUT' ] = nil
+				METEREVENTS[ callID ..'__cls' ] = nil
 				self.EVENTLISTER[ listEvents[ action ]] = nil
 			end
 
@@ -227,21 +227,23 @@ function meter:event( events, callback )
 
 		if not METEREVENTS[ callID ] then
 			METEREVENTS[ callID           ] = callback
-			METEREVENTS[ callID .. '_OUT' ] = self
+			METEREVENTS[ callID ..'__cls' ] = self
 		end
 
 		self.EVENTLISTER[ listEvents[ action ]] = callID
+
 		rain:bang(
 			'!setOption',
 			self.name,
 			listEvents[ action ],
 			( value or '' ) ..
 			"[!commandMeasure ".. rain.name .." METERONMESSAGE('".. callID .."','".. action .."','$MouseX$','$MouseY$','$MouseX:%$','$MouseY:%$')]"
+			-- ("[!commandMeasure %s METERONMESSAGE('%s','%s','$MouseX$','$MouseY$','$MouseX:%$','$MouseY:%$')]"):format( rain.name, callID, action )
 		)
 
 	end
 
-	return callID
+	return self
 end
 
 

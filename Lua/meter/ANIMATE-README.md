@@ -4,29 +4,23 @@
 
   ### Easily create and control animations
 
+  <br>
+
+  <img src="../../assets/images/animate-logo.png" alt="LOGO" width="200" height="200">
+
 </div>
 
 <br>
 <br>
 
 
-A lightweight animation layer built on top of a tweening system, designed to interpolate values over time and apply them directly to meter instances.
+## Overview
 
-This submodule aims to provide:
+This module is a lightweight animation layer built on top of the tween module, which it depends on directly to perform all value interpolation over time. The animation module itself does not calculate intermediate values — it delegates that responsibility entirely to tween, and instead focuses on applying the interpolated results to meter instances and coordinating when those updates happen. Because of this separation, the module expects tween to always be available as a dependency; it is not an optional or swappable component.
 
-- Predictable animation lifecycle
-- Minimal implicit behavior
-- Clear separation of responsibilities
+The design keeps a clear boundary between three responsibilities. Interpolation, meaning the actual math of moving from a starting value to a target value over time, is handled entirely by the tween module. Application, meaning taking an already-interpolated value and writing it onto a meter (position, size, opacity, or any other property), is handled by this module. Scheduling, meaning deciding when each animation step should run, is handled through a centralized update loop by default, rather than by individual animations managing their own timing — though an animation can opt out of this loop via manual mode and be advanced explicitly instead.
 
-<br>
-
-It divides the responsibilities into three distinct parts:
-
-- **Interpolation** → handled by the tween module
-- **Application** → handled by this module (meter updates)
-- **Scheduling** → handled via a centralized update loop
-
-The result is a clean, extensible animation system with explicit lifecycle control and predictable behavior.
+This division keeps the animation lifecycle predictable and mostly free of implicit behavior: nothing advances or changes state unless the update loop drives it, and nothing about how a value is calculated is hidden inside the animation logic itself. The result is a clean, extensible system where interpolation, application, and scheduling can each be reasoned about — and modified — independently, without one concern leaking into another.
 
 <br>
 <br>
@@ -237,13 +231,12 @@ a:delay( 25 )
 Initializes the tween and registers the animation into the global scheduler.<br>
 If [**`:from()`**](#large_orange_diamond-method-afrom) or [**`:to()`**](#large_orange_diamond-method-ato) are missing, the animation is ignored.<br>
 
-
-> #### Manual vs Automatic Mode
-> Automatic (default)
+> [!NOTE]
+> **Automatic (default)**
 > - Managed globally
 > - Recommended for most use cases
 >
-> Manual
+> **Manual**
 > - Full control over update timing
 > - Not affected by [**`animate.updateAll()`**](#large_orange_diamond-method-animateupdateall)
 
@@ -456,14 +449,16 @@ Potential extensions include:
 
 ## :scroll: License
 
-<a href="../../assets/images/logo-gpl-v2.png">
-  <img src="../../assets/images/logo-gpl-v2.png" alt="LOGO-GPL-V2" width="150" height="150" align="right">
-</a>
+Licensed under the **GPL v2.0 License**.
 
-The **RainJIT** Plugin is licensed under the [**GPL v2.0 license**](../../LICENSE).<br>
-This project also relies on external libraries that may use different open-source licenses.<br>
-If you are contributing documentation or changes to the source code, please ensure that your contributions comply with the project's licensing guidelines.
 
 <br>
+<br>
 
----
+
+<div align="center">
+  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+</div>
+
+<br>
+<br>

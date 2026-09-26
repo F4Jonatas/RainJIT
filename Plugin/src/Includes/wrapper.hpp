@@ -37,7 +37,35 @@ namespace luaWrapper {
 	 * @note The original Lua print function is replaced.
 	 */
 	static const char *main = R"lua(
-	-- Override global print() to log to Rainmeter
+	--- Override global print() to log to Rainmeter
+	local function FORMATER( ... )
+		local messages = {}
+		local count = select( '#', ... )
+
+		for i = 1, count do
+			local v = select( i, ... )
+			table.insert( messages, tostring( v ))
+		end
+
+		return table.concat( messages, '    ' ):gsub( '"', '”' )
+	end
+
+	local function LOGRAR( level, ... )
+		rain:bang( '!Log "' .. FORMATER( ... ) .. '" ' .. level )
+	end
+
+	print = setmetatable(
+		{
+			info  = function( ... ) LOGRAR( 'Notice' , ... ) end,
+			warn  = function( ... ) LOGRAR( 'Warning', ... ) end,
+			error = function( ... ) LOGRAR( 'Error'  , ... ) end
+		},
+		{
+			__call = function( _, ... ) LOGRAR( 'Debug', ... ) end
+		}
+	)
+
+	--[[ Old version
 	function print( ... )
 		local messages = {}
 		local count = select( '#', ... )
@@ -51,10 +79,10 @@ namespace luaWrapper {
 		message = message:gsub( '"', '”' )
 		rain:bang( '!Log "' .. message .. '" Debug' )
 	end
+	]]--
 
 
 	-- Loads a native Lua module implemented as a DLL.
-	local ffi = require( 'ffi' )
 	local path = {
 		x64 = '#SKINSPATH#@Vault\\lua\\bin\\x64\\',
 		x86 = '#SKINSPATH#@Vault\\lua\\bin\\x86\\'
@@ -62,6 +90,8 @@ namespace luaWrapper {
 
 
 	function import( module )
+		local ffi = require( 'ffi' )
+
 		if package.loaded[ module ] then
 			return package.loaded[ module ]
 		end

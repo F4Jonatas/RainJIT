@@ -38,7 +38,7 @@ The module doesn't load entire files into memory – it maintains only the insta
 <br>
 
 
-## :book: Usage
+## :book: Module `depot`
 
 ### :large_orange_diamond: Method `depot()`
 
@@ -335,6 +335,16 @@ end
 ### Type conversion not working
 - Values must exactly match patterns: `"true"`, `"false"`, numbers without extra spaces
 - Leading/trailing whitespace will result in string type
+
+---
+
+<br>
+<br>
+
+
+## :scroll: License
+
+Licensed under the **GPL v2.0 License**.
 
 ---
 

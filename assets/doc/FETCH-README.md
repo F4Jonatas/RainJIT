@@ -996,6 +996,16 @@ This section summarizes the intended semantics of standard HTTP methods to help 
 <br>
 
 
+## :scroll: License
+
+Licensed under the **GPL v2.0 License**.<br>
+
+---
+
+<br>
+<br>
+
+
 <div align="center">
   For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
 </div>

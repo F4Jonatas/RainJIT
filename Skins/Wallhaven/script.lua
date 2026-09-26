@@ -92,7 +92,6 @@ url.query.order       = dp:get( 'order'   , 'desc'      )
 url.query.purity      = dp:get( 'purity'  , '100', true )
 url.query.sorting     = dp:get( 'sorting' , 'random'    )
 url.query.q           = fetch.url.raw( dp:get( 'query' ))
--- print(url.href)
 
 
 -- Apply a acrylic effect
@@ -187,7 +186,7 @@ end
 
 
 --- Crete one callback for all requests
--- @param (table) list is a all response
+-- @param (table) list - is a all response
 local promise = fetch.promiseAll( function( list )
 	for index, response in ipairs( list ) do
 		local filePath = '#CURRENTPATH#/downloadfile/thumb%02d.png'
@@ -204,7 +203,7 @@ local promise = fetch.promiseAll( function( list )
 	front:update( true )
 	dp:set( 'wall-url', thumbs[1].url )
 	meter( 'resolution' ):text( thumbs[1].resolution ):update()
-end)
+end )
 
 
 
