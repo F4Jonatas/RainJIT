@@ -17,6 +17,7 @@ body {
 	scrollbar-darkshadow-color: #131314;
 }
 
+
 html, body {
 	margin: 0px;
 	padding: 0px;
@@ -41,7 +42,7 @@ img {
 	padding-left: 8px;
 	color: #fff;
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-	max-width: calc( 100%  - 16px );
+	max-width: calc( 100%  - 17px );
 }
 
 a {

@@ -6,7 +6,8 @@ local glass = require( 'glass' )
 local meter = require( 'meter' )
 local depot = require( 'depot' )
 local fetch = require( 'fetch' )
-local i18n  = require( 'i18n' )
+local i18n  = require( 'i18n'  )
+local time  = require( 'datetime.date' )
 
 
 -- Get and set current system language
@@ -103,8 +104,7 @@ function mapWeather( code, isDay, dt )
 	}
 
 	if dict[ code ] then
-		local _,_, year, month, day = dt:find( '(%d+)-(%d+)-(%d+)' )
-		dict[ code ].date = os.time({ year = year, month = month, day = day })
+		dict[ code ].date = time.todate( dt )
 		return dict[ code ]
 
 	else
@@ -157,11 +157,12 @@ function gatherResults()
 				data.daily.time[ index ]
 			)
 
+			local _, week = time.weekday( dict.date )
 			table.insert( result, {
 				max         = data.daily.temperature_2m_max[ index ],
 				min         = data.daily.temperature_2m_min[ index ],
 				icon        = dict.icon,
-				weekDayName = os.date( '%A', dict.date ),
+				weekDayName = week,
 				text        = dict.text,
 				phrase      = dict.phrase:gsub( '^%l', string.upper )
 			})

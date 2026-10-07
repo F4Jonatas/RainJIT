@@ -17,7 +17,7 @@
 -- Additional meter types can be supported through submodules.
 --
 -- @module meter
--- @release 2.4.4
+-- @release 2.5.1
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 
@@ -255,7 +255,7 @@ end
 -- @param (string) option - Name of the meter option.
 -- @param (string|number|nil) [value] - Optional value to assign.
 -- @param (string) [config] - Optional configuration scope.
--- @return (string|table) Returns option value when used as getter or meter instance when used as setter.
+-- @return (string|table|nil) Returns option value when used as getter or meter instance when used as setter.
 --
 -- **Getter**
 -- @usage local text = meter:option("Text")
@@ -268,10 +268,74 @@ function meter:option( option, value, config )
 	if value ~= nil then
 		rain:bang( '!setOption', self.name, option, value )
 		return self
-
-	else
-		return rain:option( self.name, option )
 	end
+
+	return rain:option( self.name, option )
+end
+
+
+
+--- Get or set a meter's MeterStyle option.
+-- Allows a meter to inherit options from one or more "parent" sections
+-- (meters or MeterStyle sections), joined by pipes (`|`). Passing `'+'`
+-- inside the array inserts the meter's current MeterStyle value at that
+-- exact position, preserving order relative to the other entries.
+--
+-- @param (table|nil) [value] - Array of style names to set.
+--   Use `'+'` as an entry to insert the existing MeterStyle value at that position. Omit to just read the current value.
+-- @return (string|table) Returns the current MeterStyle string when used as getter, or the meter instance when used as setter.
+--
+-- **Getter**
+-- @usage local style = meter:style()
+--
+-- **Setter**
+-- @usage meter:style({ "MyFirstParent", "MySecondParent" })
+-- @usage meter:style({ "+", "NewStyle" })
+-- @usage meter:style({ "NewStyle", "+" })
+--
+-- @see https://docs.rainmeter.net/manual/meters/general-options/#MeterStyle
+-- @see https://docs.rainmeter.net/manual/meters/general-options/meterstyles/
+-- function meter:style( value )
+-- 	if value ~= nil then
+-- 		local styles = rain:option( self.name, 'meterStyle' ) or ''
+-- 		local parts = {}
+
+-- 		for _, style in ipairs( value ) do
+-- 			if style == '+' then
+-- 				if styles ~= '' then
+-- 					table.insert( parts, styles )
+-- 				end
+-- 			else
+-- 				table.insert( parts, style )
+-- 			end
+-- 		end
+
+-- 		rain:bang( '!setOption', self.name, 'meterStyle', table.concat( parts, '|' ))
+-- 		return self
+-- 	end
+
+-- 	return rain:option( self.name, 'meterStyle' )
+-- end
+
+
+
+-- @see https://docs.rainmeter.net/manual/meters/general-options/tooltips/
+function meter:tooltip( text, title )
+	if text then
+		rain:bang( '!setOption', self.name, 'toolTipText', text )
+
+		if title then
+			rain:bang( '!setOption', self.name, 'toolTipTitle', title )
+		end
+
+		return self
+	end
+
+
+	return {
+		text  = rain:option( self.name, 'toolTipText' ),
+		title = rain:option( self.name, 'toolTipTitle' )
+	}
 
 end
 
@@ -450,7 +514,8 @@ end
 -- @usage meter:show()
 -- @see https://docs.rainmeter.net/manual/bangs/#ShowHideToggleMeter
 function meter:show()
-	rain:bang( '!showMeter', self.name )
+	rain:bang('!showMeter', self.name )
+	-- rain:bang('!setOption', self.name, 'hidden', 0 )
 	return self
 end
 
@@ -473,11 +538,13 @@ return setmetatable({}, {
 
 
 		local meta = {
-			name = name,
-			type = tipo,
-			super = meter,
-			EVENTLISTER = {},
+			name        = name,
+			type        = tipo,
+			super       = meter,
+			EVENTLISTER = {}
 		}
+
+		meta.style = setmetatable({ meter = meta }, require( 'meter.style' ))
 
 
 		if tipo == 'string' then

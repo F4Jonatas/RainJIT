@@ -99,6 +99,12 @@
     <ClCompile Include="src\Modules\html\html_node.cpp" />
     <ClCompile Include="src\Modules\html\html_nodelist.cpp" />
     <ClCompile Include="src\Modules\html\html_selector.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_core.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_options.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_renderer.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_runtime.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_window.cpp" />
     <ClCompile Include="src\Modules\webview\trident.cpp" />
     <ClCompile Include="src\Modules\xml\xml.cpp" />
     <ClCompile Include="src\RainJIT.cpp" />
@@ -112,6 +118,13 @@
     <ClInclude Include="src\Modules\fetch\wininet.hpp" />
     <ClInclude Include="src\Modules\hotkey\keyboard.hpp" />
     <ClInclude Include="src\Modules\hotkey\mouse.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_gdiplus.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_options.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_renderer.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_runtime.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_surface.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_window.hpp" />
     <ClInclude Include="src\Modules\webview\comProxy.hpp" />
     <ClInclude Include="src\Modules\webview\luaVariant.hpp" />
     <ClInclude Include="packages\gumbo\src\strings.h" />

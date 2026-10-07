@@ -124,4 +124,81 @@ utf8.char = function(cp)
 end
 
 
+
+
+--- Returns a substring based on UTF-8 characters instead of bytes.
+-- Works like `string.sub`, including negative indices and out-of-range
+-- values, but `i` and `j` refer to characters (code points), so
+-- multi-byte characters such as "á" are never split.
+--
+-- Invalid UTF-8 is not validated: every byte that is not a continuation
+-- byte (10xxxxxx) is counted as the start of a character.
+--
+-- @param (string) str - UTF-8 encoded Lua string
+-- @param (number) [i=1] - Start position in characters. Negative values count from the end
+-- @param (number) [j=-1] - End position in characters (inclusive). Negative values count from the end
+-- @return (string) The substring, or an empty string if the range is empty
+--
+-- @usage
+-- utf8.sub( 'Sáb', 1, 2 )   --> 'Sá'
+-- utf8.sub( 'Sáb', -2 )     --> 'áb'
+-- utf8.sub( 'Sáb', 2, 2 )   --> 'á'
+-- utf8.sub( 'Sáb', 5, 10 )  --> ''
+utf8.sub = function( str, i, j )
+	i = i or 1
+	j = j or -1
+
+	-- count characters (skip continuation bytes 10xxxxxx)
+	local total = 0
+	for pos = 1, #str do
+		local byte = str:byte( pos )
+		if byte < 128 or byte >= 192 then
+			total = total + 1
+		end
+	end
+
+	-- normalize indices like string.sub
+	if i < 0 then
+		i = math.max( total + i + 1, 1 )
+	elseif i == 0 then
+		i = 1
+	end
+
+	if j < 0 then
+		j = total + j + 1
+	elseif j > total then
+		j = total
+	end
+
+	if i > j then
+		return ''
+	end
+
+	-- map character indices to byte positions
+	local start_byte, end_byte
+	local char = 0
+
+	for pos = 1, #str do
+		local byte = str:byte( pos )
+		if byte < 128 or byte >= 192 then
+			char = char + 1
+
+			if char == i then
+				start_byte = pos
+			end
+
+			if char == j + 1 then
+				end_byte = pos - 1
+				break
+			end
+		end
+	end
+
+	return str:sub( start_byte, end_byte or #str )
+end
+
+
+
+
+
 return utf8

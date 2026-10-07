@@ -60,13 +60,28 @@
 			"extensions.json": "vscode",
 			"*.filters": "visualstudio",
 			"packages.config": "nuget",
+			"skin.ini": "liquid",
+			"*.inc": "controller",
 			"*.depot": "deepsource"
 		},
 
 		"material-icon-theme.folders.associations": {
 			"@Resources": "tools",
 			"@Resources/depot": "database",
-			"vault": "obsidian"
+			"vault": "obsidian",
+			"Skins": "interface",
+			"Skins/Anima-Minecraft": "layout",
+			"Skins/Battery": "layout",
+			"Skins/Bundle": "layout",
+			"Skins/Calendar": "layout",
+			"Skins/Feedi": "layout",
+			"Skins/Finance-Market": "layout",
+			"Skins/Network": "layout",
+			"Skins/Radio.net": "layout",
+			"Skins/Rainmeter-Forum": "layout",
+			"Skins/Shortcut": "layout",
+			"Skins/Wallhaven": "layout",
+			"Skins/Weather": "layout"
 		},
 
 		"material-icon-theme.files.customClones": [

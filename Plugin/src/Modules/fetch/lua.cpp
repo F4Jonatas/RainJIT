@@ -356,7 +356,7 @@ namespace lua {
 		}, 1 );
 		lua_setfield( L, -2, "html" );
 
-		// :json() - identical to json( body )
+		// :json() - equivalent to json.decode( body )
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
 			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
@@ -370,10 +370,26 @@ namespace lua {
 					                   utf8_to_wstring( err ? err : "unknown error" );
 					RmLog( r->rm, LOG_ERROR, msg.c_str() );
 				}
+
 				lua_pop( L2, 1 );
 				lua_pushnil( L2 );
 				return 1;
 			}
+
+			// Stack: [ ..., jsonModule ]
+			lua_getfield( L2, -1, "decode" );
+
+			if ( !lua_isfunction( L2, -1 ) ) {
+				if ( r && r->rm )
+					RmLog( r->rm, LOG_ERROR, L"[RainJIT:Fetch] response:json() - json.decode not found." );
+
+				lua_pop( L2, 2 ); // decode + jsonModule
+				lua_pushnil( L2 );
+				return 1;
+			}
+
+			// Stack: [ ..., jsonModule, decode ] -> remove jsonModule
+			lua_remove( L2, -2 );
 
 			lua_getfield( L2, 1, "__body" );
 

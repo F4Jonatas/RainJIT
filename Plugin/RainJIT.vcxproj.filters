@@ -85,6 +85,24 @@
     <ClCompile Include="src\Modules\fetch\wininet.cpp">
       <Filter>Modules\fetch</Filter>
     </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_core.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_options.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_renderer.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_runtime.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_window.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -180,6 +198,27 @@
     <ClInclude Include="src\Modules\fetch\wininet.hpp">
       <Filter>Modules\fetch</Filter>
     </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_gdiplus.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_options.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_renderer.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_runtime.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_surface.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_window.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RainJIT.rc" />
@@ -226,6 +265,9 @@
     </Filter>
     <Filter Include="Modules\webview">
       <UniqueIdentifier>{983529f9-08a8-4f66-b4c3-2208659a5f61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\tooltip">
+      <UniqueIdentifier>{dc40088f-5a57-4395-a731-2707a044aa81}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,0 +1,100 @@
+{
+	"2026-01-01": {
+		"title": "New Years Day"
+	},
+	"2026-01-19": {
+		"title": "Martin Luther King, Jr. Day"
+	},
+	"2026-02-02": {
+		"title": "Groundhog Day"
+	},
+	"2026-02-14": {
+		"title": "Valentines Day"
+	},
+	"2026-02-16": {
+		"title": "Washington's Birthday"
+	},
+	"2026-03-17": {
+		"title": "St. Patrick's Day"
+	},
+	"2026-04-01": {
+		"title": "April Fool's Day"
+	},
+	"2026-04-15": {
+		"title": "Tax Day"
+	},
+	"2026-04-22": {
+		"title": "Earth Day"
+	},
+	"2026-04-24": {
+		"title": "Arbor Day"
+	},
+	"2026-05-05": {
+		"title": "Cinco de Mayo"
+	},
+	"2026-05-10": {
+		"title": "Mother's Day"
+	},
+	"2026-05-25": {
+		"title": "Memorial Day"
+	},
+	"2026-06-14": {
+		"title": "Flag Day"
+	},
+	"2026-06-21": {
+		"title": "Father's Day"
+	},
+	"2026-07-04": {
+		"title": "Independence Day"
+	},
+	"2026-08-26": {
+		"title": "Women's Equality Day"
+	},
+	"2026-09-07": {
+		"title": "Labor Day"
+	},
+	"2026-09-13": {
+		"title": "Grandparent's Day"
+	},
+	"2026-09-11": {
+		"title": "Patriot Day",
+		"anniversary": true
+	},
+	"2026-09-17": {
+		"title": "Citizen Day"
+	},
+	"2026-10-09": {
+		"title": "Leif Erikson Day"
+	},
+	"2026-10-12": {
+		"title": "Columbus Day"
+	},
+	"2026-10-31": {
+		"title": "Halloween"
+	},
+	"2026-11-03": {
+		"title": "Election Day"
+	},
+	"2026-11-11": {
+		"title": "Veterans Day"
+	},
+	"2026-11-26": {
+		"title": "Thanksgiving Day"
+	},
+	"2026-12-07": {
+		"title": "Pearl Harbor Remembrance Day",
+		"anniversary": true
+	},
+	"2026-12-21": {
+		"title": "Winter Solstice"
+	},
+	"2026-12-24": {
+		"title": "Christmas Eve"
+	},
+	"2026-12-25": {
+		"titlename": "Christmas Day"
+	},
+	"2026-12-31": {
+		"title": "New Years Eve"
+	}
+}

@@ -45,7 +45,7 @@
 - [Limitations](#limitations)
 - [Examples](#examples)
 
-<details>
+</details>
 
 <br>
 <br>

@@ -29,7 +29,7 @@ local grapth = chart({
 		{
 			strokewidth = 1,
 			strokecolor = '180 | 102,219,252,20 ; 0 | 102,219,252,180 ; 0.2 | 102,219,252,180 ; 0.85 | 102,219,252,20 ; 1',
-			fill = '-90 | 102,219,252,86 ; 0 | 102,219,252,20 ; 1',
+			fill = '-90 | 102,219,252,120 ; 0 | 102,219,252,0 ; 0.9',
 			data = { 0 }
 		},
 		{
@@ -46,9 +46,9 @@ local grapth = chart({
 
 
 --- Convert a byte count to a human-readable string with binary prefixes (IEC).
--- @param bytes number The number of bytes to format (must be non-negative).
--- @return string A formatted string like "12.34 MB" (two decimal places).
--- @usage local size = fmt_bytes(1234567) -- yields "1.18 MB"
+-- @usage fmt_bytes(1234567) -- yields "1.18 MB"
+-- @param (number) bytes - The number of bytes to format (must be non-negative).
+-- @return (string) A formatted string like "12.34 MB" (two decimal places).
 local fmt_bytes = setmetatable(
 	-- static
 	{ prefixes = { 'B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB' }},

@@ -19,6 +19,7 @@
 #include "modules/webview/trident.hpp"
 #include "modules/html/html.hpp"
 #include "modules/xml/xml.hpp"
+#include "modules/tooltip/tooltip.hpp"
 // #include "modules/interval/interval.hpp"
 
 
@@ -177,6 +178,7 @@ namespace Lua {
 		html::RegisterModule( rain->L, rain );
 		xml::RegisterModule( rain->L, rain );
 		// interval::RegisterModule(rain->L, rain);
+		tooltip::RegisterModule( rain->L, rain );
 		exposeRainToLua( rain->L, rain );
 	}
 

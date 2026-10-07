@@ -386,8 +386,18 @@ end
 
 
 setmetatable( json, {
-	__call = function( _, str )
-		return json.decode( str )
+	__call = function( _, file )
+		local file = io.open( file, 'r' )
+		local text
+
+		if file then
+			text = json.decode( file:read( '*all' ))
+		else
+			error( 'Could not create file.' )
+		end
+
+		file:close()
+		return text
 	end
 })
 

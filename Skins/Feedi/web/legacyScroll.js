@@ -2,7 +2,7 @@
  * =================================================================
  * Custom scrollbar for Trident (IE7+) and modern browsers.
  *
- * @license MIT
+ * @license GPL v2.0 License
  * @author F4Jonatas
  *
  * @option {number}  [width=12]               - Scrollbar width in px.

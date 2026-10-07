@@ -2,6 +2,9 @@ local depot   = require( 'depot' )
 -- local meter   = require( 'meter' )
 local fetch   = require( 'fetch' )
 local glass   = require( 'glass' )
+local time    = require( 'time' )
+local html    = require( 'html' )
+local xml     = require( 'xml' )
 local trident = require( 'webview.trident'  )
 
 
@@ -17,6 +20,7 @@ local headers = {
 	['User-Agent'] = 'Rainmeter WebParser plugin'
 }
 
+local forumsWatch = { 'Lua Scripting' }
 
 
 
@@ -51,7 +55,7 @@ local browser = trident.create({
 
 function rain:init()
 	local response = fetch( baseURL:format( login, passw ), { headers = headers })
-	assert( response.ok, 'Erro ao obter o XML' )
+	assert( response.ok, 'Error retrieving the XML' )
 	response:save( 'feeds.xml' )
 
 	local doc, err = response:xml()
@@ -71,14 +75,21 @@ function rain:init()
 		local entry = entries:get( i )
 
 		local author_name = entry:select_single( 'author/name' ):text()
-		local updated     = entry:select_single( 'updated' ):text()
+		local _, updated  = time.todate( entry:select_single( 'updated' ):text())
 		local link        = entry:select_single( 'link' ):attribute( 'href' )
 		local category    = entry:select_single( 'category' )
 		local topic_url   = category:attribute( 'scheme' )
 		local title       = entry:select_single( 'title' ):text()
+		-- local content     = entry:select_single( 'content' ):text()
 		category          = category:attribute( 'label' )
 
+		-- for item in xml.parse_html( entry:select_single( 'content' ):text()):iter() do
+		-- 	print( item:text())
+		-- end
+
 		title = title:gsub( '^%s*'.. category:gsub( '%-', '%%-' ) ..'%s*•%s*', '' )
+		title = title:gsub( '^[Rr][Ee]%s*:%s*[Hh][Ee][Ll][Pp]%s*:', 'Re: ' )
+		title = title:gsub( '^[Cc][Oo][Mm][Mm][Uu][Nn][Ii][Tt][Yy]%s*[Pp][Ll][Uu][Gg][Ii][Nn][Ss]%s*&amp;%s*[Aa][Dd][Dd][Oo][Nn][Ss]%s*•%s*', '' )
 
 		inner = inner .. string.format([[
 			<div class="feed-group">
@@ -86,13 +97,15 @@ function rain:init()
 				<a href="%s" title="%s" class="title">%s</a>
 				<a href="%s" title="%s" class="category">%s</a>
 				<div class="posted"><span class="author">%s</span><span>  »  </span><span class="updated">%s</span></div>
+				<div class="content">%s</div>
 			</div>]],
 			link, link,
 			title,
 			topic_url,
 			topic_url, category,
 			author_name,
-			updated
+			updated,
+			''
 		)
 	end
 
