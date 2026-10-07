@@ -534,12 +534,16 @@ print.error("Failed to parse settings.ini at line 42")
 
 To maintain compatibility between `x64` and `x86` versions, I created this dynamic loader of native modules using **LuaJIT FFI**.<br><br>
 This method loads architecture-specific native DLLs (.dll) at runtime and registers them in `package.loaded`, mimicking Lua standard `require` behavior.<br>
-Path for loading DLLs: `#SKINSPATH#@Vault\lua\bin`<br>
 
-> - Detects the CPU architecture via **LuaJIT FFI**
-> - Resolves the correct binary path (`x86`/`x64`)
-> - Converts Lua module names into DLL paths
-> - Calls the corresponding `luaopen_*` entry point
+> [!NOTE]
+> Path for loading DLLs:
+>   - `#SKINSPATH#@Vault\lua\bin`
+>   - `#@#\lua\bin`
+>   - `#CURRENTPATH#\lua\bin`<br><br>
+> 1. Detects the CPU architecture via **LuaJIT FFI**
+> 2. Resolves the correct binary path (`x86`/`x64`)
+> 3. Converts Lua module names into DLL paths
+> 4. Calls the corresponding `luaopen_*` entry point
 
 > [!IMPORTANT]
 > Some modules depend on other libraries. Make sure you have them installed beforehand to avoid unsuccessful attempts.
