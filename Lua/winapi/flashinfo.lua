@@ -1,7 +1,8 @@
 
 
+-- @submodule winapi.flashinfo
 -- @author F4Jonatas
--- @license GPL v2.0 License
+-- @license GPL-2.0 License
 
 local ffi = require( 'ffi' )
 local bit = require( 'bit' )

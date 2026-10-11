@@ -1,6 +1,7 @@
 /**
  * @file html_node.hpp
  * @brief HTML node userdata definitions.
+ * @license GPL v2.0 License
  *
  * Provides read-only DOM node access.
  *

@@ -33,31 +33,6 @@ local play = meter( METER_PLAY, 2 )
 local next = meter( METER_NEXT, 2 )
 local prev = meter( METER_PREV, 2 )
 
--- next:path([[
--- M 10.5028 6.908
--- L 7.6516 6.908
--- L 7.6516 17.072
--- L 10.5028 17.072
--- L 10.5028 6.908
--- Z
--- M 19.1418 11.0546
--- C 19.6178 11.3714 19.8563 11.5306 19.939 11.7304
--- C 20.0112 11.9046 20.0112 12.1018 19.939 12.276
--- C 19.8563 12.4766 19.6178 12.635 19.1418 12.9518
--- L 13.7852 16.5238
--- C 13.2088 16.9074 12.921 17.0993 12.6826 17.0852
--- C 12.474 17.0729 12.2822 16.9699 12.1563 16.8036
--- C 12.012 16.6126 12.012 16.2668 12.012 15.5742
--- L 12.012 8.4322
--- C 12.012 7.7396 12.012 7.3938 12.1563 7.2028
--- C 12.2822 7.0365 12.474 6.9335 12.6826 6.9212
--- C 12.921 6.9071 13.2088 7.099 13.7852 7.4826
--- L 19.1418 11.0546
--- Z
--- ]])
-
--- rain:var( 'shape', next.contentPath, rain:var("#CURRENTPATH##CURRENTFILE#"))
-
 
 -- Forward declarations
 local radioTitle
@@ -86,13 +61,12 @@ end
 -- @param state number WMPlayer state to apply (2 = paused, 3 = playing)
 local function buttonPlayPause( state )
 	if state == 3 then
-		play:path( 'M 13.5 7 L 9.5 7 V 21 L 13.5 21 V 7 Z M 15.5 7 L 19.5 7 V 21 L 15.5 21 V 7 Z' ):update()
+		play:text( '[\\XEB33]' ):update()
 		dp:set( 'radio-state', 3 )
 		player.controls:play()
 
 	else
-		play:path([[M 20.003 12.6688C 20.6708 13.1138 21.0046 13.3364 21.121 13.617C 21.2226 13.8622 21.2226 14.1378 21.121 14.383C 21.0046 14.6636 20.6708 14.8862 20.003 15.3312L 12.4876 20.3416C 11.6794 20.8804 11.2754 21.1498 10.9404 21.1298C 10.6486 21.1122 10.3788 20.968 10.2024 20.7348C 10 20.4672 10 19.9816 10 19.0104L 10 8.9896C 10 8.0185 10 7.5329 10.2024 7.2652C 10.3788 7.032 10.6486 6.8877 10.9404 6.8703C 11.2754 6.8503 11.6794 7.1196 12.4876 7.6583L 20.003 12.6688Z]])
-		play:update()
+		play:text( '[\\XEDDA]' ):update()
 		dp:set( 'radio-state', 2 )
 		player.controls:pause()
 	end
@@ -265,15 +239,15 @@ end
 -- callers are responsible for that.
 function loadRadio()
 	if iRadio == #radio then
-		next:fill( 'ffffff64'):update()
+		next:fontalpha( 100 ):update()
 	else
-		next:fill( 'ffffff'):update()
+		next:fontalpha( 255 ):update()
 	end
 
 	if iRadio == 1 then
-		prev:fill( 'ffffff64'):update()
+		prev:fontalpha( 100 ):update()
 	else
-		prev:fill( 'ffffff'):update()
+		prev:fontalpha( 255 ):update()
 	end
 
 
@@ -291,7 +265,7 @@ function loadRadio()
 
 		radioTitle = data.name
 		player.url = data.streams[1].url
-		player.settings.volume = dp:get( 'volume', 100 )
+		player.settings.volume = dp:get( 'volume', 50 )
 
 		if player.state ~= 3 then
 			player.controls:stop()

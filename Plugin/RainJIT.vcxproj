@@ -110,6 +110,7 @@
     <ClCompile Include="src\RainJIT.cpp" />
     <ClCompile Include="src\rain.cpp" />
     <ClCompile Include="src\binding.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_text.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".editorconfig" />
@@ -153,6 +154,7 @@
     <ClInclude Include="src\utils\filesystem.hpp" />
     <ClInclude Include="src\utils\strings.hpp" />
     <ClInclude Include="src\utils\util.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_text.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RainJIT.rc" />

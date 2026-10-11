@@ -536,6 +536,12 @@ static int moveSkin( lua_State *L ) {
  * - First argument (`self`) is the `rain` table
  * - Second argument is command string
  *
+ * When called with multiple arguments, the first argument is matched
+ * case-insensitively against `util::BANGS`. If it matches a known bang name
+ * without the leading `!`, the `!` is prepended automatically, so
+ * `rain:bang("SetVariable", "Counter", "42")` behaves like
+ * `rain:bang("!SetVariable", "Counter", "42")`.
+ *
  * @param L Lua state.
  * @return Number of values returned to Lua (always 0).
  *
@@ -548,6 +554,7 @@ static int moveSkin( lua_State *L ) {
  *
  * -- Multiple arguments: concatenated
  * rain:bang("!SetVariable", "Counter", "42")
+ * rain:bang("SetVariable", "Counter", "42")  -- '!' added automatically
  * rain:bang("!ShowMeter", "MyMeter", "MyConfig.ini")
  * @endcode
  */
@@ -575,6 +582,25 @@ static int executeBang( lua_State *L ) {
 	for ( int i = 2; i <= argc; ++i ) {
 		const char *arg = luaL_checkstring( L, i );
 		std::wstring warg = utf8_to_wstring( arg );
+
+		// Normalize the first argument: if it is a known bang name without
+		// the leading '!', prepend it. Case-insensitive check against BANGS.
+		if ( i == 2 && ! warg.empty() && warg.front() != L'!' ) {
+			std::wstring lower = warg;
+			std::transform(
+				lower.begin(), lower.end(), lower.begin(),
+				[]( wchar_t c ) {
+					return ( c >= L'A' && c <= L'Z' ) ? (wchar_t)( c + 32 ) : c;
+				}
+			);
+
+			for ( const auto b : util::BANGS ) {
+				if ( lower == b ) {
+					warg.insert( warg.begin(), L'!' );
+					break;
+				}
+			}
+		}
 
 		if ( ! cmd.empty() )
 			cmd += L" ";

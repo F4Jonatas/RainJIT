@@ -1,6 +1,7 @@
 /**
  * @file html.cpp
  * @brief HTML Lua module entry.
+ * @license GPL v2.0 License
  *
  * Provides:
  * html.parse()

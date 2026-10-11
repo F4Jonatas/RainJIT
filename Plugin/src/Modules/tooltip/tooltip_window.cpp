@@ -1,10 +1,14 @@
 /**
  * @file tooltip_window.cpp
- * @brief Layered tooltip window and monitor helpers implementation.
+ * @brief Layered tooltip window, fade animation and monitor helpers implementation.
  * @license GPL v2.0 License
  */
 
 #include "tooltip_window.hpp"
+
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 
 #pragma comment( lib, "advapi32.lib" )
 
@@ -13,27 +17,31 @@ namespace tooltip {
 	namespace {
 
 		constexpr const wchar_t *kClassName = L"RainJIT.Tooltip";
-		constexpr UINT_PTR kTimerId = 1;
+		constexpr UINT_PTR kTimeoutTimer = 1;
+		constexpr UINT_PTR kFadeTimer = 2;
+		constexpr UINT kFadeInterval = 15; // ms (the system timer resolution is ~15.6 ms)
+		constexpr std::uint32_t kMaxFade = 60000; // ms
 
 
 
 		/**
 		 * @brief Window procedure of the tooltip window.
 		 *
-		 * Refuses activation and hides the window when the auto-hide timer fires.
+		 * Refuses activation and forwards the timers to the owning Window.
 		 */
 		LRESULT CALLBACK windowProc( HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 			switch ( msg ) {
 			case WM_MOUSEACTIVATE:
 				return MA_NOACTIVATE;
 
-			case WM_TIMER:
-				if ( wParam == kTimerId ) {
-					KillTimer( hwnd, kTimerId );
-					ShowWindow( hwnd, SW_HIDE );
-					return 0;
-				}
-				break;
+			case WM_TIMER: {
+				auto *self = reinterpret_cast<Window *>( GetWindowLongPtrW( hwnd, GWLP_USERDATA ) );
+
+				if ( self && self->Handle == hwnd )
+					self->onTimer( static_cast<UINT_PTR>( wParam ) );
+
+				return 0;
+			}
 
 			default:
 				break;
@@ -62,9 +70,11 @@ namespace tooltip {
 			return fn;
 		}
 
-		// ---- DWM (resolved at runtime, so the module builds with any SDK) ---------
 
-		// Attribute ids (dwmapi.h, Windows 11 SDK)
+
+		// ---- system backdrop (resolved at runtime, so the module builds with any SDK) ----
+
+		// DWM attribute ids (dwmapi.h, Windows 11 SDK)
 		constexpr DWORD kDwmUseImmersiveDarkMode = 20;
 		constexpr DWORD kDwmWindowCornerPref = 33;
 		constexpr DWORD kDwmBorderColor = 34;
@@ -73,8 +83,15 @@ namespace tooltip {
 		constexpr DWORD kDwmColorDefault = 0xFFFFFFFF;
 		constexpr DWORD kDwmColorNone = 0xFFFFFFFE;
 
+		// SetWindowCompositionAttribute ids and accent states (undocumented, stable since Windows 10)
+		constexpr DWORD kWcaForceActiveWindowAppearance = 15;
+		constexpr DWORD kWcaAccentPolicy = 19;
+		constexpr DWORD kAccentDisabled = 0;
+		constexpr DWORD kAccentAcrylicBlurBehind = 4;
+
+		constexpr DWORD kBuildAcrylicAccent = 17134; // Windows 10 1803
 		constexpr DWORD kBuildWindows11 = 22000;
-		constexpr DWORD kBuildSystemBackdrop = 22621;
+		constexpr DWORD kBuildSystemBackdrop = 22621; // Windows 11 22H2
 
 		/// @brief Same layout as MARGINS.
 		struct DwmMargins {
@@ -84,8 +101,24 @@ namespace tooltip {
 			int Bottom;
 		};
 
+		/// @brief Same layout as ACCENT_POLICY.
+		struct AccentPolicy {
+			DWORD State;
+			DWORD Flags;
+			DWORD GradientColor; // 0xAABBGGRR
+			DWORD AnimationId;
+		};
+
+		/// @brief Same layout as WINDOWCOMPOSITIONATTRIBDATA.
+		struct CompositionAttribData {
+			DWORD Attrib;
+			PVOID Data;
+			SIZE_T Size;
+		};
+
 		using DwmSetWindowAttributeFn = HRESULT( WINAPI * )( HWND, DWORD, LPCVOID, DWORD );
 		using DwmExtendFrameIntoClientAreaFn = HRESULT( WINAPI * )( HWND, const DwmMargins * );
+		using SetWindowCompositionAttributeFn = BOOL( WINAPI * )( HWND, CompositionAttribData * );
 
 
 
@@ -111,6 +144,17 @@ namespace tooltip {
 			static const DwmExtendFrameIntoClientAreaFn fn = []() -> DwmExtendFrameIntoClientAreaFn {
 				HMODULE dwm = dwmModule();
 				return dwm ? reinterpret_cast<DwmExtendFrameIntoClientAreaFn>( GetProcAddress( dwm, "DwmExtendFrameIntoClientArea" ) ) : nullptr;
+			}();
+
+			return fn;
+		}
+
+
+
+		SetWindowCompositionAttributeFn resolveSetWindowCompositionAttribute() noexcept {
+			static const SetWindowCompositionAttributeFn fn = []() -> SetWindowCompositionAttributeFn {
+				HMODULE user32 = GetModuleHandleW( L"user32.dll" );
+				return user32 ? reinterpret_cast<SetWindowCompositionAttributeFn>( GetProcAddress( user32, "SetWindowCompositionAttribute" ) ) : nullptr;
 			}();
 
 			return fn;
@@ -260,7 +304,16 @@ namespace tooltip {
 	);
 		// clang-format on
 
-		return Handle != nullptr;
+		if ( !Handle )
+			return false;
+
+		SetWindowLongPtrW( Handle, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( this ) );
+
+		Current = 0;
+		Fading = false;
+		Then = After::None;
+
+		return true;
 	}
 
 
@@ -269,13 +322,33 @@ namespace tooltip {
 		if ( !Handle )
 			return;
 
-		DestroyWindow( Handle );
+		HWND handle = Handle;
+
+		// Detach first: the window procedure must not reach this object while the
+		// window is being torn down. The window timers die with the window.
 		Handle = nullptr;
+		Fading = false;
+		Then = After::None;
+
+		SetWindowLongPtrW( handle, GWLP_USERDATA, 0 );
+		DestroyWindow( handle );
 	}
 
 
 
-	bool Window::present( const Surface &surface, int x, int y, std::uint8_t opacity ) noexcept {
+	void Window::finish() noexcept {
+		const GoneFn fn = OnGone;
+		void *context = Context;
+
+		destroy();
+
+		if ( fn )
+			fn( context );
+	}
+
+
+
+	bool Window::present( const Surface &surface, int x, int y ) noexcept {
 		if ( !Handle || !surface.Dc )
 			return false;
 
@@ -285,7 +358,7 @@ namespace tooltip {
 
 		BLENDFUNCTION blend{};
 		blend.BlendOp = AC_SRC_OVER;
-		blend.SourceConstantAlpha = opacity;
+		blend.SourceConstantAlpha = Current;
 		blend.AlphaFormat = AC_SRC_ALPHA;
 
 		// clang-format off
@@ -314,22 +387,200 @@ namespace tooltip {
 
 
 
-	void Window::show() noexcept {
+	void Window::applyAlpha( std::uint8_t alpha ) noexcept {
+		Current = alpha;
+
 		if ( !Handle )
 			return;
 
-		ShowWindow( Handle, SW_SHOWNOACTIVATE );
-		raise();
+		BLENDFUNCTION blend{};
+		blend.BlendOp = AC_SRC_OVER;
+		blend.SourceConstantAlpha = alpha;
+		blend.AlphaFormat = AC_SRC_ALPHA;
+
+		// Only the blend function changes: no source DC, no bitmap upload.
+		UpdateLayeredWindow( Handle, nullptr, nullptr, nullptr, nullptr, nullptr, 0, &blend, ULW_ALPHA );
 	}
 
 
 
-	void Window::hide() noexcept {
+	void Window::stopFade() noexcept {
+		if ( Fading ) {
+			Fading = false;
+
+			if ( Handle )
+				KillTimer( Handle, kFadeTimer );
+		}
+	}
+
+
+
+	void Window::fadeTo( std::uint8_t target, std::uint32_t ms, After then ) noexcept {
 		if ( !Handle )
 			return;
 
-		KillTimer( Handle, kTimerId );
-		ShowWindow( Handle, SW_HIDE );
+		ms = ( std::min )( ms, kMaxFade );
+
+		if ( ms == 0 || target == Current ) {
+			stopFade();
+			applyAlpha( target );
+
+			Then = then;
+			complete();
+			return;
+		}
+
+		// A partial fade (e.g. interrupted halfway) keeps the same speed as a full one.
+		const std::uint32_t span = ( std::max )( static_cast<std::uint32_t>( Level ), 1u );
+		const std::uint32_t distance = static_cast<std::uint32_t>( std::abs( static_cast<int>( target ) - static_cast<int>( Current ) ) );
+
+		FadeFrom = Current;
+		FadeTo = target;
+		FadeMs = ( std::max )( 1u, ( std::min )( ms, ms * distance / span ) );
+		FadeStart = GetTickCount64();
+		Then = then;
+		Fading = true;
+
+		SetTimer( Handle, kFadeTimer, kFadeInterval, nullptr );
+	}
+
+
+
+	void Window::tick() noexcept {
+		if ( !Fading || !Handle ) {
+			stopFade();
+			return;
+		}
+
+		const ULONGLONG elapsed = GetTickCount64() - FadeStart;
+
+		if ( elapsed >= FadeMs ) {
+			stopFade();
+			applyAlpha( FadeTo );
+			complete();
+			return;
+		}
+
+		// smoothstep easing
+		double t = static_cast<double>( elapsed ) / static_cast<double>( FadeMs );
+		t = t * t * ( 3.0 - 2.0 * t );
+
+		const int value = static_cast<int>( FadeFrom ) + static_cast<int>( std::lround( ( static_cast<double>( FadeTo ) - static_cast<double>( FadeFrom ) ) * t ) );
+
+		applyAlpha( static_cast<std::uint8_t>( ( std::clamp )( value, 0, 255 ) ) );
+	}
+
+
+
+	void Window::complete() noexcept {
+		const After then = Then;
+		Then = After::None;
+
+		switch ( then ) {
+		case After::Hide:
+			if ( Handle ) {
+				KillTimer( Handle, kTimeoutTimer );
+				ShowWindow( Handle, SW_HIDE );
+			}
+			break;
+
+		case After::Destroy:
+			finish();
+			break;
+
+		default:
+			break;
+		}
+	}
+
+
+
+	void Window::onTimer( UINT_PTR id ) noexcept {
+		if ( id == kFadeTimer ) {
+			tick();
+			return;
+		}
+
+		if ( id == kTimeoutTimer ) {
+			KillTimer( Handle, kTimeoutTimer );
+			hide( AutoFadeMs );
+		}
+	}
+
+
+
+	void Window::show( std::uint32_t fadeMs, bool raiseIt ) noexcept {
+		if ( !Handle )
+			return;
+
+		// Showing cancels a pending hide / destroy.
+		Then = After::None;
+
+		if ( !visible() ) {
+			stopFade();
+			applyAlpha( fadeMs == 0 ? Level : 0 );
+
+			ShowWindow( Handle, SW_SHOWNOACTIVATE );
+			raise();
+
+			if ( fadeMs != 0 )
+				fadeTo( Level, fadeMs, After::None );
+
+			return;
+		}
+
+		// Already visible: fade back in when it was fading out (or is not at full level).
+		if ( ( Fading && FadeTo != Level ) || ( !Fading && Current != Level ) ) {
+			fadeTo( Level, fadeMs, After::None );
+
+			if ( raiseIt )
+				raise();
+
+			return;
+		}
+
+		if ( raiseIt )
+			raise();
+	}
+
+
+
+	void Window::hide( std::uint32_t fadeMs ) noexcept {
+		if ( !Handle )
+			return;
+
+		KillTimer( Handle, kTimeoutTimer );
+
+		if ( !visible() ) {
+			stopFade();
+			Then = After::None;
+			return;
+		}
+
+		if ( fadeMs == 0 ) {
+			stopFade();
+			Then = After::None;
+			ShowWindow( Handle, SW_HIDE );
+			return;
+		}
+
+		fadeTo( 0, fadeMs, After::Hide );
+	}
+
+
+
+	void Window::close( std::uint32_t fadeMs ) noexcept {
+		if ( !Handle )
+			return;
+
+		KillTimer( Handle, kTimeoutTimer );
+
+		if ( fadeMs == 0 || !visible() ) {
+			finish();
+			return;
+		}
+
+		fadeTo( 0, fadeMs, After::Destroy );
 	}
 
 
@@ -383,91 +634,154 @@ namespace tooltip {
 
 
 
+	void Window::setLevel( std::uint8_t level ) noexcept {
+		Level = level;
+
+		if ( !Handle || !visible() )
+			return;
+
+		if ( Fading ) {
+			// Fading in: retarget. Fading out: the level applies on the next show.
+			if ( FadeTo != 0 )
+				FadeTo = level;
+
+			return;
+		}
+
+		if ( Current != level )
+			applyAlpha( level );
+	}
+
+
+
 	void Window::setTimeout( std::uint32_t milliseconds ) noexcept {
 		if ( !Handle )
 			return;
 
 		if ( milliseconds == 0 )
-			KillTimer( Handle, kTimerId );
+			KillTimer( Handle, kTimeoutTimer );
 		else
-			SetTimer( Handle, kTimerId, milliseconds, nullptr );
+			SetTimer( Handle, kTimeoutTimer, milliseconds, nullptr );
 	}
 
 
 
-	BackdropResult Window::setBackdrop( Backdrop effect, Corner corner, std::optional<bool> dark ) noexcept {
+	BackdropResult Window::setBackdrop( Backdrop effect, Corner corner, std::optional<bool> dark, std::optional<Rgba> tint ) noexcept {
 		if ( !Handle )
 			return BackdropResult::Failed;
 
-		const bool active = effect != Backdrop::None;
+		const bool acrylic = effect == Backdrop::Acrylic;
+		const bool mica = effect == Backdrop::Mica || effect == Backdrop::MicaAlt;
+		const bool active = acrylic || mica;
 		const DWORD build = windowsBuild();
 
-		// Nothing to reset on systems that never had these attributes.
-		if ( !active && build < kBuildWindows11 )
+		// Nothing could have been applied on systems older than the accent policy.
+		if ( !active && build < kBuildAcrylicAccent )
 			return BackdropResult::Ok;
 
-		if ( build < kBuildSystemBackdrop )
+		if ( acrylic && build < kBuildAcrylicAccent )
 			return BackdropResult::Unsupported;
 
-		const auto setAttribute = resolveDwmSetWindowAttribute();
-
-		if ( !setAttribute )
+		if ( mica && build < kBuildSystemBackdrop )
 			return BackdropResult::Unsupported;
 
-		// DWM_SYSTEMBACKDROP_TYPE: 1 none, 2 mica, 3 acrylic (transient), 4 mica alt (tabbed)
-		DWORD type = 1;
+		const bool useDark = dark.value_or( systemUsesDarkTheme() );
 
-		switch ( effect ) {
-		case Backdrop::Mica:
-			type = 2;
-			break;
-		case Backdrop::Acrylic:
-			type = 3;
-			break;
-		case Backdrop::MicaAlt:
-			type = 4;
-			break;
-		default:
-			break;
+		const auto setComposition = resolveSetWindowCompositionAttribute();
+
+		if ( acrylic && !setComposition )
+			return BackdropResult::Unsupported;
+
+		bool ok = true;
+
+		// ---- accent policy: acrylic on, anything else off ----------------------
+		if ( setComposition ) {
+			AccentPolicy policy{};
+
+			if ( acrylic ) {
+				// Rgba 0xRRGGBBAA -> 0xAABBGGRR. Acrylic does not accept a tint with alpha 0.
+				const Rgba t = tint.value_or( useDark ? 0x00000001u : 0xFFFFFF01u );
+				const DWORD r = ( t >> 24 ) & 0xFF;
+				const DWORD g = ( t >> 16 ) & 0xFF;
+				const DWORD b = ( t >> 8 ) & 0xFF;
+				const DWORD a = ( std::max<DWORD> )( 1, static_cast<DWORD>( t & 0xFF ) );
+
+				policy.State = kAccentAcrylicBlurBehind;
+				policy.Flags = 0;
+				policy.GradientColor = ( a << 24 ) | ( b << 16 ) | ( g << 8 ) | r;
+			} else
+				policy.State = kAccentDisabled;
+
+			CompositionAttribData data{ kWcaAccentPolicy, &policy, sizeof( policy ) };
+			const BOOL result = setComposition( Handle, &data );
+
+			if ( acrylic )
+				ok = result != FALSE;
 		}
 
-		// DWM_WINDOW_CORNER_PREFERENCE: 0 default, 1 do not round, 2 round, 3 round small
-		DWORD cornerPreference = 0;
+		// ---- DWM attributes (Windows 11) ---------------------------------------
+		if ( build >= kBuildWindows11 ) {
+			if ( const auto setAttribute = resolveDwmSetWindowAttribute() ) {
+				// DWM_WINDOW_CORNER_PREFERENCE: 0 default, 1 do not round, 2 round, 3 round small
+				DWORD cornerPreference = 0;
 
-		if ( active ) {
-			switch ( corner ) {
-			case Corner::None:
-				cornerPreference = 1;
-				break;
-			case Corner::Round:
-				cornerPreference = 2;
-				break;
-			case Corner::Small:
-				cornerPreference = 3;
-				break;
-			default:
-				cornerPreference = 0;
-				break;
+				if ( active ) {
+					switch ( corner ) {
+					case Corner::None:
+						cornerPreference = 1;
+						break;
+					case Corner::Round:
+						cornerPreference = 2;
+						break;
+					case Corner::Small:
+						cornerPreference = 3;
+						break;
+					default:
+						cornerPreference = 0;
+						break;
+					}
+				}
+
+				// While a backdrop is active DWM draws no border: the tooltip border has priority.
+				const DWORD border = active ? kDwmColorNone : kDwmColorDefault;
+				const BOOL dwmDark = useDark ? TRUE : FALSE;
+
+				setAttribute( Handle, kDwmUseImmersiveDarkMode, &dwmDark, sizeof( dwmDark ) );
+				setAttribute( Handle, kDwmWindowCornerPref, &cornerPreference, sizeof( cornerPreference ) );
+				setAttribute( Handle, kDwmBorderColor, &border, sizeof( border ) );
+
+				if ( build >= kBuildSystemBackdrop ) {
+					// DWM_SYSTEMBACKDROP_TYPE: 1 none, 2 mica, 4 mica alt (tabbed).
+					// Acrylic goes through the accent policy, so DWM must draw nothing.
+					DWORD type = 1;
+
+					if ( effect == Backdrop::Mica )
+						type = 2;
+					else if ( effect == Backdrop::MicaAlt )
+						type = 4;
+
+					const HRESULT result = setAttribute( Handle, kDwmSystemBackdropType, &type, sizeof( type ) );
+
+					if ( mica )
+						ok = SUCCEEDED( result );
+
+					// Mica is rendered in the "frame" area, which must cover the whole window.
+					if ( const auto extend = resolveDwmExtendFrame() ) {
+						const DwmMargins margins = mica ? DwmMargins{ -1, -1, -1, -1 } : DwmMargins{ 0, 0, 0, 0 };
+						extend( Handle, &margins );
+					}
+
+					// Mica is drawn only for the active window: keep the active look.
+					if ( setComposition ) {
+						BOOL force = mica ? TRUE : FALSE;
+						CompositionAttribData data{ kWcaForceActiveWindowAppearance, &force, sizeof( force ) };
+						setComposition( Handle, &data );
+					}
+				}
 			}
 		}
 
-		// While a backdrop is active DWM draws no border: the tooltip border has priority.
-		const DWORD border = active ? kDwmColorNone : kDwmColorDefault;
-		const BOOL useDark = dark.value_or( systemUsesDarkTheme() ) ? TRUE : FALSE;
-
-		setAttribute( Handle, kDwmUseImmersiveDarkMode, &useDark, sizeof( useDark ) );
-		setAttribute( Handle, kDwmWindowCornerPref, &cornerPreference, sizeof( cornerPreference ) );
-		setAttribute( Handle, kDwmBorderColor, &border, sizeof( border ) );
-
-		const HRESULT result = setAttribute( Handle, kDwmSystemBackdropType, &type, sizeof( type ) );
-
-		// The material is rendered in the "frame" area, which must cover the whole window.
-		if ( const auto extend = resolveDwmExtendFrame() ) {
-			const DwmMargins margins = active ? DwmMargins{ -1, -1, -1, -1 } : DwmMargins{ 0, 0, 0, 0 };
-			extend( Handle, &margins );
-		}
-
-		return SUCCEEDED( result ) ? BackdropResult::Ok : BackdropResult::Failed;
+		return ok ? BackdropResult::Ok : BackdropResult::Failed;
 	}
 
 } // namespace tooltip

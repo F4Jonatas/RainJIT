@@ -233,7 +233,7 @@ function meter:event( events, callback )
 		self.EVENTLISTER[ listEvents[ action ]] = callID
 
 		rain:bang(
-			'!setOption',
+			'setOption',
 			self.name,
 			listEvents[ action ],
 			( value or '' ) ..
@@ -286,36 +286,36 @@ end
 -- @return (string|table) Returns the current MeterStyle string when used as getter, or the meter instance when used as setter.
 --
 -- **Getter**
--- @usage local style = meter:style()
+-- @usage local style = meter:styles()
 --
 -- **Setter**
--- @usage meter:style({ "MyFirstParent", "MySecondParent" })
--- @usage meter:style({ "+", "NewStyle" })
--- @usage meter:style({ "NewStyle", "+" })
+-- @usage meter:styles({ "MyFirstParent", "MySecondParent" })
+-- @usage meter:styles({ "+", "NewStyle" })
+-- @usage meter:styles({ "NewStyle", "+" })
 --
 -- @see https://docs.rainmeter.net/manual/meters/general-options/#MeterStyle
 -- @see https://docs.rainmeter.net/manual/meters/general-options/meterstyles/
--- function meter:style( value )
--- 	if value ~= nil then
--- 		local styles = rain:option( self.name, 'meterStyle' ) or ''
--- 		local parts = {}
+function meter:styles( value )
+	if value ~= nil then
+		local styles = rain:option( self.name, 'meterStyle' ) or ''
+		local parts = {}
 
--- 		for _, style in ipairs( value ) do
--- 			if style == '+' then
--- 				if styles ~= '' then
--- 					table.insert( parts, styles )
--- 				end
--- 			else
--- 				table.insert( parts, style )
--- 			end
--- 		end
+		for _, style in ipairs( value ) do
+			if style == '+' then
+				if styles ~= '' then
+					table.insert( parts, styles )
+				end
+			else
+				table.insert( parts, style )
+			end
+		end
 
--- 		rain:bang( '!setOption', self.name, 'meterStyle', table.concat( parts, '|' ))
--- 		return self
--- 	end
+		rain:bang( '!setOption', self.name, 'meterStyle', table.concat( parts, '|' ))
+		return self
+	end
 
--- 	return rain:option( self.name, 'meterStyle' )
--- end
+	return rain:option( self.name, 'meterStyle' )
+end
 
 
 
@@ -544,7 +544,7 @@ return setmetatable({}, {
 			EVENTLISTER = {}
 		}
 
-		meta.style = setmetatable({ meter = meta }, require( 'meter.style' ))
+		meta.inherit = setmetatable({ meter = meta }, require( 'meter.inherit' ))
 
 
 		if tipo == 'string' then

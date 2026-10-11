@@ -1,6 +1,7 @@
 /**
  * @file html_document.hpp
  * @brief HTML document userdata definitions.
+ * @license GPL v2.0 License
  */
 
 #pragma once

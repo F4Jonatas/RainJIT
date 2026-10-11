@@ -1,6 +1,7 @@
 /**
  * @file html_nodelist.cpp
  * @brief HtmlNodeList implementation.
+ * @license GPL v2.0 License
  */
 
 #include "html_nodelist.hpp"

@@ -9,7 +9,7 @@
 --
 -- Uses Win32 API via LuaJIT FFI.
 --
--- @module monitor
+-- @submodule winapi.monitor
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 

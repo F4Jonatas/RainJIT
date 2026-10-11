@@ -1,5 +1,5 @@
 
-
+-- @submodule winapi.msgbox
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 -- @see https://github.com/luapower/winapi/blob/master/winapi/messagebox.lua

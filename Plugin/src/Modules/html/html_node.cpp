@@ -1,6 +1,7 @@
 /**
  * @file html_node.cpp
  * @brief HTML node implementation.
+ * @license GPL v2.0 License
  */
 
 #include <string>

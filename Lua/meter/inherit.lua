@@ -1,22 +1,22 @@
---- Style manager (`meter.style`).
+--- Style manager (`meter.inherit`).
 -- Manipulates the pipe-separated list of the `MeterStyle` option.
 -- Every method returns the meter instance, except `contains`.
 --
 -- @usage
--- meter.style:add( "A", "B" )
--- meter.style:remove( "A" )
--- meter.style:contains( "A" )
--- meter.style:toggle( "A" )
+-- meter.inherit:add( "A", "B" )
+-- meter.inherit:remove( "A" )
+-- meter.inherit:contains( "A" )
+-- meter.inherit:toggle( "A" )
 --
--- @submodule meter.style
+-- @submodule meter.inherit
 -- @release 0.1.1
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 
 
 
-local style = {}
-style.__index = style
+local M = {}
+M.__index = M
 
 
 local function split( str )
@@ -55,7 +55,7 @@ end
 
 
 --- Add one or more styles (ignores those already present).
-function style:add( ... )
+function M:add( ... )
 	local list  = read( self )
 	local array = type( ... ) == 'table' and ... or { ... }
 
@@ -70,7 +70,7 @@ end
 
 
 --- Remove one or more styles.
-function style:remove( ... )
+function M:remove( ... )
 	local list = read( self )
 	local array = type( ... ) == 'table' and ... or { ... }
 
@@ -88,7 +88,7 @@ end
 
 --- Check whether all given styles are present.
 -- @return (boolean)
-function style:contains( ... )
+function M:contains( ... )
 	local list = read( self )
 	local array = type( ... ) == 'table' and ... or { ... }
 
@@ -103,7 +103,7 @@ end
 
 
 --- Toggle one or more styles.
-function style:toggle( ... )
+function M:toggle( ... )
 	local list = read( self )
 
 	for _, name in ipairs({ ... }) do
@@ -120,4 +120,4 @@ function style:toggle( ... )
 end
 
 
-return style
+return M

@@ -57,21 +57,21 @@ namespace core {
 		std::string error;
 		std::string text;
 
-		static const int STATUS_NETWORK_ERROR = -1; // Erro genérico de rede
-		static const int STATUS_CANCELLED = -2; // Requisição cancelada pelo usuário
-		static const int STATUS_INVALID_URL = -3; // URL inválida/mal formatada
-		static const int STATUS_NO_INTERNET = -4; // Sem conexão com internet
-		static const int STATUS_THREAD_ERROR = -5; // Erro ao criar thread
+		static const int STATUS_NETWORK_ERROR = -1; // Generic network error
+		static const int STATUS_CANCELLED = -2; // Request cancelled by the user
+		static const int STATUS_INVALID_URL = -3; // Invalid / malformed URL
+		static const int STATUS_NO_INTERNET = -4; // No internet connection
+		static const int STATUS_THREAD_ERROR = -5; // Failed to create the worker thread
 
-		static const int STATUS_ABORTED = -6; // Operação abortada (E_ABORT)
-		static const int STATUS_CONNECTION_LOST = -7; // Conexão perdida durante transferência
-		static const int STATUS_SSL_ERROR = -8; // Erro de SSL/TLS
-		static const int STATUS_PROXY_ERROR = -9; // Erro de proxy
-		static const int STATUS_TIMEOUT_DNS = -10; // Timeout na resolução DNS
-		static const int STATUS_TIMEOUT_CONNECT = -11; // Timeout na conexão
-		static const int STATUS_TIMEOUT_SEND = -12; // Timeout no envio
-		static const int STATUS_TIMEOUT_RECEIVE = -13; // Timeout no recebimento
-		static const int STATUS_CHUNKED_ERROR = -14; // Erro ao processar chunked encoding
+		static const int STATUS_ABORTED = -6; // Operation aborted (E_ABORT)
+		static const int STATUS_CONNECTION_LOST = -7; // Connection lost during transfer
+		static const int STATUS_SSL_ERROR = -8; // SSL/TLS error
+		static const int STATUS_PROXY_ERROR = -9; // Proxy error
+		static const int STATUS_TIMEOUT_DNS = -10; // DNS resolution timeout
+		static const int STATUS_TIMEOUT_CONNECT = -11; // Connection timeout
+		static const int STATUS_TIMEOUT_SEND = -12; // Send timeout
+		static const int STATUS_TIMEOUT_RECEIVE = -13; // Receive timeout
+		static const int STATUS_CHUNKED_ERROR = -14; // Failed to process chunked encoding
 
 		FetchResponse() = default;
 	};
@@ -88,18 +88,18 @@ namespace core {
 		std::map<std::wstring, std::wstring> headers;
 		std::vector<BYTE> body;
 
-		// Timeout geral (para compatibilidade)
+		// General timeout (kept for compatibility)
 		int timeout = 30000;
 
-		// Timeouts específicos por fase (em milissegundos)
-		// Nota: ignorados quando driver == "wininet" (não suportado pelo WinINet)
-		int dnsTimeout     = 0; // 0 = usa timeout geral
-		int connectTimeout = 0; // 0 = usa timeout geral
-		int sendTimeout    = 0; // 0 = usa timeout geral
-		int receiveTimeout = 0; // 0 = usa timeout geral
+		// Phase-specific timeouts (in milliseconds)
+		// Note: ignored when driver == "wininet" (not supported by WinINet)
+		int dnsTimeout = 0; // 0 = use the general timeout
+		int connectTimeout = 0; // 0 = use the general timeout
+		int sendTimeout = 0; // 0 = use the general timeout
+		int receiveTimeout = 0; // 0 = use the general timeout
 
 		bool followRedirects = true;
-		bool HTTPVersion     = false;
+		bool HTTPVersion = false;
 
 		/**
 		 * @brief HTTP driver/stack to use for this request.
@@ -122,6 +122,21 @@ namespace core {
 
 
 	/**
+	 * @struct NetHandle
+	 * @brief Opaque network handle (WinHTTP/WinINet) plus the function that closes it.
+	 *
+	 * The closer is supplied by the driver that created the handle, because
+	 * winhttp.h and wininet.h cannot be included in the same translation unit.
+	 * This keeps core.cpp independent from both stacks.
+	 */
+	struct NetHandle {
+		void *handle;
+		void ( *closer )( void * );
+	};
+
+
+
+	/**
 	 * @struct FetchContext
 	 * @brief Async fetch context with thread-safe state
 	 */
@@ -134,6 +149,12 @@ namespace core {
 		std::atomic<bool> completed{ false };
 		std::atomic<bool> cancelled{ false };
 		std::mutex mutex;
+
+		// Network handles created by the worker thread. They are tracked so that
+		// requestCancel() can close them from any thread - closing the handle is the
+		// only way to interrupt a blocking synchronous WinHTTP/WinINet call.
+		std::mutex handleMutex;
+		std::vector<NetHandle> netHandles;
 
 		// Results
 		FetchResponse response;
@@ -151,6 +172,32 @@ namespace core {
 		~FetchContext();
 
 		void releaseLuaRefs();
+
+		/**
+		 * @brief Registers a network handle so that requestCancel() can close it.
+		 *
+		 * Must be called by the driver right after each successful Open/Connect call.
+		 * If the request was already cancelled, the handle is closed immediately and
+		 * false is returned - the driver must then abort.
+		 *
+		 * @param handle Native handle (HINTERNET).
+		 * @param closer Function that closes the handle (WinHttpCloseHandle / InternetCloseHandle).
+		 * @return true if the handle is now tracked, false if it was closed because of a cancel.
+		 */
+		bool trackHandle( void *handle, void ( *closer )( void * ) );
+
+		/**
+		 * @brief Closes every tracked handle (children first).
+		 *
+		 * Safe to call repeatedly and from any thread: each handle is closed only once.
+		 */
+		void closeHandles();
+
+		/**
+		 * @brief Marks the request as cancelled and closes the tracked handles,
+		 *        which aborts any blocking network call. Callable from any thread.
+		 */
+		void requestCancel();
 	};
 
 

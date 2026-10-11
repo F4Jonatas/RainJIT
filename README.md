@@ -379,6 +379,15 @@ end
 
 Executes a **Rainmeter** default [**Bang**](https://docs.rainmeter.net/manual/bangs/).
 
+> [!NOTE]
+> When called with multiple arguments, the first argument is compared against standard **Rainmeter** [**Bang**](https://docs.rainmeter.net/manual/bangs/), ignoring case.<br>
+> If it matches a known bang name without the leading `!`, the `!` is added automatically;
+>
+> ```lua
+> rain:bang("SetVariable", "Counter", 42)  -- '!' added automatically
+> rain:bang("!SetVariable", "Counter", 42) -- Rainmeter default
+> ```
+
 ```lua
 -- @usage rain:bang(bang [, arg1, arg2, ...])
 -- @param (string) bang

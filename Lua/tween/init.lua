@@ -56,7 +56,7 @@
 -- @copyright 2011 Enrique García Cota
 -- @copyright 2026 Jonatas Peclat
 -- @release 2.0.1
--- @license GPL-2.0-only
+-- @license GPL-2.0
 --   SPDX-License-Identifier: GPL-2.0-only
 --   Modified by Jonatas Peclat in 2026.
 

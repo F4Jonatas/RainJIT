@@ -60,7 +60,11 @@ namespace tooltip {
 
 	/**
 	 * @enum Backdrop
-	 * @brief System backdrop material applied behind the tooltip (Windows 11 22H2+).
+	 * @brief System backdrop material applied behind the tooltip.
+	 *
+	 * - Acrylic: SetWindowCompositionAttribute accent policy (Windows 10 1803+).
+	 *            It keeps the blur while the window is not active.
+	 * - Mica / MicaAlt: DWM system backdrop (Windows 11 22H2+, build 22621).
 	 *
 	 * @note The material is visible only where the drawn background is
 	 *       translucent. Use a low alpha in `backgroundColor` to reveal it.
@@ -133,7 +137,7 @@ namespace tooltip {
 	 * - Render: the bitmap must be redrawn
 	 * - Place:  only the position changed
 	 * - Style:  window attributes changed (opacity, topmost, click-through)
-	 * - Timer:  the auto-hide timeout changed
+	 * - Timer:  the auto-hide timeout changed (fadeDuration needs no flag, it is read on use)
 	 * - Show:   the call must make the tooltip visible
 	 */
 	struct Dirty {
@@ -224,15 +228,17 @@ namespace tooltip {
 		/// @{
 		std::uint8_t Opacity = 255;
 		std::uint32_t Timeout = 0; ///< Auto-hide in ms. 0 disables.
+		std::uint32_t FadeDuration = 0; ///< Fade-in / fade-out time in ms. 0 disables.
 		bool Topmost = true;
 		bool ClickThrough = true;
 		/// @}
 
-		/// @name Backdrop (Windows 11)
+		/// @name Backdrop
 		/// @{
 		Backdrop Effect = Backdrop::None; ///< Lua: backdrop.
-		Corner BackdropCorner = Corner::Default; ///< Lua: backdropCorner.
+		Corner BackdropCorner = Corner::Default; ///< Lua: backdropCorner (Windows 11).
 		std::optional<bool> Dark; ///< Lua: dark. Unset follows the system theme.
+		std::optional<Rgba> BackdropTint; ///< Lua: backdropTint. Acrylic tint, unset derives it from `dark`.
 		/// @}
 
 
@@ -242,13 +248,16 @@ namespace tooltip {
 		 *
 		 * Only the keys present in the table are changed. Types are validated and
 		 * a descriptive message is stored in @p error on the first failure.
+		 * Unknown keys are not an error: they are listed in @p unknown (when given)
+		 * so the host can log a warning.
 		 *
-		 * @param L      Lua state.
-		 * @param index  Stack index of the options table.
-		 * @param dirty  Receives the flags of what changed.
-		 * @param error  Receives the error message, if any.
+		 * @param L        Lua state.
+		 * @param index    Stack index of the options table.
+		 * @param dirty    Receives the flags of what changed.
+		 * @param error    Receives the error message, if any.
+		 * @param unknown  Optional. Receives the unknown keys, separated by ", ".
 		 */
-		void apply( lua_State *L, int index, Dirty &dirty, ParseError &error );
+		void apply( lua_State *L, int index, Dirty &dirty, ParseError &error, std::string *unknown = nullptr );
 	};
 
 } // namespace tooltip

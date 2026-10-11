@@ -1,6 +1,7 @@
 /**
  * @file html.hpp
  * @brief HTML parsing module interface.
+ * @license GPL v2.0 License
  *
  * Provides read-only HTML DOM traversal using Gumbo.
  *

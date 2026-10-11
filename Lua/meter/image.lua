@@ -9,7 +9,8 @@
 -- `meter` factory when the Rainmeter meter type is `"Image"`.
 --
 -- @submodule meter.image
--- @see meter
+-- @author F4Jonatas
+-- @license GPL v2.0 License
 -- @see https://docs.rainmeter.net/manual/meters/image/
 
 local M = {}

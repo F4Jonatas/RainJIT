@@ -10,7 +10,7 @@
 	stringAlign     = right
 	fontEffectColor = 0,0,0,120
 	stringStyle     = normal
-	fontFace        = calibri
+	fontFace        = "Segoe UI"
 	antialias       = 1
 
 [clipString]

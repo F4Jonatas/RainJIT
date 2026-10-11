@@ -54,6 +54,68 @@ namespace core {
 
 
 
+	// Closes a list of handles, children first (request -> connect -> session).
+	static void CloseHandleList( std::vector<NetHandle> &handles ) {
+		for ( auto it = handles.rbegin(); it != handles.rend(); ++it ) {
+			if ( it->handle && it->closer )
+				it->closer( it->handle );
+		}
+
+		handles.clear();
+	}
+
+
+
+	bool FetchContext::trackHandle( void *handle, void ( *closer )( void * ) ) {
+		if ( !handle || !closer )
+			return false;
+
+		{
+			std::lock_guard<std::mutex> lock( handleMutex );
+
+			if ( !cancelled.load() ) {
+				NetHandle h{ handle, closer };
+				netHandles.push_back( h );
+				return true;
+			}
+		}
+
+		// Cancelled before the handle could be tracked: close it right away so the
+		// worker can never block on a handle that nobody is able to abort.
+		closer( handle );
+		return false;
+	}
+
+
+
+	void FetchContext::closeHandles() {
+		std::vector<NetHandle> toClose;
+		{
+			std::lock_guard<std::mutex> lock( handleMutex );
+			toClose.swap( netHandles );
+		}
+
+		// Closed outside the lock, so a slow close never blocks the thread that
+		// is registering handles. Each handle belongs to exactly one list, so it
+		// is never closed twice (cancel thread vs. worker thread).
+		CloseHandleList( toClose );
+	}
+
+
+
+	void FetchContext::requestCancel() {
+		std::vector<NetHandle> toClose;
+		{
+			std::lock_guard<std::mutex> lock( handleMutex );
+			cancelled.store( true );
+			toClose.swap( netHandles );
+		}
+
+		CloseHandleList( toClose );
+	}
+
+
+
 	// ContextRegistry implementation
 	ContextRegistry &ContextRegistry::instance() {
 		static ContextRegistry instance;
@@ -91,17 +153,28 @@ namespace core {
 
 
 	void ContextRegistry::removeAllByRain( Rain *rain ) {
-		std::lock_guard<std::mutex> lock( mutex_ );
+		std::vector<std::shared_ptr<FetchContext>> removed;
 
-		for ( auto it = contexts_.begin(); it != contexts_.end(); ) {
-			if ( it->second->rain == rain ) {
-				it->second->cancelled.store( true );
-				it->second->rainValid = false;
-				it = contexts_.erase( it );
+		{
+			std::lock_guard<std::mutex> lock( mutex_ );
+
+			for ( auto it = contexts_.begin(); it != contexts_.end(); ) {
+				if ( it->second->rain == rain ) {
+					removed.push_back( it->second );
+					it = contexts_.erase( it );
+				}
+
+				else
+					++it;
 			}
+		}
 
-			else
-				++it;
+		// Cancelled outside the registry lock: requestCancel() closes network
+		// handles, which also aborts in-flight calls so the worker threads wind
+		// down quickly instead of lingering after the skin was unloaded.
+		for ( auto &ctx : removed ) {
+			ctx->rainValid = false;
+			ctx->requestCancel();
 		}
 	}
 

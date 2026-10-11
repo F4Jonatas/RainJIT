@@ -7,8 +7,9 @@
  * Refresh strategy (the reason this tooltip is cheap):
  * - Render only when content/style changed, the monitor DPI changed or
  *   there is no bitmap yet
- * - Present (UpdateLayeredWindow) only after a render or an opacity change
+ * - Present (UpdateLayeredWindow) only after a render or a style change
  * - Otherwise only SetWindowPos is used to move the window
+ * - Fading only changes the constant alpha of the window (see Window)
  */
 
 #include "tooltip.hpp"
@@ -37,7 +38,7 @@ namespace tooltip {
 	bool Tooltip::open( std::string text, Options options ) noexcept {
 		try {
 			if ( !Runtime::acquire() ) {
-				Warning = "failed to initialize GDI+";
+				Warning = "failed to initialize the rendering engine (GDI+, Direct2D or DirectWrite)";
 				return false;
 			}
 
@@ -51,6 +52,9 @@ namespace tooltip {
 				destroy();
 				return false;
 			}
+
+			Win.OnGone = &Tooltip::onGone;
+			Win.Context = this;
 
 			Dirty dirty;
 			dirty.Render = true;
@@ -106,14 +110,16 @@ namespace tooltip {
 		if ( !alive() )
 			return;
 
-		Win.show();
+		Win.AutoFadeMs = Opts.FadeDuration;
+		Win.show( Opts.FadeDuration, true );
 		Win.setTimeout( Opts.Timeout );
 	}
 
 
 
 	void Tooltip::hide() noexcept {
-		Win.hide();
+		Win.AutoFadeMs = Opts.FadeDuration;
+		Win.hide( Opts.FadeDuration );
 	}
 
 
@@ -148,6 +154,26 @@ namespace tooltip {
 
 
 
+	void Tooltip::close( std::uint32_t fadeMs ) noexcept {
+		if ( fadeMs == 0 || !alive() || !Win.visible() ) {
+			destroy();
+			return;
+		}
+
+		Win.AutoFadeMs = Opts.FadeDuration;
+		Win.close( fadeMs );
+	}
+
+
+
+	void Tooltip::onGone( void *context ) noexcept {
+		// The window is already gone: release everything else (bitmaps, runtime reference).
+		if ( context )
+			static_cast<Tooltip *>( context )->destroy();
+	}
+
+
+
 	std::string Tooltip::takeWarning() noexcept {
 		std::string out;
 		out.swap( Warning );
@@ -177,24 +203,28 @@ namespace tooltip {
 
 
 	void Tooltip::applyBackdrop() {
-		if ( Opts.Effect == AppliedEffect && Opts.BackdropCorner == AppliedCorner && Opts.Dark == AppliedDark )
+		if ( Opts.Effect == AppliedEffect && Opts.BackdropCorner == AppliedCorner && Opts.Dark == AppliedDark && Opts.BackdropTint == AppliedTint )
 			return;
 
-		// Only touch DWM when a backdrop is (or was) involved.
+		// Only touch the system when a backdrop is (or was) involved.
 		const bool involved = Opts.Effect != Backdrop::None || AppliedEffect != Backdrop::None;
 
 		AppliedEffect = Opts.Effect;
 		AppliedCorner = Opts.BackdropCorner;
 		AppliedDark = Opts.Dark;
+		AppliedTint = Opts.BackdropTint;
 
 		if ( !involved )
 			return;
 
-		const BackdropResult result = Win.setBackdrop( Opts.Effect, Opts.BackdropCorner, Opts.Dark );
+		const BackdropResult result = Win.setBackdrop( Opts.Effect, Opts.BackdropCorner, Opts.Dark, Opts.BackdropTint );
 
-		if ( result == BackdropResult::Unsupported )
-			Warning += "backdrop requires Windows 11 22H2 (build 22621) or newer\n";
-		else if ( result == BackdropResult::Failed )
+		if ( result == BackdropResult::Unsupported ) {
+			if ( Opts.Effect == Backdrop::Acrylic )
+				Warning += "acrylic requires Windows 10 1803 (build 17134) or newer\n";
+			else
+				Warning += "mica requires Windows 11 22H2 (build 22621) or newer\n";
+		} else if ( result == BackdropResult::Failed )
 			Warning += "failed to apply the backdrop\n";
 	}
 
@@ -256,26 +286,25 @@ namespace tooltip {
 		y = ( std::max )( static_cast<int>( work.top ), ( std::min )( y, static_cast<int>( work.bottom ) - h ) );
 
 		// ---- window attributes ---------------------------------------------
+		Win.AutoFadeMs = Opts.FadeDuration;
+
 		if ( dirty.Style ) {
 			Win.setTopmost( Opts.Topmost );
 			Win.setClickThrough( Opts.ClickThrough );
+			Win.setLevel( Opts.Opacity );
 			applyBackdrop();
 		}
 
 		// ---- present or just move ------------------------------------------
 		if ( rendered || dirty.Style ) {
-			if ( !Win.present( Canvas, x, y, Opts.Opacity ) )
+			if ( !Win.present( Canvas, x, y ) )
 				return false;
 		} else
 			Win.moveTo( x, y );
 
-		// ---- visibility + timer --------------------------------------------
-		if ( dirty.Show ) {
-			if ( !Win.visible() )
-				Win.show();
-			else if ( rendered )
-				Win.raise();
-		}
+		// ---- visibility (fade-in) + timer ----------------------------------
+		if ( dirty.Show )
+			Win.show( Opts.FadeDuration, rendered );
 
 		if ( dirty.Show || dirty.Timer )
 			Win.setTimeout( Opts.Timeout );

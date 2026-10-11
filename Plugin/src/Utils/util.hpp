@@ -15,7 +15,9 @@
 
 #include <Windows.h>
 #include <algorithm>
+#include <array>
 #include <string>
+#include <string_view>
 
 
 #include "strings.hpp"
@@ -25,6 +27,131 @@
 
 
 namespace util {
+
+	/**
+	 * @brief Static list of Rainmeter bang names recognized by the plugin.
+	 *
+	 * Stored as a fixed-size array of `std::wstring_view`, so each entry is
+	 * just a pointer + length (no heap allocation, no copy). Intended to be
+	 * used for membership checks against a caller-provided name.
+	 */
+	inline constexpr std::array<std::wstring_view, 115> BANGS = {
+		L"setclip",
+		L"setwallpaper",
+		L"about",
+		L"manage",
+		L"traymenu",
+		L"log",
+		L"resetstats",
+		L"loadlayout",
+		L"refreshapp",
+		L"quit",
+		L"play",
+		L"playloop",
+		L"playstop",
+		L"setoption",
+		L"setvariable",
+		L"writekeyvalue",
+		L"setoptiongroup",
+		L"setvariablegroup",
+		L"showhidetoggle",
+		L"showhidetogglefade",
+		L"fadeduration",
+		L"showhidetoggleblur",
+		L"addremoveblur",
+		L"move",
+		L"setwindowposition",
+		L"setanchor",
+		L"activateconfig",
+		L"deactivateconfig",
+		L"toggleconfig",
+		L"update",
+		L"redraw",
+		L"refresh",
+		L"delay",
+		L"skinmenu",
+		L"skincustommenu",
+		L"settransparency",
+		L"zpos",
+		L"draggable",
+		L"keeponscreen",
+		L"clickthrough",
+		L"snapedges",
+		L"autoselectscreen",
+		L"editskin",
+		L"showhidetogglegroup",
+		L"showhidetogglefadegroup",
+		L"fadedurationgroup",
+		L"deactivateconfiggroup",
+		L"updategroup",
+		L"redrawgroup",
+		L"refreshgroup",
+		L"settransparencygroup",
+		L"draggablegroup",
+		L"zposgroup",
+		L"keeponscreengroup",
+		L"clickthroughgroup",
+		L"snapedgesgroup",
+		L"autoselectscreengroup",
+		L"showhidetogglemeter",
+		L"updatemeter",
+		L"movemeter",
+		L"showhidetogglemetergroup",
+		L"updatemetergroup",
+		L"enabledisabletogglemeasure",
+		L"pausemeasure",
+		L"updatemeasure",
+		L"commandmeasure",
+		L"enabledisabletogglemeasuregroup",
+		L"pausemeasuregroup",
+		L"updatemeasuregroup",
+		L"disablemouseaction",
+		L"clearmouseaction",
+		L"enablemouseaction",
+		L"togglemouseaction",
+		L"disablemouseactiongroup",
+		L"clearmouseactiongroup",
+		L"enablemouseactiongroup",
+		L"togglemouseactiongroup",
+		L"disablemouseactionskingroup",
+		L"clearmouseactionskingroup",
+		L"enablemouseactionskingroup",
+		L"togglemouseactionskingroup",
+		L"setoption",
+		L"setvariable",
+		L"setoptiongroup",
+		L"setvariablegroup",
+		L"showhidetoggle",
+		L"showhidetogglefade",
+		L"fadeduration",
+		L"showhidetoggleblur",
+		L"addremoveblur",
+		L"move",
+		L"setwindowposition",
+		L"setanchor",
+		L"activateconfig",
+		L"deactivateconfig",
+		L"toggleconfig",
+		L"update",
+		L"redraw",
+		L"refresh",
+		L"delay",
+		L"skinmenu",
+		L"skincustommenu",
+		L"settransparency",
+		L"zpos",
+		L"draggable",
+		L"keeponscreen",
+		L"clickthrough",
+		L"snapedges",
+		L"autoselectscreen",
+		L"editskin",
+		L"showhidetogglegroup",
+		L"showhidetogglefadegroup",
+		L"fadedurationgroup"
+	};
+
+
 
 	/**
 	 * @brief Detects whether a string likely represents a Rainmeter formula.

@@ -8,7 +8,7 @@
   <br>
 
 
-  <img src="../images/tooltip-logo.png" alt="LOGO" height="200">
+  <img src="../images/tooltip-logo.png" alt="LOGO" width="200" height="200">
 
 </div>
 
@@ -47,7 +47,7 @@
 
 ## Overview
 
-Tooltip is a lightweight and fully customizable tooltip module for [**RainJIT**](https://github.com/F4Jonatas/RainJIT). Each tooltip is a per-pixel-alpha **layered window** drawn with [**GDI+**](https://learn.microsoft.com/en-us/windows/win32/gdiplus/-gdiplus-gdi-start), so it supports rounded corners, gradients, borders, icons, images and, on Windows 11, system backdrop materials.<br>
+Tooltip is a lightweight and fully customizable tooltip module for [**RainJIT**](https://github.com/F4Jonatas/RainJIT). Each tooltip is a per-pixel-alpha **layered window** drawn with [**Direct2D**](https://learn.microsoft.com/en-us/windows/win32/direct2d/direct2d-portal) and [**DirectWrite**](https://learn.microsoft.com/en-us/windows/win32/directwrite/direct-write-portal), so it supports rounded corners, gradients, borders, icons, images, color emoji and system backdrop materials (acrylic and mica).<br>
 
 The bitmap is drawn **only when the content or the style changes**. Moving a tooltip never redraws it, which keeps the cost of a tooltip that follows the mouse close to zero.
 
@@ -76,7 +76,7 @@ A tooltip is composed of up to three blocks, stacked from top to bottom:
 The `options` table is **merged** with the previous options, so only the keys present in the table are changed:
 
 - A missing key (or `nil`) keeps the current value.
-- `false` removes optional entries: `x`, `y`, `title`, `titleFont`, `titleColor`, `icon`, `image`, `timeout` and `backdrop`.
+- `false` removes optional entries: `x`, `y`, `title`, `titleFont`, `titleColor`, `icon`, `image`, `timeout`, `fadeDuration`, `backdrop` and `backdropTint`.
 - An invalid value raises a Lua error describing the offending option.
 
 <br>
@@ -84,7 +84,9 @@ The `options` table is **merged** with the previous options, so only the keys pr
 
 ## :green_book: Features
 
-- Per-pixel alpha, anti-aliased rendering with GDI+
+- Per-pixel alpha, anti-aliased rendering with Direct2D / DirectWrite
+- Color emoji and automatic system font fallback
+- Fade-in / fade-out animation with `fadeDuration`
 - Redraws only when the content or the style changes; moving never redraws
 - Content-sized bitmap, with no full-screen buffers
 - Title with optional icon, body text and image blocks
@@ -94,8 +96,9 @@ The `options` table is **merged** with the previous options, so only the keys pr
 - Follows the cursor (with screen-edge flipping) or stays at a fixed screen position
 - Optional auto-hide `timeout`
 - Non-activating and click-through window
-- Windows 11 backdrop materials: `acrylic`, `mica` and `micaAlt`, with dark and light variants
+- Backdrop materials: `acrylic` (Windows 10 1803+), `mica` and `micaAlt` (Windows 11 22H2+)
 - The window is released by `destroy()` or by the Lua garbage collector
+- Unknown option keys are reported in the Rainmeter log
 - Full UTF-8 support
 
 <br>
@@ -108,7 +111,8 @@ The `options` table is **merged** with the previous options, so only the keys pr
 **To do so, the easiest way is to use the method [`tooltip`](#large_orange_diamond-method-tooltip) of the Lua API.**
 
 ```lua
-local tooltip = require("tooltip")
+-- @see https://github.com/F4Jonatas/RainJIT#large_orange_diamond-method-import
+local tooltip = import("tooltip")
 
 local tt = tooltip("Hello, world!")
 ```
@@ -117,7 +121,8 @@ local tt = tooltip("Hello, world!")
 **All options are optional. The following code creates a styled tooltip that hides itself after 3 seconds.**
 
 ```lua
-local tooltip = require("tooltip")
+-- @see https://github.com/F4Jonatas/RainJIT#large_orange_diamond-method-import
+local tooltip = import("tooltip")
 
 local tt = tooltip("The file was saved.", {
   title           = "Done",
@@ -131,12 +136,23 @@ local tt = tooltip("The file was saved.", {
 ```
 
 
+**Text accepts any Unicode character, including color emoji. `fadeDuration` animates the show, the hide and the `timeout`.**
+
+```lua
+local tt = tooltip("Backup finished ✅ 🎉", {
+  title        = "Backup",
+  timeout      = 2500,
+  fadeDuration = 200,
+})
+```
+
+
 **An existing tooltip is changed with [`update`](#large_orange_diamond-method-ttupdate) and released with [`destroy`](#large_orange_diamond-method-ttdestroy).**
 
 ```lua
 tt:update("Saving...")
 tt:update(nil, { x = 100, y = 100 }) -- only moves
-tt:destroy()
+tt:destroy( 200 )                    -- fades out, then destroys
 ```
 
 > [!WARNING]
@@ -185,7 +201,7 @@ All options are optional.
 
 **Text**
 
-- **font** (`string`, default `"Segoe UI"`) Font family. Falls back to a generic sans-serif font if it is not installed.
+- **font** (`string`, default `"Segoe UI"`) Font family. Falls back to `"Segoe UI"` if it is not installed. Characters missing in the font (symbols, CJK, emoji) are drawn with the system font fallback, and color emoji are drawn in color.
 - **fontSize** (`number`, default `12`) Font size in points.
 - **fontStyle** (`string`, default `"regular"`) Any combination of `regular`, `bold`, `italic`, `underline` and `strikeout`, e.g. `"bold italic"`.
 - **textColor** (`number`, default `0xFFFFFFFF`) Text color.
@@ -221,20 +237,24 @@ All options are optional.
 
 - **opacity** (`number`, default `255`) Opacity of the whole tooltip from `0` to `255`.
 - **timeout** (`number|false`, default `0`) Time in milliseconds before the tooltip hides itself. `0` or `false` disables it.
+- **fadeDuration** (`number|false`, default `0`) Fade time in milliseconds used by the show, hide and `timeout` animations. `0` or `false` disables it. Fading only changes the window opacity, so the bitmap is never redrawn.
 - **topmost** (`boolean`, default `true`) Keeps the tooltip above other windows.
 - **clickThrough** (`boolean`, default `true`) Lets mouse input pass through the tooltip.
 
-**Backdrop** (Windows 11 22H2 or newer)
+**Backdrop** (`acrylic`: Windows 10 1803 or newer; `mica` and `micaAlt`: Windows 11 22H2 or newer)
 
 - **backdrop** (`string|false`) Material applied behind the tooltip: `"acrylic"`, `"mica"`, `"micaAlt"` or `"none"`. Use `false` to remove it.
 - **backdropCorner** (`string`, default `"default"`) Corner style used by the system: `"round"`, `"small"`, `"none"` or `"default"`.
-- **dark** (`boolean|string`) `true` forces the dark variant, `false` forces the light one and `"auto"` follows the system theme (default).
+- **dark** (`boolean|string`) `true` forces the dark variant, `false` forces the light one and `"auto"` follows the system theme (default). It mainly affects `mica` and `micaAlt`.
+- **backdropTint** (`number|false`) Acrylic tint `0xRRGGBBAA`. When omitted, it follows `dark`. The alpha is the tint strength.
 
 > [!NOTE]
+> - Acrylic is applied with `SetWindowCompositionAttribute`, so it stays blurred while the tooltip is not the active window.
 > - The material is visible only where the background is translucent. Use a low alpha in `backgroundColor`, e.g. `0x20202040`.
 > - While a backdrop is active, the system border is removed, so only the tooltip's own `borderColor` and `borderWidth` are visible. The system only rounds the corners.
 > - While a backdrop is active, the drawn corner follows `backdropCorner` (`round` and `default` = 8, `small` = 4, `none` = 0) instead of `radius`, so the drawn shape matches the shape clipped by the system.
 > - On older systems the backdrop options are ignored and a warning is written to the Rainmeter log. The final result may vary depending on the Windows build.
+> - `mica` and `micaAlt` are best-effort on a layered window and may fall back to a flat color on some builds.
 
 ```lua
 local tt = tooltip("Acrylic", {
@@ -273,14 +293,19 @@ tt:update(nil, { x = false, y = false })   -- follows the cursor again
 ### :large_orange_diamond: Method `tt:destroy()`
 
 This method destroys the tooltip window and releases all of its resources. It can be called more than once.<br>
+Without an argument the tooltip is destroyed at once. With a fade duration it fades out first; calling `show` or `update` during the fade cancels the destruction.<br>
 After it, every method except `destroy`, `isVisible` and `hwnd` raises an error.
 
 ```lua
--- @usage tt:destroy()
+-- @usage tt:destroy([fadeDuration])
+-- @param (number|nil|false) [fadeDuration] - Fade-out time in milliseconds
 -- @return (nil)
 
 local tt = tooltip("Bye")
-tt:destroy()
+tt:destroy()        -- immediate
+
+local tt2 = tooltip("Bye")
+tt2:destroy( 200 )  -- fades out for 200 ms
 ```
 
 <br>
@@ -288,7 +313,7 @@ tt:destroy()
 
 ### :large_orange_diamond: Method `tt:show()`
 
-This method shows the tooltip again and restarts the auto-hide timer.
+This method shows the tooltip again (with a fade-in when `fadeDuration` is set) and restarts the auto-hide timer.
 
 ```lua
 -- @usage tt:show()
@@ -305,7 +330,7 @@ tt:show()
 
 ### :large_orange_diamond: Method `tt:hide()`
 
-This method hides the tooltip without destroying it.
+This method hides the tooltip without destroying it. It fades out when `fadeDuration` is set.
 
 ```lua
 -- @usage tt:hide()
@@ -336,7 +361,7 @@ tt:move(200, 120)
 
 ### :large_orange_diamond: Method `tt:isVisible()`
 
-This method returns `true` if the tooltip is currently visible. It returns `false` after the tooltip was hidden, was hidden by `timeout` or was destroyed.
+This method returns `true` if the tooltip is currently visible, including while it is fading out. It returns `false` after the tooltip was hidden, was hidden by `timeout` or was destroyed.
 
 ```lua
 -- @usage tt:isVisible()
@@ -370,6 +395,7 @@ print( tt:hwnd() )
 ## :paperclip: Links
 
 - [**BeautifulToolTip** — AutoHotkey tooltip that inspired this module](https://github.com/telppa/BeautifulToolTip)
+- [**Color font support (DirectWrite / Direct2D)**](https://learn.microsoft.com/en-us/windows/win32/DirectWrite/color-fonts)
 - [**Layered Windows**](https://learn.microsoft.com/en-us/windows/win32/winmsg/window-features#layered-windows)
 - [**UpdateLayeredWindow**](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-updatelayeredwindow)
 - [**DWM_SYSTEMBACKDROP_TYPE**](https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwm_systembackdrop_type)
@@ -386,7 +412,7 @@ print( tt:hwnd() )
 Licensed under the **GPL v2.0 License**.<br>
 
 > [!NOTE]
-> Tooltip relies on the Windows GDI+ and DWM system components, which are provided by the operating system and are not redistributed.
+> Tooltip relies on the Windows Direct2D, DirectWrite, GDI+ (image decoding) and DWM system components, which are provided by the operating system and are not redistributed.
 
 ---
 

@@ -7,6 +7,7 @@
 #include "tooltip_runtime.hpp"
 
 #include "tooltip_gdiplus.hpp"
+#include "tooltip_text.hpp"
 #include "tooltip_window.hpp"
 
 #include <cstddef>
@@ -29,7 +30,14 @@ namespace tooltip {
 			if ( Gdiplus::GdiplusStartup( &g_token, &input, nullptr ) != Gdiplus::Ok )
 				return false;
 
+			if ( !TextEngine::start() ) {
+				Gdiplus::GdiplusShutdown( g_token );
+				g_token = 0;
+				return false;
+			}
+
 			if ( !Window::registerClass() ) {
+				TextEngine::stop();
 				Gdiplus::GdiplusShutdown( g_token );
 				g_token = 0;
 				return false;
@@ -50,6 +58,7 @@ namespace tooltip {
 			return;
 
 		Window::unregisterClass();
+		TextEngine::stop();
 		Gdiplus::GdiplusShutdown( g_token );
 		g_token = 0;
 	}

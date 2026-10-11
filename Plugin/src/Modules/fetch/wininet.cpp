@@ -54,31 +54,42 @@ namespace wininet {
 
 
 
+	/**
+	 * @brief Closer registered through FetchContext::trackHandle() for WinINet handles.
+	 *
+	 * Closing a handle from another thread aborts any synchronous call that is
+	 * blocked on it (InternetOpenUrlW, InternetReadFile, ...).
+	 */
+	static void CloseWinInetHandle( void *handle ) {
+		InternetCloseHandle( static_cast<HINTERNET>( handle ) );
+	}
+
+
+
 	void ExecuteFetchThread( std::shared_ptr<core::FetchContext> ctx ) {
-		auto &request  = ctx->request;
+		auto &request = ctx->request;
 		auto &response = ctx->response;
 
 		auto operationStart = std::chrono::steady_clock::now();
 
 		HINTERNET hInternet = nullptr;
-		HINTERNET hUrl      = nullptr;
+		HINTERNET hUrl = nullptr;
 
 		// ----------------------------------------------------------------
 		// Validate: InternetOpenUrlW only supports GET natively.
 		// ----------------------------------------------------------------
 		if ( request.method != L"GET" && request.method != L"get" ) {
 			Log( ctx, LOG_WARNING,
-			     L"[RainJIT:Fetch] driver=\"wininet\" - only GET requests are supported "
-			     L"via InternetOpenUrlW. Use driver=\"winhttp\" for POST/PUT/DELETE." );
+					 L"[RainJIT:Fetch] driver=\"wininet\" - only GET requests are supported "
+					 L"via InternetOpenUrlW. Use driver=\"winhttp\" for POST/PUT/DELETE." );
 		}
 
 		// Warn about unsupported phase-specific timeouts.
-		if ( request.dnsTimeout > 0 || request.connectTimeout > 0 ||
-		     request.sendTimeout > 0 || request.receiveTimeout > 0 ) {
+		if ( request.dnsTimeout > 0 || request.connectTimeout > 0 || request.sendTimeout > 0 || request.receiveTimeout > 0 ) {
 			Log( ctx, LOG_WARNING,
-			     L"[RainJIT:Fetch] driver=\"wininet\" - phase-specific timeouts "
-			     L"(dnsTimeout, connectTimeout, sendTimeout, receiveTimeout) are not "
-			     L"supported and will be ignored. Use 'timeout' instead." );
+					 L"[RainJIT:Fetch] driver=\"wininet\" - phase-specific timeouts "
+					 L"(dnsTimeout, connectTimeout, sendTimeout, receiveTimeout) are not "
+					 L"supported and will be ignored. Use 'timeout' instead." );
 		}
 
 		try {
@@ -98,25 +109,24 @@ namespace wininet {
 			auto uaIt = request.headers.find( L"User-Agent" );
 			std::wstring customUA;
 			if ( uaIt != request.headers.end() ) {
-				customUA  = uaIt->second;
+				customUA = uaIt->second;
 				userAgent = customUA.c_str();
 			}
 
-			hInternet = InternetOpenW(
-				userAgent,
-				INTERNET_OPEN_TYPE_PRECONFIG,
-				nullptr,
-				nullptr,
-				0
-			);
+			hInternet = InternetOpenW( userAgent, INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0 );
 
 			if ( !hInternet )
 				throw std::runtime_error( "InternetOpenW failed: " + std::to_string( GetLastError() ) );
 
+			// Track the session so :cancel() can close it from another thread.
+			// If the request was cancelled in the meantime the handle is already closed.
+			if ( !ctx->trackHandle( hInternet, CloseWinInetHandle ) )
+				throw std::runtime_error( "Request cancelled" );
+
 			// Apply general timeout to all phases.
 			DWORD timeout = static_cast<DWORD>( request.timeout );
 			InternetSetOptionW( hInternet, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof( timeout ) );
-			InternetSetOptionW( hInternet, INTERNET_OPTION_SEND_TIMEOUT,    &timeout, sizeof( timeout ) );
+			InternetSetOptionW( hInternet, INTERNET_OPTION_SEND_TIMEOUT, &timeout, sizeof( timeout ) );
 			InternetSetOptionW( hInternet, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout, sizeof( timeout ) );
 
 			if ( ctx->cancelled.load() )
@@ -154,19 +164,15 @@ namespace wininet {
 			// Open URL - the single high-level call that does everything.
 			// This is what WebParser calls and what Cloudflare accepts.
 			// ----------------------------------------------------------------
-			hUrl = InternetOpenUrlW(
-				hInternet,
-				request.url.c_str(),
-				extraHeaders.empty() ? nullptr : extraHeaders.c_str(),
-				extraHeaders.empty() ? 0       : static_cast<DWORD>( extraHeaders.size() ),
-				flags,
-				0
-			);
+			hUrl = InternetOpenUrlW( hInternet, request.url.c_str(), extraHeaders.empty() ? nullptr : extraHeaders.c_str(), extraHeaders.empty() ? 0 : static_cast<DWORD>( extraHeaders.size() ), flags, 0 );
 
 			if ( !hUrl ) {
 				DWORD err = GetLastError();
 				throw std::runtime_error( "InternetOpenUrlW failed: " + std::to_string( err ) );
 			}
+
+			if ( !ctx->trackHandle( hUrl, CloseWinInetHandle ) )
+				throw std::runtime_error( "Request cancelled" );
 
 			if ( ctx->cancelled.load() )
 				throw std::runtime_error( "Request cancelled" );
@@ -176,13 +182,7 @@ namespace wininet {
 			// ----------------------------------------------------------------
 			DWORD statusCode = 0;
 			DWORD statusSize = sizeof( statusCode );
-			HttpQueryInfoW(
-				hUrl,
-				HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
-				&statusCode,
-				&statusSize,
-				nullptr
-			);
+			HttpQueryInfoW( hUrl, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &statusCode, &statusSize, nullptr );
 			response.status = static_cast<int>( statusCode );
 
 			// ----------------------------------------------------------------
@@ -195,12 +195,13 @@ namespace wininet {
 				std::vector<wchar_t> headerBuf( headerSize / sizeof( wchar_t ) + 1 );
 
 				if ( HttpQueryInfoW( hUrl, HTTP_QUERY_RAW_HEADERS_CRLF, headerBuf.data(), &headerSize, nullptr ) ) {
-					const wchar_t *p   = headerBuf.data();
+					const wchar_t *p = headerBuf.data();
 					const wchar_t *end = p + wcslen( p );
 
 					while ( p < end ) {
 						const wchar_t *lineEnd = wcschr( p, L'\n' );
-						if ( !lineEnd ) lineEnd = end;
+						if ( !lineEnd )
+							lineEnd = end;
 
 						std::wstring line( p, lineEnd );
 
@@ -228,13 +229,14 @@ namespace wininet {
 
 			// Extract Set-Cookie headers.
 			{
-				DWORD cookieIndex   = 0;
+				DWORD cookieIndex = 0;
 				DWORD cookieBufSize = 0;
 
 				while ( true ) {
 					cookieBufSize = 0;
 					HttpQueryInfoW( hUrl, HTTP_QUERY_SET_COOKIE, nullptr, &cookieBufSize, &cookieIndex );
-					if ( cookieBufSize == 0 ) break;
+					if ( cookieBufSize == 0 )
+						break;
 
 					std::vector<wchar_t> cookieBuf( cookieBufSize / sizeof( wchar_t ) + 1 );
 
@@ -263,7 +265,7 @@ namespace wininet {
 			std::vector<BYTE> body;
 			body.reserve( 65536 );
 
-			BYTE  chunk[8192];
+			BYTE chunk[8192];
 			DWORD bytesRead = 0;
 
 			while ( InternetReadFile( hUrl, chunk, sizeof( chunk ), &bytesRead ) && bytesRead > 0 ) {
@@ -292,20 +294,26 @@ namespace wininet {
 		// ----------------------------------------------------------------
 		// Cleanup
 		// ----------------------------------------------------------------
-		if ( hUrl )      InternetCloseHandle( hUrl );
-		if ( hInternet ) InternetCloseHandle( hInternet );
+		// The handles are owned by the context. Any handle already closed by :cancel()
+		// (from another thread) was removed from its list, so nothing is closed twice.
+		ctx->closeHandles();
+		hUrl = nullptr;
+		hInternet = nullptr;
+
+		// A cancelled request always ends as STATUS_CANCELLED, whatever error the
+		// aborted network call produced.
+		if ( ctx->cancelled.load() ) {
+			response = core::FetchResponse();
+			response.status = core::FetchResponse::STATUS_CANCELLED;
+			response.error = "Request cancelled";
+		}
 
 		// Single completion log
-		auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-			std::chrono::steady_clock::now() - operationStart
-		).count();
+		auto totalMs = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::steady_clock::now() - operationStart ).count();
 
 #ifdef __RAINMETERAPI_H__
 		if ( ctx->rainValid && ctx->rain && ctx->rain->rm ) {
-			std::wstring msg =
-				L"[RainJIT:Fetch] Completed in " + std::to_wstring( totalMs ) +
-				L"ms | status: "                 + std::to_wstring( response.status ) +
-				L" | driver: wininet";
+			std::wstring msg = L"[RainJIT:Fetch] Completed in " + std::to_wstring( totalMs ) + L"ms | status: " + std::to_wstring( response.status ) + L" | driver: wininet";
 
 			if ( !response.error.empty() )
 				msg += L" | error: " + utf8_to_wstring( response.error );

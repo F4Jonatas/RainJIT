@@ -3,23 +3,25 @@
  * @brief Custom layered tooltip bound to a Lua object.
  * @license GPL v2.0 License
  *
- * Provides a lightweight tooltip drawn with GDI+ into a per-pixel-alpha
- * layered window. The bitmap is rendered only when the content or style
- * changes; moving the tooltip never redraws it.
+ * Provides a lightweight tooltip drawn with Direct2D / DirectWrite into a
+ * per-pixel-alpha layered window. The bitmap is rendered only when the
+ * content or style changes; moving or fading the tooltip never redraws it.
  *
  * @details
  * - All strings exposed to Lua are UTF-8
  * - Colors are 0xRRGGBBAA
+ * - Text uses the system font fallback and color glyphs (emoji)
  * - Every tooltip owns its own window and a content-sized bitmap
+ * - `fadeDuration` animates show / hide (and `destroy( fadeDuration )`)
  * - Lifetime is tied to the Lua userdata: `destroy()` or `__gc` release
  *   the window, so no Finalize hook is required in the plugin
  *
  * @example
  * @code{.lua}
  * local tooltip = require("tooltip")
- * local tt = tooltip("Hello", { title = "Info", timeout = 3000 })
+ * local tt = tooltip("Hello 😀", { title = "Info", timeout = 3000, fadeDuration = 200 })
  * tt:update("World")
- * tt:destroy()
+ * tt:destroy( 200 )
  * @endcode
  */
 
@@ -91,6 +93,7 @@ namespace tooltip {
 		Backdrop AppliedEffect = Backdrop::None;
 		Corner AppliedCorner = Corner::Default;
 		std::optional<bool> AppliedDark;
+		std::optional<Rgba> AppliedTint;
 		/// @}
 
 
@@ -130,20 +133,34 @@ namespace tooltip {
 		 */
 		bool moveTo( int x, int y ) noexcept;
 
-		/// @brief Shows the tooltip and restarts the auto-hide timer.
+		/// @brief Shows the tooltip (fade-in when fadeDuration is set) and restarts the auto-hide timer.
 		void show() noexcept;
 
-		/// @brief Hides the tooltip.
+		/// @brief Hides the tooltip (fade-out when fadeDuration is set).
 		void hide() noexcept;
 
 		/// @brief True when the tooltip is currently visible.
 		bool visible() const noexcept;
 
-		/// @brief True until destroy() is called.
+		/// @brief True until the tooltip is destroyed.
 		bool alive() const noexcept;
 
-		/// @brief Releases the window, bitmaps and the Runtime reference (idempotent).
+		/// @brief Releases the window, bitmaps and the Runtime reference at once (idempotent).
 		void destroy() noexcept;
+
+		/**
+		 * @brief Destroys the tooltip after an optional fade-out.
+		 *
+		 * The resources are released when the fade ends (or when the Lua object is
+		 * garbage collected, whichever comes first). Showing or updating the tooltip
+		 * during the fade cancels the destruction.
+		 *
+		 * @param fadeMs Fade-out time. 0 is the same as destroy().
+		 */
+		void close( std::uint32_t fadeMs ) noexcept;
+
+		/// @brief Window callback: the window destroyed itself at the end of a fade-out.
+		static void onGone( void *context ) noexcept;
 
 		/// @brief Returns and clears the pending warning.
 		std::string takeWarning() noexcept;

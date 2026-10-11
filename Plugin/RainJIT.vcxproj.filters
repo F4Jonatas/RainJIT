@@ -103,6 +103,9 @@
     <ClCompile Include="src\Modules\tooltip\tooltip_window.cpp">
       <Filter>Modules\tooltip</Filter>
     </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_text.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -217,6 +220,9 @@
       <Filter>Modules\tooltip</Filter>
     </ClInclude>
     <ClInclude Include="src\Modules\tooltip\tooltip_window.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_text.hpp">
       <Filter>Modules\tooltip</Filter>
     </ClInclude>
   </ItemGroup>

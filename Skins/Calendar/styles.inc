@@ -31,9 +31,8 @@
 
 
 [currentday]
-	fontFace    = "Segoe UI bold"
-	fontColor   = 30,30,30
-
+	fontFace    = "Segoe UI SemiBold"
+	fontColor   = 0,0,0
 
 ; [NewWk]
 ; 	solidColor = 255,0,0,20

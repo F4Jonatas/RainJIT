@@ -1,6 +1,9 @@
 
+-- @file easing.lua
 -- @author F4Jonatas
--- @license GPL v2.0 License or MIT
+-- @license GPL-2.0 License
+--   SPDX-License-Identifier: GPL-2.0-only
+--   Modified by Jonatas Peclat in 2026.
 
 
 --- Collection of easing functions.

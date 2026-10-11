@@ -9,7 +9,7 @@
  * @details
  * Each Tooltip instance is bound to a Lua userdata with the following methods:
  * - update(text [, options])
- * - destroy()
+ * - destroy([fadeDuration])
  * - show()
  * - hide()
  * - move(x, y)
@@ -33,8 +33,11 @@
 #include <lua.hpp>
 #include <utils/strings.hpp>
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 
 namespace tooltip {
@@ -60,15 +63,40 @@ namespace tooltip {
 
 
 
+	/// @brief Writes a (possibly multi-line) warning to the Rainmeter log, one entry per line.
+	static void logLines( Rain *rain, const std::string &warning ) {
+		std::size_t pos = 0;
+
+		while ( pos < warning.size() ) {
+			std::size_t end = warning.find( '\n', pos );
+
+			if ( end == std::string::npos )
+				end = warning.size();
+
+			if ( end > pos ) {
+				const std::wstring message = L"[RainJIT:Tooltip] " + utf8_to_wstring( warning.substr( pos, end - pos ) );
+				RmLog( rain->rm, LOG_WARNING, message.c_str() );
+			}
+
+			pos = end + 1;
+		}
+	}
+
+
+
 	/// @brief Forwards a pending warning to the Rainmeter log.
 	static void logWarning( Rain *rain, Tooltip *t ) {
-		const std::string warning = t->takeWarning();
+		logLines( rain, t->takeWarning() );
+	}
 
-		if ( warning.empty() )
+
+
+	/// @brief Reports option keys that are not recognized (usually a typo).
+	static void logUnknown( Rain *rain, const std::string &unknown ) {
+		if ( unknown.empty() )
 			return;
 
-		const std::wstring message = L"[RainJIT:Tooltip] " + utf8_to_wstring( warning );
-		RmLog( rain->rm, LOG_WARNING, message.c_str() );
+		logLines( rain, "unknown option(s): " + unknown );
 	}
 
 
@@ -127,14 +155,17 @@ namespace tooltip {
 
 		Options opts;
 		Dirty dirty;
+		std::string unknown;
 
 		if ( lua_istable( L, 3 ) )
-			opts.apply( L, 3, dirty, err );
+			opts.apply( L, 3, dirty, err, &unknown );
 		else if ( !lua_isnoneornil( L, 3 ) )
 			err.set( "tooltip: options must be a table" );
 
 		if ( err )
 			return;
+
+		logUnknown( rain, unknown );
 
 		auto tip = std::make_unique<Tooltip>();
 		const bool opened = tip->open( std::move( text ), std::move( opts ) );
@@ -154,6 +185,7 @@ namespace tooltip {
 	static void updateInner( lua_State *L, Rain *rain, Tooltip *t, ParseError &err ) {
 		Options next = t->Opts;
 		std::string text = t->Text;
+		std::string unknown;
 		Dirty dirty;
 
 		dirty.Show = true;
@@ -174,12 +206,14 @@ namespace tooltip {
 		}
 
 		if ( lua_istable( L, 3 ) )
-			next.apply( L, 3, dirty, err );
+			next.apply( L, 3, dirty, err, &unknown );
 		else if ( !lua_isnoneornil( L, 3 ) )
 			err.set( "tooltip: options must be a table" );
 
 		if ( err )
 			return;
+
+		logUnknown( rain, unknown );
 
 		const bool ok = t->commit( std::move( next ), std::move( text ), dirty );
 
@@ -204,10 +238,16 @@ namespace tooltip {
 	 *                 when an image is used.
 	 * @param[in] options Optional options table. May be omitted entirely.
 	 *
-	 * @note Backdrop options (Windows 11 22H2+): `backdrop` ("acrylic", "mica",
-	 *       "micaAlt", "none" or false), `backdropCorner` ("round", "small",
-	 *       "none", "default") and `dark` (true, false or "auto"). The material is
-	 *       visible only where `backgroundColor` is translucent (low alpha).
+	 * @note Backdrop options: `backdrop` ("acrylic", "mica", "micaAlt", "none" or
+	 *       false), `backdropCorner` ("round", "small", "none", "default"), `dark`
+	 *       (true, false or "auto") and `backdropTint` (0xRRGGBBAA, acrylic only).
+	 *       Acrylic uses SetWindowCompositionAttribute (Windows 10 1803+); mica
+	 *       needs Windows 11 22H2+. The material is visible only where
+	 *       `backgroundColor` is translucent (low alpha).
+	 *
+	 * @note `fadeDuration` (ms) animates show, hide, the auto-hide timeout and
+	 *       `destroy( fadeDuration )`. Unknown option keys are reported in the
+	 *       Rainmeter log as a warning.
 	 *
 	 * @example
 	 * @code{.lua}
@@ -290,16 +330,35 @@ namespace tooltip {
 
 
 	/**
-	 * @brief Lua: tt:destroy()
+	 * @brief Lua: tt:destroy([fadeDuration])
 	 *
 	 * Destroys the window and releases every resource. Idempotent.
+	 * Without an argument the tooltip is destroyed at once; with a fade duration
+	 * (milliseconds) it fades out first. Calling `show()` or `update()` during the
+	 * fade cancels the destruction.
 	 *
 	 * @param L Lua state.
 	 * @return Always 0 (no return values).
+	 *
+	 * @param[in] fadeDuration Optional fade-out time in milliseconds (nil, false or 0 = immediate).
+	 *
+	 * @example
+	 * @code{.lua}
+	 * tt:destroy()        -- immediate
+	 * tt:destroy( 200 )   -- fades out for 200 ms, then destroys
+	 * @endcode
 	 */
 	static int tooltip_destroy( lua_State *L ) {
 		Tooltip *t = checkTooltip( L, true );
-		t->destroy();
+
+		double ms = 0.0;
+
+		if ( lua_type( L, 2 ) == LUA_TNUMBER )
+			ms = lua_tonumber( L, 2 );
+		else if ( !lua_isnoneornil( L, 2 ) && !( lua_type( L, 2 ) == LUA_TBOOLEAN && !lua_toboolean( L, 2 ) ) )
+			return luaL_argerror( L, 2, "number expected (fade duration in ms)" );
+
+		t->close( static_cast<std::uint32_t>( ( std::clamp )( ms, 0.0, 60000.0 ) ) );
 		return 0;
 	}
 

@@ -1,6 +1,7 @@
 /**
  * @file html_selector.hpp
  * @brief CSS-lite selector parsing and matching.
+ * @license GPL v2.0 License
  */
 
 #pragma once

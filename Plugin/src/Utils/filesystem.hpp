@@ -1,3 +1,10 @@
+/**
+ * @file filesystem.hpp
+ * @license GPL v2.0 License
+ */
+
+
+
 #pragma once
 
 #include <Windows.h>

@@ -1,7 +1,8 @@
 --
 -- @module dict
 -- @author F4Jonatas
--- @version 1.3
+-- @release 1.3
+-- @license GPL-2.0 License
 -- A collection of utility functions for dictionary-like tables
 -- (tables with string keys and arbitrary values).
 

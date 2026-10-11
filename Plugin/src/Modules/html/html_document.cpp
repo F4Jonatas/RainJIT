@@ -1,6 +1,7 @@
 /**
  * @file html_document.cpp
  * @brief HTML document implementation.
+ * @license GPL v2.0 License
  */
 
 #include "html_document.hpp"

@@ -22,13 +22,11 @@
 #pragma comment( lib, "winhttp.lib" )
 
 #define FETCH_USER_AGENT L"RainJIT/1.0"
-#define FETCH_USER_AGENT_A  "RainJIT/1.0"
+#define FETCH_USER_AGENT_A "RainJIT/1.0"
 
 
 
-
-// Defina um identificador único para a mensagem
-#define WM_FETCH_COMPLETE ( WM_APP + 3 )
+// WM_FETCH_COMPLETE is defined once in core.hpp (included through http.hpp).
 
 
 
@@ -67,6 +65,18 @@ namespace http {
 
 
 
+	/**
+	 * @brief Closer registered through FetchContext::trackHandle() for WinHTTP handles.
+	 *
+	 * Closing a handle from another thread aborts any synchronous call that is
+	 * blocked on it (the call fails with ERROR_WINHTTP_OPERATION_CANCELLED).
+	 */
+	static void CloseWinHttpHandle( void *handle ) {
+		WinHttpCloseHandle( static_cast<HINTERNET>( handle ) );
+	}
+
+
+
 	void ExecuteFetchThread( std::shared_ptr<core::FetchContext> ctx ) {
 		core::FetchResponse response;
 		response.status = -1;
@@ -85,23 +95,23 @@ namespace http {
 		LPCWSTR HTTPVersion = request.HTTPVersion ? L"HTTP/1.0" : NULL; // NULL = default (1.1)
 
 		// TIMEOUT CONFIGURATION
-		// Se timeouts específicos não forem definidos, usa timeout geral
+		// If phase-specific timeouts are not set, fall back to the general timeout
 		int dnsTimeout = request.dnsTimeout > 0 ? request.dnsTimeout : request.timeout;
 		int connectTimeout = request.connectTimeout > 0 ? request.connectTimeout : request.timeout;
 		int sendTimeout = request.sendTimeout > 0 ? request.sendTimeout : request.timeout;
 		int receiveTimeout = request.receiveTimeout > 0 ? request.receiveTimeout : request.timeout;
 
-		// Garante mínimos razoáveis
+		// Enforce reasonable minimums
 		if ( dnsTimeout < 1000 )
-			dnsTimeout = 5000; // DNS: mínimo 5s
+			dnsTimeout = 5000; // DNS: minimum 5s
 		if ( connectTimeout < 1000 )
-			connectTimeout = 10000; // Connect: mínimo 10s
+			connectTimeout = 10000; // Connect: minimum 10s
 		if ( sendTimeout < 1000 )
-			sendTimeout = 30000; // Send: mínimo 30s
+			sendTimeout = 30000; // Send: minimum 30s
 		if ( receiveTimeout < 1000 )
-			receiveTimeout = 60000; // Receive: mínimo 60s
+			receiveTimeout = 60000; // Receive: minimum 60s
 
-		// TIMEOUT TOTAL (backup safety)
+		// TOTAL TIMEOUT (backup safety)
 		auto totalTimeout = std::chrono::milliseconds( request.timeout );
 		if ( totalTimeout.count() < 1000 )
 			totalTimeout = std::chrono::milliseconds( 120000 ); // Fallback: 120s
@@ -129,12 +139,12 @@ namespace http {
 			uc.dwStructSize = sizeof( uc );
 
 			// Set non-zero lengths to request allocation of each component.
-			uc.dwSchemeLength    = (DWORD)-1;
-			uc.dwHostNameLength  = (DWORD)-1;
-			uc.dwUrlPathLength   = (DWORD)-1;
+			uc.dwSchemeLength = (DWORD)-1;
+			uc.dwHostNameLength = (DWORD)-1;
+			uc.dwUrlPathLength = (DWORD)-1;
 			uc.dwExtraInfoLength = (DWORD)-1;
-			uc.dwUserNameLength  = (DWORD)-1;
-			uc.dwPasswordLength  = (DWORD)-1;
+			uc.dwUserNameLength = (DWORD)-1;
+			uc.dwPasswordLength = (DWORD)-1;
 
 			if ( !WinHttpCrackUrl( url.c_str(), 0, 0, &uc ) ) {
 				DWORD err = GetLastError();
@@ -187,6 +197,11 @@ namespace http {
 				throw std::runtime_error( "WinHttpOpen failed: " + std::to_string( err ) );
 			}
 
+			// Track the session so :cancel() can close it from another thread.
+			// If the request was cancelled in the meantime the handle is already closed.
+			if ( !ctx->trackHandle( hSession, CloseWinHttpHandle ) )
+				throw std::runtime_error( "Request cancelled" );
+
 			// Set modern TLS options
 			// clang-format off
 			DWORD secureProtocols =
@@ -234,6 +249,9 @@ namespace http {
 				throw std::runtime_error( "WinHttpConnect failed: " + WinHttpErrorToString( err ) );
 			}
 
+			if ( !ctx->trackHandle( hConnect, CloseWinHttpHandle ) )
+				throw std::runtime_error( "Request cancelled" );
+
 			checkTotalTimeout();
 
 			// Open request
@@ -244,16 +262,12 @@ namespace http {
 				throw std::runtime_error( "WinHttpOpenRequest failed: " + WinHttpErrorToString( err ) );
 			}
 
+			if ( !ctx->trackHandle( hRequest, CloseWinHttpHandle ) )
+				throw std::runtime_error( "Request cancelled" );
+
 			// Apply Basic Auth credentials extracted from the URL, if present.
 			if ( !urlUser.empty() ) {
-				WinHttpSetCredentials(
-					hRequest,
-					WINHTTP_AUTH_TARGET_SERVER,
-					WINHTTP_AUTH_SCHEME_BASIC,
-					urlUser.c_str(),
-					urlPassword.c_str(),
-					nullptr
-				);
+				WinHttpSetCredentials( hRequest, WINHTTP_AUTH_TARGET_SERVER, WINHTTP_AUTH_SCHEME_BASIC, urlUser.c_str(), urlPassword.c_str(), nullptr );
 			}
 
 			// Configure request options
@@ -392,7 +406,8 @@ namespace http {
 					buffer.resize( offset );
 
 					if ( err == E_ABORT || err == ERROR_OPERATION_ABORTED ) {
-						if ( totalBytes > 0 ) readSuccess = true;
+						if ( totalBytes > 0 )
+							readSuccess = true;
 					} else if ( err == ERROR_WINHTTP_CONNECTION_ERROR && totalBytes > 0 ) {
 						readSuccess = true;
 					} else if ( totalBytes > 0 ) {
@@ -544,13 +559,21 @@ namespace http {
 			}
 		}
 
-		// Cleanup
-		if ( hRequest )
-			WinHttpCloseHandle( hRequest );
-		if ( hConnect )
-			WinHttpCloseHandle( hConnect );
-		if ( hSession )
-			WinHttpCloseHandle( hSession );
+		// Cleanup - the handles are owned by the context. Any handle already closed by
+		// :cancel() (from another thread) was removed from its list, so nothing is
+		// ever closed twice.
+		ctx->closeHandles();
+		hRequest = NULL;
+		hConnect = NULL;
+		hSession = NULL;
+
+		// A cancelled request always ends as STATUS_CANCELLED, whatever error the
+		// aborted network call produced (e.g. -1 "Send failed").
+		if ( ctx->cancelled.load() ) {
+			response = core::FetchResponse();
+			response.status = core::FetchResponse::STATUS_CANCELLED;
+			response.error = "Request cancelled";
+		}
 
 		// Log completion
 		if ( ctx && ctx->rain && ctx->rain->rm ) {

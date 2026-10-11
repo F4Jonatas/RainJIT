@@ -5,159 +5,159 @@
 	<title>Rainmeter Forum</title>
 	
 	<link href="https://forum.rainmeter.net/index.php" />
-	<updated>2026-09-27T09:15:22+00:00</updated>
+	<updated>2026-10-11T11:33:33+00:00</updated>
 
 	<author><name><![CDATA[Rainmeter Forum]]></name></author>
 	<id>https://forum.rainmeter.net/feed</id>
 
 		<entry>
-		<author><name><![CDATA[Rooky_89]]></name></author>
-		<updated>2026-09-27T09:15:22+00:00</updated>
+		<author><name><![CDATA[Thinkr8]]></name></author>
+		<updated>2026-10-11T11:33:33+00:00</updated>
 
-		<published>2026-09-27T09:15:22+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245690#p245690</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245690#p245690"/>
-		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Help: RunCommand]]></title>
+		<published>2026-10-11T11:33:33+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246075#p246075</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246075#p246075"/>
+		<title type="html"><![CDATA[Suites • Re: The 4th Rock v1.11.11.2026]]></title>
 
-					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
+					<category term="Suites" scheme="https://forum.rainmeter.net/viewforum.php?f=130" label="Suites"/>
 		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245690#p245690"><![CDATA[
-<blockquote class="uncited"><div>It already did, despite you still pretending to be a "rookie" since it's more comfortable and fun, you don't fool me...  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/do.gif" width="20" height="20" alt=":sly:" title="Sly"><br>Now you even know what I didn't: how to escape quotes in PowerShell scripts. You're an expert and a seasoned veteran now!  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/innuendo.gif" width="20" height="20" alt=";)" title="Wink"></div></blockquote>Thanks for the nice an warming words <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ax.gif" width="30" height="26" alt=":rosegift:" title="Rose Gift">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ab2.gif" width="20" height="24" alt=":-)" title="Grinning"> Ah, there’s still a lot to learn and plenty of room for improvement for my self  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great"><br><span style="text-decoration:line-through">Currently i try to wrote the Vaules directly in to the ini file from the powershell script  <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">"[!WriteKeyValue Variables XVar `"Hello World`" `"$Config`"] "</span><img class="smilies" src="https://forum.rainmeter.net/images/smilies/bw.gif" width="27" height="24" alt=":???:" title="Confused"> but with no succes.<br>If this not possbile sure the only way goes to the FinishAction.....</span><br><br><br><br>Got it to work  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/dn.gif" width="28" height="23" alt=":great:" title="Great">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ay.gif" width="26" height="23" alt=":thumbup:" title="Thumbs Up"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=74221">Rooky_89</a> — 59 minutes ago</p><hr />
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246075#p246075"><![CDATA[
+<blockquote class="uncited"><div><p>In case you didn't know, a newer and more capable WebView plugin for Rainmeter exists:<br>- <a href="https://forum.rainmeter.net/viewtopic.php?t=45787" class="postlink">https://forum.rainmeter.net/viewtopic.php?t=45787</a><br><br>For simple things, changing the name of the plugin in the corresponding option is enough. This plugin also comes with built-in mouse control capabilities, based on its Clickthrough option and whether you're holding down the CTRL key when interacting with the WebView area.</p></div></blockquote><p>OK, TY. I knew there was a new version and I have it, but I don't have it to add to a package, but I will now. TY.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=56960">Thinkr8</a> — 6 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Yincognito]]></name></author>
+		<updated>2026-10-11T11:00:39+00:00</updated>
+
+		<published>2026-10-11T11:00:39+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246074#p246074</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246074#p246074"/>
+		<title type="html"><![CDATA[Suites • Re: The 4th Rock v1.11.11.2026]]></title>
+
+					<category term="Suites" scheme="https://forum.rainmeter.net/viewforum.php?f=130" label="Suites"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246074#p246074"><![CDATA[
+<blockquote class="uncited"><div><p>WebView.dll Version 0.1.0/32 &amp; 64 bit (Included)</p></div></blockquote><p>In case you didn't know, a newer and more capable WebView plugin for Rainmeter exists:<br>- <a href="https://forum.rainmeter.net/viewtopic.php?t=45787" class="postlink">https://forum.rainmeter.net/viewtopic.php?t=45787</a><br><br>For simple things, changing the name of the plugin in the corresponding option is enough. This plugin also comes with built-in mouse control capabilities, based on its Clickthrough option and whether you're holding down the CTRL key when interacting with the WebView area.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — 39 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Yincognito]]></name></author>
+		<updated>2026-10-11T10:46:31+00:00</updated>
+
+		<published>2026-10-11T10:46:31+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246073#p246073</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246073#p246073"/>
+		<title type="html"><![CDATA[Pre-Release Testing • Re: 5.0 pre-release discussion]]></title>
+
+					<category term="Pre-Release Testing" scheme="https://forum.rainmeter.net/viewforum.php?f=143" label="Pre-Release Testing"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246073#p246073"><![CDATA[
+<blockquote class="uncited"><div><p>But the above still there.</p></div></blockquote><p>You probably solved this by now, but your skin had Clickthrough checked in the Manage window. This will make the skin window redirect mouse actions to the desktop behind it, which would explain why you get the desktop menu...</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — 53 minutes ago</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Yincognito]]></name></author>
+		<updated>2026-10-11T10:23:14+00:00</updated>
+
+		<published>2026-10-11T10:23:14+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246071#p246071</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246071#p246071"/>
+		<title type="html"><![CDATA[Pre-Release Testing • Re: 5.0 pre-release discussion]]></title>
+
+					<category term="Pre-Release Testing" scheme="https://forum.rainmeter.net/viewforum.php?f=143" label="Pre-Release Testing"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246071#p246071"><![CDATA[
+<blockquote class="uncited"><div><p>Yeah, I'm back with WebView2 plugin and the dragging/resize logic. But lets leave resize for later.</p></div></blockquote><p>Later is fine, since while I did find a way to convert Javascript coordinates to Rainmeter ones, the system is still tricky to implement and not finished yet.</p><p>It relies not on a single plain formula to convert stuff (like it would have been ideal if the way such coordinates were determined in Javascript was documented in the first place), but on quickly and temporarily !Moving the skin to be dragged at the 0, 0 coordinates of each monitor when dragging starts (via the new built-in variables in 5.0 and a FOR loop), in order to get the Javascript coordinates of the skin's (and monitor's, given the said movement) top left corner, for usage in the conversion to follow.</p><p>I don't like this approach as it involves additional skin moving and redrawing that could and should be avoided if the way to convert coordinates were to be available online, but the result is precise and usable since when it comes to the coordinate part within a single monitor, the way Javascript and Rainmeter see it is identical (they're both logical / virtualized). In other words, only how the 0, 0 points on each monitor maps from Rainmeter to Javascript is needed to have the Javascript to Rainmeter coordinate conversion, besides some additional computation.</p><p>I'm on my phone now and can't share the code, but it's still shaky a bit and unfinished, so it would only describe what I said above, instead of doing the whole thing. Obviously, if the monitor arrangement is changed while a skin is dragged via RainmeterAPI's !Move in Javascript, this would fail (since for practical reasons the approach is done only once just before dragging starts), but hey, we're not there yet anyway.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Today, 10:23 am</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Thinkr8]]></name></author>
+		<updated>2026-10-11T10:47:13+00:00 </updated>
+
+		<published>2026-10-11T10:04:15+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246070#p246070</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246070#p246070"/>
+		<title type="html"><![CDATA[Pre-Release Testing • Re: 5.0 pre-release discussion]]></title>
+
+					<category term="Pre-Release Testing" scheme="https://forum.rainmeter.net/viewforum.php?f=143" label="Pre-Release Testing"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246070#p246070"><![CDATA[
+<div class="inline-attachment"><!-- ia0 -->Screenshot 2026-10-11 060155.png<!-- ia0 --></div><p><br><br>A right mouse click on my skin revealed the Fie Explorer context menu, wow. :O<br>Fixed network error., and the UTF-16 error. But the above still there.<br><br>NEVERMIND I had a brain blow out, all good now.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=56960">Thinkr8</a> — Today, 10:04 am</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[jsmorley]]></name></author>
+		<updated>2026-10-11T09:55:44+00:00</updated>
+
+		<published>2026-10-11T09:55:44+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246069#p246069</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246069#p246069"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: Custom ToolTip plugin]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246069#p246069"><![CDATA[
+<blockquote class="uncited"><div><p>Great plugin - thank you!<br>just one sidenote: on your github-page there's still angled-text mentioned (just above the "SVG icons" paragraph): "<em class="text-italics"><strong class="text-strong">Angled text and</strong> shadows can extend outside the calculated layout; provide sufficient padding/size.</em>"</p></div></blockquote><p>Fixed... Thanks.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=85">jsmorley</a> — Today, 9:55 am</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Thinkr8]]></name></author>
+		<updated>2026-10-11T09:37:03+00:00</updated>
+
+		<published>2026-10-11T09:37:03+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246068#p246068</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246068#p246068"/>
+		<title type="html"><![CDATA[Pre-Release Testing • Re: 5.0 pre-release discussion]]></title>
+
+					<category term="Pre-Release Testing" scheme="https://forum.rainmeter.net/viewforum.php?f=143" label="Pre-Release Testing"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246068#p246068"><![CDATA[
+<div class="inline-attachment"><!-- ia1 -->Screenshot 2026-10-11 052751.png<!-- ia1 --></div><p><br>Changing Bits to Bytes and the error still exists.<br>I'm afraid the forum is going to have a very hard time dealing with me and these new changes because of my learning curve, and most likely I will be asking the same question multiple times.<br>I don't have Bits Sent anywhere in the code. I've check it 12 times and still the error.<br><br></p><div class="inline-attachment"><!-- ia0 -->Screenshot 2026-10-11 054548.png<!-- ia0 --></div><p><br>Same error here too. Made the changes and still get the error.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=56960">Thinkr8</a> — Today, 9:37 am</p><hr />
+]]></content>
+	</entry>
+		<entry>
+		<author><name><![CDATA[Yincognito]]></name></author>
+		<updated>2026-10-11T09:24:51+00:00</updated>
+
+		<published>2026-10-11T09:24:51+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246067#p246067</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246067#p246067"/>
+		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: NativeHardwareMonitor - Plugin [ 2.1.4 ]]]></title>
+
+					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+		
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246067#p246067"><![CDATA[
+<p>Thanks a lot for the explanation, Kurou - it makes perfect sense indeed. I'll provide the logs and the metrics again when I get some time, which could be today if possible, or Tuesday if not.<br><br>Yes, driver update could be an option for me, but it really depends on whether such an installation supports my devices and of course if it plays well with them - as far as I recall, I did update drivers over the years (manually, not automatically, as I'm not into the latter), so it's not like I purposely stayed on older ones, but can't recall exactly why it didn't end up with the system you described being there.<br><br>In any case, I think it's best to stay with these drivers for now, to try and see if the matter can be solved "as it is" (just in case your plugin encounters similar scenarios on other systems), before attempting to update them.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Today, 9:24 am</p><hr />
 ]]></content>
 	</entry>
 		<entry>
 		<author><name><![CDATA[RicardoTM]]></name></author>
-		<updated>2026-09-27T05:48:21+00:00</updated>
+		<updated>2026-10-11T09:18:58+00:00</updated>
 
-		<published>2026-09-27T05:48:21+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245689#p245689</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245689#p245689"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+		<published>2026-10-11T09:18:58+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246066#p246066</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246066#p246066"/>
+		<title type="html"><![CDATA[Pre-Release Testing • Re: 5.0 pre-release discussion]]></title>
 
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+					<category term="Pre-Release Testing" scheme="https://forum.rainmeter.net/viewforum.php?f=143" label="Pre-Release Testing"/>
 		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245689#p245689"><![CDATA[
-<blockquote class="uncited"><div>Well, JumpListExplorer doesn't work for me, even though I installed .NET SDK 9.0 as well, as per its requirements, but I managed to run the command line version. It's interesting, because the "AI" from my phone provided some other results that mentioned the taskbar button arrangement in <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband</span>, and thumbnail actions not being stored permanently on disk or the registry, but being programmatic and created on the fly by the Windows API's <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">ITaskbarList3:TumbBarAddButtons</span> interface (probably what you used as well). It said that when opening the app, the app registers those actions in the OS' active memory, and when closing the app, the thumbnail actions dissapear completely. Of course, wasn't interested in the previews, just the commands in them (the .json created by JLECmd has some of those, albeit I tested only on some existing .customDestinations-ms from yesterday that I'm not even sure it included the progress bar thumbnail actions).<br><br>In any case, there is no chance of easy editing those task / thumbnail actions and make them run directly something anyway, thus the plugin is still the best bet in that regard. Not sure if there are many use cases where you'd want to run directly something without involving the Rainmeter executable though, so that's debatable.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">Haha, thanks - sure I'm thankful. I can send you chickens, pigs, beef, or if you're into the wild side, we have bears and bisons here except they're still protected by law and can't hunt them yet even though they're raiding some inhabited places from time to time... I recommend the domesticated food though, that way you won't ask yourself if you're gonna eat the food or the food will eat you lol. In case you didn't enter the hunger games yet of course, if so I can quickly send you some stuff on the vegetable side. If you need already made stuff, we have some specialities too, but I'm afraid you'd have to drink a lot of water until the food gets to El Mexico.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"> </div></div></div></div></blockquote><br><br>Oh yeah, of course. I was only talking about tasks. Thumbnail buttons are completely programmatic and aren't stored anywhere. They're only available while the window exists. Yeah, that's the interface the plugin uses. I didn't see anything related to them either on JumpListExplorer.<br><br>This is a screenshot for the progress bar skin, that shows the info for the "Set to Indeterminate" task:<div class="inline-attachment"><!-- ia0 -->asdawq.jpg<!-- ia0 --></div>Yep, pretty much. I don't know either but still I think there could be use cases, so it could allow to set a different path. Maybe I could parse it first to check for a path, and if there's none then I inject the Rainmeter path instead, so pure bangs can still be entered.<br><br>Although, since you can already do:<div class="codebox"><p>Code: </p><pre><code>TaskbarTaskCommand=[!Launch]["notepad"]TaskbarTaskCommand2=[!Launch]["calc"]TaskbarTaskCommand3=[!Launch]["Everything.exe" -s "rainmeter"]</code></pre></div>It will work fine as long as it is properly enclosed on brackets... So it may not be necessary to do anything after all.. Unless someone would not want to launch rainmeter for some odd reason... mmm.. not sure.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">Wow, I think beer will be a safer bet... yeah, without the "a" lol</div></div></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Today, 5:48 am</p><hr />
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246066#p246066"><![CDATA[
+<p>Hey, now that 5.0 seems much more stable, can we take a look at the <code>[!Move]</code> Bang behavior again?</p><p>Yeah, I'm back with WebView2 plugin and the dragging/resize logic. But lets leave resize for later. First a little reminder about the issue so we're in sync:</p><p>WebView2 can't drag the skin window because it's a different window. To achieve a similar dragging behavior one has to write a script that uses the <code>!Move</code> bang. However, right now, if <code>KeppOnScreen</code> is enabled, when one drags the skin close to the screen bounds it will flicker like crazy (see gif below)</p><div class="inline-attachment"><!-- ia0 -->crazyflick.gif<!-- ia0 --></div><p>This happens because while the skin refuses to go out of the screen, the move bang is still accepting values out of the limit and will move the skin out of the limit before Rainmeter takes it back inside. Could the <code>[!Move]</code> bang be made to respect the user's <code>KeepOnScreen</code> preference? So if you enter out of bounds coordinates it just moves it automatically to the limit, or to the next screen? In other words, make <code>[!Move]</code> respect the same principles manually dragging a skin follows? This would also include <code>SnapToEdges</code>.</p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Today, 9:18 am</p><hr />
 ]]></content>
 	</entry>
 		<entry>
-		<author><name><![CDATA[Yincognito]]></name></author>
-		<updated>2026-09-27T02:12:59+00:00</updated>
+		<author><name><![CDATA[Thinkr8]]></name></author>
+		<updated>2026-10-11T09:05:19+00:00</updated>
 
-		<published>2026-09-27T02:12:59+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245688#p245688</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245688#p245688"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
+		<published>2026-10-11T09:05:19+00:00</published>
+		<id>https://forum.rainmeter.net/viewtopic.php?p=246065#p246065</id>
+		<link href="https://forum.rainmeter.net/viewtopic.php?p=246065#p246065"/>
+		<title type="html"><![CDATA[Pre-Release Testing • Re: 5.0 pre-release discussion]]></title>
 
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
+					<category term="Pre-Release Testing" scheme="https://forum.rainmeter.net/viewforum.php?f=143" label="Pre-Release Testing"/>
 		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245688#p245688"><![CDATA[
-<blockquote class="uncited"><div>They are apparently stored on files at <br><span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">C:\Users\USER\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations</span><br>and<br><span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">C:\Users\USER\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations</span><br><br>However, not sure how to read them yet. <br><br>There's an open source tool called JumplistExplorer here: <a href="https://ericzimmerman.github.io/#forensic-tools" class="postlink">https://ericzimmerman.github.io/#forensic-tools</a><br><br>Haven't tested yet.<br><br>Edit. Tested, it can indeed open those files.<br>Edit2. It can open and inspect the files. The ones we are interested on are at CustomDestinations. It can't edit them however.<br><a href="https://github.com/openmcdf/openmcdf" class="postlink">OpenMcdf</a> can supposedly edit them but I haven't (and probably won't) tested it.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">You're welcome. You can send me some food if you feel really thankful <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"></div></div></div></div></blockquote>Well, JumpListExplorer doesn't work for me, even though I installed .NET SDK 9.0 as well, as per its requirements, but I managed to run the command line version. It's interesting, because the "AI" from my phone provided some other results that mentioned the taskbar button arrangement in <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Taskband</span>, and thumbnail actions not being stored permanently on disk or the registry, but being programmatic and created on the fly by the Windows API's <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">ITaskbarList3:TumbBarAddButtons</span> interface (probably what you used as well). It said that when opening the app, the app registers those actions in the OS' active memory, and when closing the app, the thumbnail actions dissapear completely. Of course, wasn't interested in the previews, just the commands in them (the .json created by JLECmd has some of those, albeit I tested only on some existing .customDestinations-ms from yesterday that I'm not even sure it included the progress bar thumbnail actions).<br><br>In any case, there is no chance of easy editing those task / thumbnail actions and make them run directly something anyway, thus the plugin is still the best bet in that regard. Not sure if there are many use cases where you'd want to run directly something without involving the Rainmeter executable though, so that's debatable.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">Haha, thanks - sure I'm thankful. I can send you chickens, pigs, beef, or if you're into the wild side, we have bears and bisons here except they're still protected by law and can't hunt them yet even though they're raiding some inhabited places from time to time... I recommend the domesticated food though, that way you won't ask yourself if you're gonna eat the food or the food will eat you lol. In case you didn't enter the hunger games yet of course, if so I can quickly send you some stuff on the vegetable side. If you need already made stuff, we have some specialities too, but I'm afraid you'd have to drink a lot of water until the food gets to El Mexico.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"> </div></div></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Today, 2:12 am</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[RicardoTM]]></name></author>
-		<updated>2026-09-26T23:59:01+00:00</updated>
-
-		<published>2026-09-26T23:59:01+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245687#p245687</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245687#p245687"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
-
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245687#p245687"><![CDATA[
-They are apparently stored on files at <br><span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">C:\Users\USER\AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations</span><br>and<br><span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">C:\Users\USER\AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations</span><br><br>However, not sure how to read them yet. <br><br>There's an open source tool called JumplistExplorer here: <a href="https://ericzimmerman.github.io/#forensic-tools" class="postlink">https://ericzimmerman.github.io/#forensic-tools</a><br><br>Haven't tested yet.<br><br>Edit. Tested, it can indeed open those files.<br>Edit2. It can open and inspect the files. The ones we are interested on are at CustomDestinations. It can't edit them however.<br><a href="https://github.com/openmcdf/openmcdf" class="postlink">OpenMcdf</a> can supposedly edit them but I haven't (and probably won't) tested it.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">You're welcome. You can send me some food if you feel really thankful <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ag.gif" width="20" height="20" alt=":D" title="Big Grin"></div></div></div>Edit3.<br>By the way, even if you were able to edit them, the plugin will overwrite your changes every time it starts anyway.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Yesterday, 11:59 pm</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[Yincognito]]></name></author>
-		<updated>2026-09-26T23:53:57+00:00</updated>
-
-		<published>2026-09-26T23:53:57+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245686#p245686</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245686#p245686"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
-
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245686#p245686"><![CDATA[
-<blockquote class="uncited"><div>Ah yeah nope, tasks can't be set/modified from outside the plugin as far as I know. Now that you mention it, not sure where Windows stores those entries, they should be stored somewhere, as they are available even when Rainmeter is not running (when pinned). Will have to investigate that, may be useful to know I guess.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">Pretty nice! Certainly allowing to play/pause the Earth through thumbnail buttons would be a nice feature. Tasks can be used to switch different views or commands like that without needing to use the skin's UI.<br> Well, you can always use Win+UP/DOWN anyway so not really necessary to add those buttons anyways <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ab.gif" width="20" height="24" alt=":)" title="Smiler">.</div></div></div></div></blockquote>Yep, I was just about to edit my previous reply along those lines too. I don't know if they (tasks, thumbnail actions) are even related to, or included in the .lnk itself, or have to be features of the actual "app" corresponding to the said window, in the first place. You're right, would be good to know - at least we'd better understand where these things really come from and how they can (alternatively or not) manipulated.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">Indeed, that skin is well suited for such tasks / thumbnails, and even progress bars if I'm really thinking about it. But it's a somewhat complex (and optional) task to weigh in what would be the best way to add those (and which things to include as tasks / thumbnails / progress stuff in the first place), especially at this late hour, hence being something to think about at some other time. The good thing is that they're possible, thanks to your plugin.</div></div></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Yesterday, 11:53 pm</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[RicardoTM]]></name></author>
-		<updated>2026-09-26T23:41:16+00:00</updated>
-
-		<published>2026-09-26T23:41:16+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245685#p245685</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245685#p245685"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
-
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245685#p245685"><![CDATA[
-<blockquote class="uncited"><div>Good to know. Well, I didn't refer to setting them dynamically from inside the skin, but to whether there's an easy alternative way to set those task commands to something not involving Rainmeter acting as an intermediary executable, from outside Rainmeter or the skin - e.g. from the shortcut's or .lnk's properties, afterwards (if not, then the only way would be from the skin, and then the plugin should probably provide a way to not involve running Rainmeter, if desired by the user, I guess).<br><br>My current use case that I prefer for now is to use the plugin to trigger the creation of the .lnk as an "implicit" button, but copy that .lnk to someplace else and work with it as a "normal" (not "implicit") shortcut afterwards, that can be automatically e.g. deleted from the taskbar folder on unpinning. Obviously, the main role of the plugin is to provide window like capabilities like minimize / restore / etc., but on the shortcut side I personally only use it in the initial phase, so to speak (at least for now).<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">By the way, I just tried using the plugin with my WebView Earth skin, via some simple:<div class="codebox"><p>Code: </p><pre><code>[AppWindow]Measure=PluginPlugin=AppWindowAutoStart=1WindowTitle=#CURRENTCONFIG#WindowIcon=#@#FavIcon.icoAppId=#CURRENTCONFIG#TaskbarDisplayName=#CURRENTCONFIG#TaskbarCommand=[!Launch][!ActivateConfig "#CURRENTCONFIG#"]TaskbarIcon=#@#FavIcon.ico</code></pre></div>added to the skin's .ini, and it works wonderfully - the Earth in the skin keeps rotating while minimized, can be seen rotating in the taskbar preview, and all those goodies, I like it. I should probably have some use for the tasks and especially the thumbnail buttons (for e.g. pause, resume, toggle rotation type from Live aka based on actual earth position, to Time aka based on some arbitrary rotation or datetime), but I'll leave that for another time. It's great to have it as an "app like" thingy on the taskbar and manageable like a window though, even if I don't yet and probably won't bother to make specific minimize / close buttons in the skin, due to space constraints and keeping symmetries there.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/af.gif" width="21" height="21" alt="8-)" title="Cool"> </div></div></div></div></blockquote>Ah yeah nope, tasks can't be set/modified from outside the plugin as far as I know. Now that you mention it, not sure where Windows stores those entries, they should be stored somewhere, as they are available even when Rainmeter is not running (when pinned). Will have to investigate that, may be useful to know I guess.<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">Pretty nice! Certainly allowing to play/pause the Earth through thumbnail buttons would be a nice feature. Tasks can be used to switch different views or commands like that without needing to use the skin's UI.<br> Well, you can always use Win+UP/DOWN anyway so not really necessary to add those buttons anyways <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ab.gif" width="20" height="24" alt=":)" title="Smiler">.</div></div></div><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Yesterday, 11:41 pm</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[Yincognito]]></name></author>
-		<updated>2026-09-26T23:26:08+00:00</updated>
-
-		<published>2026-09-26T23:26:08+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245684#p245684</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245684#p245684"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
-
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245684#p245684"><![CDATA[
-<blockquote class="uncited"><div>Unlike TaskbarCommand, TaskbarTaskCommand can be set dynamically without issues. The only thing to consider is that they’re “shared” between all skins using the same AppID. So if you set different task commands for different skins that group together using the same AppID, the very last set will be the ones being displayed when you right click. This is why is recommended to set the taskbar options to the same values on all skins grouped together by using an included .inc file as I did on the suite example.</div></blockquote>Good to know. Well, I didn't refer to setting them dynamically from inside the skin, but to whether there's an easy alternative way to set those task commands to something not involving Rainmeter acting as an intermediary executable, from outside Rainmeter or the skin - e.g. from the shortcut's or .lnk's properties, afterwards (if not, then the only way would be from the skin, and then the plugin should probably provide a way to not involve running Rainmeter, if desired by the user, I guess?).  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/bw.gif" width="27" height="24" alt=":???:" title="Confused"> <br><br>My current use case that I prefer for now is to use the plugin to trigger the creation of the .lnk as an "implicit" button, but copy that .lnk to someplace else and work with it as a "normal" (not "implicit") shortcut afterwards, that can be automatically e.g. deleted from the taskbar folder on unpinning. Obviously, the main role of the plugin is to provide window like capabilities like minimize / restore / etc., but on the shortcut side I personally only use it in the initial phase, so to speak (at least for now).<br><div style="margin:20px;margin-top:5px"><div class="quotetitle"> <input type="button" value="Spoiler" style="width:45px;font-size:10px;margin:0;padding:0" ></div><div class="quotecontent" style="margin-top:10px;padding:10px;border:1px solid lightgray"><div style="display:none">By the way, I just tried using the plugin with my WebView Earth skin, via some simple:<div class="codebox"><p>Code: </p><pre><code>[AppWindow]Measure=PluginPlugin=AppWindowAutoStart=1WindowTitle=#CURRENTCONFIG#WindowIcon=#@#FavIcon.icoAppId=#CURRENTCONFIG#TaskbarDisplayName=#CURRENTCONFIG#TaskbarCommand=[!Launch][!ActivateConfig "#CURRENTCONFIG#"]TaskbarIcon=#@#FavIcon.ico</code></pre></div>added to the skin's .ini, and it works wonderfully - the Earth in the skin keeps rotating while minimized, can be seen rotating in the taskbar preview, and all those goodies, I like it. I should probably have some use for the tasks and especially the thumbnail buttons (for e.g. pause, resume, toggle rotation type from Live aka based on actual earth position, to Time aka based on some arbitrary rotation or datetime), but I'll leave that for another time. It's great to have it as an "app like" thingy on the taskbar and manageable like a window though, even if I don't yet and probably won't bother to make specific minimize / close buttons in the skin, due to space constraints and keeping symmetries there.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/af.gif" width="21" height="21" alt="8-)" title="Cool"> </div></div></div>P.S. Of course, there might be some more advanced .lnk editing software that could also set the tasks and / or thumbnails, and that would solve it too.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Yesterday, 11:26 pm</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[RicardoTM]]></name></author>
-		<updated>2026-09-26T22:45:13+00:00</updated>
-
-		<published>2026-09-26T22:45:13+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245683#p245683</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245683#p245683"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
-
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245683#p245683"><![CDATA[
-<blockquote class="uncited"><div>Oh, I see... well, if there isn't another / later / easy method to freely customize the <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">TaskbarTaskCommand</span>s (like it's available for the shorcut target aka <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">TaskbarCommand</span>, which can be easily edited at will in Windows afterwards), it might be something to think about and see what choice is better, indeed. Can't think of any example where one might actually need such freedom in setting these things at this time, but that doesn't mean it couldn't be something that users may want at some point, for whatever reasons.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/bw.gif" width="27" height="24" alt=":???:" title="Confused"></div></blockquote>Unlike TaskbarCommand, TaskbarTaskCommand can be set dynamically without issues. The only thing to consider is that they’re “shared” between all skins using the same AppID. So if you set different task commands for different skins that group together using the same AppID, the very last set will be the ones being displayed when you right click. This is why is recommended to set the taskbar options to the same values on all skins grouped together by using an included .inc file as I did on the suite example.<p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=68250">RicardoTM</a> — Yesterday, 10:45 pm</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[Yincognito]]></name></author>
-		<updated>2026-09-26T22:35:10+00:00</updated>
-
-		<published>2026-09-26T22:35:10+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245682#p245682</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245682#p245682"/>
-		<title type="html"><![CDATA[Community Plugins &amp; Addons • Re: AppWindow [skins as normal windows]]]></title>
-
-					<category term="Community Plugins &amp; Addons" scheme="https://forum.rainmeter.net/viewforum.php?f=128" label="Community Plugins &amp; Addons"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245682#p245682"><![CDATA[
-<blockquote class="uncited"><div>Doing that would cause issues. Windows relies on both AppID and the application path to choose what windows to group. If you do that, the skin will not actually group on that, because it will recognize the shortcut (and thus the taskbar icon) as a shortcut for the calculator and not for the skin. This is why it already includes Rainmeter’s path, I noticed those issues from the beginning.<br><br>Remember that those options are not for a simple command, but to create the actual shortcut. On the latest version will default to “…\Rainmeter.exe” [!ActivateConfig “#CURRENTCONFIG#”] when empty. This is because leaving it empty can also confuse Windows, making it group normal Rainmeter windows as well.<br><br>However, we can do what you suggest for <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">TaskbarTaskCommand</span> instead, which right now also includes Rainmeter’s path, but could allow to launch whatever application.</div></blockquote>Oh, I see... well, if there isn't another / later / easy method to freely customize the <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">TaskbarTaskCommand</span>s (like it's available for the shorcut target aka <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">TaskbarCommand</span>, which can be easily edited at will in Windows afterwards), it might be something to think about and see what choice is better, indeed. Can't think of any example where one might actually need such freedom in setting these things at this time, but that doesn't mean it couldn't be something that users may want at some point, for whatever reasons.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/bw.gif" width="27" height="24" alt=":???:" title="Confused"><br><br>P.S. Just to be clear, my point here was to bring this to your attention - I don't have a strong preference for one way or the other. Right now my use of the plugin is for fun and coolness (it's really nice to enjoy!), the actual practical usage scenarios that I may or may not confront in the future with it are yet to come.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/innuendo.gif" width="20" height="20" alt=";)" title="Wink"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Yesterday, 10:35 pm</p><hr />
-]]></content>
-	</entry>
-		<entry>
-		<author><name><![CDATA[Yincognito]]></name></author>
-		<updated>2026-09-26T22:20:54+00:00</updated>
-
-		<published>2026-09-26T22:20:54+00:00</published>
-		<id>https://forum.rainmeter.net/viewtopic.php?p=245681#p245681</id>
-		<link href="https://forum.rainmeter.net/viewtopic.php?p=245681#p245681"/>
-		<title type="html"><![CDATA[Help: Rainmeter Skins • Re: Help: RunCommand]]></title>
-
-					<category term="Help: Rainmeter Skins" scheme="https://forum.rainmeter.net/viewforum.php?f=5" label="Help: Rainmeter Skins"/>
-		
-		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=245681#p245681"><![CDATA[
-<blockquote class="uncited"><div>My unsuspectingness won't run away from you!.  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/bj.gif" width="28" height="23" alt=":rolmfao:" title="ROLMFAO"> <img class="smilies" src="https://forum.rainmeter.net/images/smilies/cv.gif" width="28" height="25" alt=":givelove:" title="Give Love">  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ax.gif" width="30" height="26" alt=":rosegift:" title="Rose Gift"></div></blockquote>It already did, despite you still pretending to be a "rookie" since it's more comfortable and fun, you don't fool me...  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/do.gif" width="20" height="20" alt=":sly:" title="Sly"><br>Now you even know what I didn't: how to escape quotes in PowerShell scripts. You're an expert and a seasoned veteran now!  <img class="smilies" src="https://forum.rainmeter.net/images/smilies/innuendo.gif" width="20" height="20" alt=";)" title="Wink"><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=33362">Yincognito</a> — Yesterday, 10:20 pm</p><hr />
+		<content type="html" xml:base="https://forum.rainmeter.net/viewtopic.php?p=246065#p246065"><![CDATA[
+<blockquote class="uncited"><div><p>Why is it troublesome? You can have the Rainmeter 5 portable install use your Rainmeter 4.5 setup (skins, layouts, plugins) by removing <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">Rainmeter.ini</span> in the portable install directory. Then you can easily switch between Rainmeter 4.5 and Rainmeter 5. Doing this should fix the MSIAfterburner plugin error.<br><br>Regarding the UsageMonitor error, the skin requests <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">Bits Received/sec</span>, which is indeed not valid and does not exist. The counter name should be <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">Bytes Received/sec</span>. These measures were already broken with Rainmeter 4.5, but that wasn't necessarily visible because it didn't error an error in this situation.<br><br>Regarding the RunCommand error, <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">UTF-16</span> is indeed not valid, but was silently accepted by Rainmeter 4.5. It should be <span style="font-family:Consolas,'Courier New',Menlo,Monaco,monospace;font-size:1em;font-style:normal;line-height:1.3em;background:#fff;border:1px solid #869aa8;padding:0 3px;color:#003807;display:inline">UTF16</span>. This error has no functional effect because UTF16 is the default in case of invalid values.</p></div></blockquote><p>OK, thank you, I'll be back if'n I find more errors to report. <img class="smilies" src="https://forum.rainmeter.net/images/smilies/ab.gif" width="20" height="24" alt=":)" title="Smiler"></p><p>Statistics: Posted by <a href="https://forum.rainmeter.net/memberlist.php?mode=viewprofile&amp;u=56960">Thinkr8</a> — Today, 9:05 am</p><hr />
 ]]></content>
 	</entry>
 	</feed>

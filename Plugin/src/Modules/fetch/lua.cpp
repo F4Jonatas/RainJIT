@@ -18,7 +18,7 @@
 #include <RainmeterAPI.hpp>
 #include <Utils/filesystem.hpp>
 
-// Mapa global para associar Rain* ao HWND da janela de notificação
+// Global map associating each Rain* with the HWND of its notification window
 static std::unordered_map<Rain *, HWND> g_notifyWindows;
 static std::mutex g_notifyMutex;
 
@@ -29,8 +29,8 @@ static std::mutex g_notifyMutex;
 
 namespace lua {
 
-	// Procedimento da janela
-	// wParam contém o ID do contexto (ctx->refSelf)
+	// Window procedure
+	// wParam carries the context ID (ctx->refSelf)
 	LRESULT CALLBACK FetchNotifyWndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam ) {
 		if ( msg == WM_FETCH_COMPLETE ) {
 			int ctxId = static_cast<int>( wParam );
@@ -38,7 +38,7 @@ namespace lua {
 
 			if ( ctx && ctx->completed.load() ) {
 				if ( ctx->rain->L ) {
-					// Coloca a função fetch_dispatch e o objeto self na pilha
+					// Push the self object and the fetch_dispatch function onto the stack
 					lua_rawgeti( ctx->rain->L, LUA_REGISTRYINDEX, ctx->refSelfLua ); // self
 					lua_pushcfunction( ctx->rain->L, lua::fetch_dispatch ); // function
 					lua_pushvalue( ctx->rain->L, -2 ); // self argument
@@ -66,9 +66,9 @@ namespace lua {
 
 
 
-	// Cria a janela para um Rain*
+	// Creates the notification window for a Rain*
 	void CreateNotifyWindow( Rain *rain ) {
-		// Registra a classe da janela uma única vez
+		// Register the window class only once
 		static bool classRegistered = false;
 		if ( !classRegistered ) {
 			WNDCLASSEX wc = { sizeof( WNDCLASSEX ) };
@@ -103,7 +103,7 @@ namespace lua {
 		// clang-format on
 
 		if ( hWnd ) {
-			// Armazena o ponteiro Rain* na janela (opcional, útil para debug)
+			// Store the Rain* pointer in the window (optional, useful for debugging)
 			SetWindowLongPtr( hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>( rain ) );
 			std::lock_guard<std::mutex> lock( g_notifyMutex );
 			g_notifyWindows[rain] = hWnd;
@@ -117,7 +117,7 @@ namespace lua {
 
 
 
-	// Obtém o HWND associado ao Rain*
+	// Returns the HWND associated with the Rain*
 	HWND GetNotifyWindow( Rain *rain ) {
 		std::lock_guard<std::mutex> lock( g_notifyMutex );
 		auto it = g_notifyWindows.find( rain );
@@ -126,7 +126,7 @@ namespace lua {
 
 
 
-	// Destroi a janela e remove do mapa
+	// Destroys the window and removes it from the map
 	void DestroyNotifyWindow( Rain *rain ) {
 		HWND hWnd = nullptr;
 		{
@@ -163,8 +163,8 @@ namespace lua {
 
 
 
-	// Função auxiliar (fora de PushResponseTable) para criar tabela case‑insensitive
-	// Função auxiliar para criar tabela case‑insensitive (mesma de antes)
+	// Helper (defined outside PushResponseTable) that builds a case-insensitive table:
+	// keys are stored lowercased and lookups are lowercased before the raw get.
 	static void createCaseInsensitiveTable( lua_State *L, const std::map<std::string, std::string> &map ) {
 		lua_newtable( L );
 		for ( const auto &pair : map ) {
@@ -220,7 +220,8 @@ namespace lua {
 			lua_newtable( L );
 			lua_pushcfunction( L, []( lua_State *L2 ) -> int {
 				MapType *m = static_cast<MapType *>( lua_touserdata( L2, 1 ) );
-				if ( m ) m->~MapType();
+				if ( m )
+					m->~MapType();
 				return 0;
 			} );
 			lua_setfield( L, -2, "__gc" );
@@ -233,7 +234,7 @@ namespace lua {
 		pushMapUserdata( response.cookies );
 		lua_setfield( L, -2, "__cookies_ud" );
 
-		// Metatable com métodos
+		// Metatable with methods
 		lua_newtable( L );
 		lua_pushvalue( L, -1 );
 		lua_setfield( L, -2, "__index" );
@@ -243,7 +244,10 @@ namespace lua {
 			lua_getfield( L2, 1, "__headers_ud" );
 			auto *map = static_cast<MapType *>( lua_touserdata( L2, -1 ) );
 			lua_pop( L2, 1 );
-			if ( !map ) { lua_pushnil( L2 ); return 1; }
+			if ( !map ) {
+				lua_pushnil( L2 );
+				return 1;
+			}
 			createCaseInsensitiveTable( L2, *map );
 			return 1;
 		} );
@@ -254,7 +258,10 @@ namespace lua {
 			lua_getfield( L2, 1, "__cookies_ud" );
 			auto *map = static_cast<MapType *>( lua_touserdata( L2, -1 ) );
 			lua_pop( L2, 1 );
-			if ( !map ) { lua_pushnil( L2 ); return 1; }
+			if ( !map ) {
+				lua_pushnil( L2 );
+				return 1;
+			}
 			createCaseInsensitiveTable( L2, *map );
 			return 1;
 		} );
@@ -276,200 +283,206 @@ namespace lua {
 
 		// :xml() - identical to xml.parse( body )
 		lua_pushlightuserdata( L, rain );
-		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
-			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+		lua_pushcclosure(
+				L,
+				[]( lua_State *L2 ) -> int {
+					Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			lua_getglobal( L2, "require" );
-			lua_pushstring( L2, "xml" );
-			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
-				const char *err = lua_tostring( L2, -1 );
-				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:xml() - xml module unavailable: " +
-					                   utf8_to_wstring( err ? err : "unknown error" );
-					RmLog( r->rm, LOG_ERROR, msg.c_str() );
-				}
-				lua_pop( L2, 1 );
-				lua_pushnil( L2 );
-				lua_pushstring( L2, "xml module not available" );
-				return 2;
-			}
+					lua_getglobal( L2, "require" );
+					lua_pushstring( L2, "xml" );
+					if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+						const char *err = lua_tostring( L2, -1 );
+						if ( r && r->rm ) {
+							std::wstring msg = L"[RainJIT:Fetch] response:xml() - xml module unavailable: " + utf8_to_wstring( err ? err : "unknown error" );
+							RmLog( r->rm, LOG_ERROR, msg.c_str() );
+						}
+						lua_pop( L2, 1 );
+						lua_pushnil( L2 );
+						lua_pushstring( L2, "xml module not available" );
+						return 2;
+					}
 
-			lua_getfield( L2, -1, "parse" );
-			lua_remove( L2, -2 );
-			lua_getfield( L2, 1, "__body" );
+					lua_getfield( L2, -1, "parse" );
+					lua_remove( L2, -2 );
+					lua_getfield( L2, 1, "__body" );
 
-			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
-				const char *err = lua_tostring( L2, -1 );
-				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:xml() - parse failed: " +
-					                   utf8_to_wstring( err ? err : "unknown error" );
-					RmLog( r->rm, LOG_ERROR, msg.c_str() );
-				}
-				lua_pop( L2, 1 );
-				lua_pushnil( L2 );
-				lua_pushstring( L2, "xml.parse() call failed" );
-				return 2;
-			}
+					if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
+						const char *err = lua_tostring( L2, -1 );
+						if ( r && r->rm ) {
+							std::wstring msg = L"[RainJIT:Fetch] response:xml() - parse failed: " + utf8_to_wstring( err ? err : "unknown error" );
+							RmLog( r->rm, LOG_ERROR, msg.c_str() );
+						}
+						lua_pop( L2, 1 );
+						lua_pushnil( L2 );
+						lua_pushstring( L2, "xml.parse() call failed" );
+						return 2;
+					}
 
-			return 2;
-		}, 1 );
+					return 2;
+				},
+				1 );
 		lua_setfield( L, -2, "xml" );
 
 		// :html() - identical to html.parse( body )
 		lua_pushlightuserdata( L, rain );
-		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
-			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+		lua_pushcclosure(
+				L,
+				[]( lua_State *L2 ) -> int {
+					Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			lua_getglobal( L2, "require" );
-			lua_pushstring( L2, "html" );
-			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
-				const char *err = lua_tostring( L2, -1 );
-				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:html() - html module unavailable: " +
-					                   utf8_to_wstring( err ? err : "unknown error" );
-					RmLog( r->rm, LOG_ERROR, msg.c_str() );
-				}
-				lua_pop( L2, 1 );
-				lua_pushnil( L2 );
-				lua_pushstring( L2, "html module not available" );
-				return 2;
-			}
+					lua_getglobal( L2, "require" );
+					lua_pushstring( L2, "html" );
+					if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+						const char *err = lua_tostring( L2, -1 );
+						if ( r && r->rm ) {
+							std::wstring msg = L"[RainJIT:Fetch] response:html() - html module unavailable: " + utf8_to_wstring( err ? err : "unknown error" );
+							RmLog( r->rm, LOG_ERROR, msg.c_str() );
+						}
+						lua_pop( L2, 1 );
+						lua_pushnil( L2 );
+						lua_pushstring( L2, "html module not available" );
+						return 2;
+					}
 
-			lua_getfield( L2, -1, "parse" );
-			lua_remove( L2, -2 );
-			lua_getfield( L2, 1, "__body" );
+					lua_getfield( L2, -1, "parse" );
+					lua_remove( L2, -2 );
+					lua_getfield( L2, 1, "__body" );
 
-			if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
-				const char *err = lua_tostring( L2, -1 );
-				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:html() - parse failed: " +
-					                   utf8_to_wstring( err ? err : "unknown error" );
-					RmLog( r->rm, LOG_ERROR, msg.c_str() );
-				}
-				lua_pop( L2, 1 );
-				lua_pushnil( L2 );
-				lua_pushstring( L2, "html.parse() call failed" );
-				return 2;
-			}
+					if ( lua_pcall( L2, 1, 2, 0 ) != LUA_OK ) {
+						const char *err = lua_tostring( L2, -1 );
+						if ( r && r->rm ) {
+							std::wstring msg = L"[RainJIT:Fetch] response:html() - parse failed: " + utf8_to_wstring( err ? err : "unknown error" );
+							RmLog( r->rm, LOG_ERROR, msg.c_str() );
+						}
+						lua_pop( L2, 1 );
+						lua_pushnil( L2 );
+						lua_pushstring( L2, "html.parse() call failed" );
+						return 2;
+					}
 
-			return 2;
-		}, 1 );
+					return 2;
+				},
+				1 );
 		lua_setfield( L, -2, "html" );
 
 		// :json() - equivalent to json.decode( body )
 		lua_pushlightuserdata( L, rain );
-		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
-			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+		lua_pushcclosure(
+				L,
+				[]( lua_State *L2 ) -> int {
+					Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			lua_getglobal( L2, "require" );
-			lua_pushstring( L2, "json" );
-			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
-				const char *err = lua_tostring( L2, -1 );
-				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:json() - json module unavailable: " +
-					                   utf8_to_wstring( err ? err : "unknown error" );
-					RmLog( r->rm, LOG_ERROR, msg.c_str() );
-				}
+					lua_getglobal( L2, "require" );
+					lua_pushstring( L2, "json" );
+					if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+						const char *err = lua_tostring( L2, -1 );
+						if ( r && r->rm ) {
+							std::wstring msg = L"[RainJIT:Fetch] response:json() - json module unavailable: " + utf8_to_wstring( err ? err : "unknown error" );
+							RmLog( r->rm, LOG_ERROR, msg.c_str() );
+						}
 
-				lua_pop( L2, 1 );
-				lua_pushnil( L2 );
-				return 1;
-			}
+						lua_pop( L2, 1 );
+						lua_pushnil( L2 );
+						return 1;
+					}
 
-			// Stack: [ ..., jsonModule ]
-			lua_getfield( L2, -1, "decode" );
+					// Stack: [ ..., jsonModule ]
+					lua_getfield( L2, -1, "decode" );
 
-			if ( !lua_isfunction( L2, -1 ) ) {
-				if ( r && r->rm )
-					RmLog( r->rm, LOG_ERROR, L"[RainJIT:Fetch] response:json() - json.decode not found." );
+					if ( !lua_isfunction( L2, -1 ) ) {
+						if ( r && r->rm )
+							RmLog( r->rm, LOG_ERROR, L"[RainJIT:Fetch] response:json() - json.decode not found." );
 
-				lua_pop( L2, 2 ); // decode + jsonModule
-				lua_pushnil( L2 );
-				return 1;
-			}
+						lua_pop( L2, 2 ); // decode + jsonModule
+						lua_pushnil( L2 );
+						return 1;
+					}
 
-			// Stack: [ ..., jsonModule, decode ] -> remove jsonModule
-			lua_remove( L2, -2 );
+					// Stack: [ ..., jsonModule, decode ] -> remove jsonModule
+					lua_remove( L2, -2 );
 
-			lua_getfield( L2, 1, "__body" );
+					lua_getfield( L2, 1, "__body" );
 
-			if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
-				const char *err = lua_tostring( L2, -1 );
-				if ( r && r->rm ) {
-					std::wstring msg = L"[RainJIT:Fetch] response:json() - parse failed: " +
-					                   utf8_to_wstring( err ? err : "unknown error" );
-					RmLog( r->rm, LOG_ERROR, msg.c_str() );
-				}
-				lua_pop( L2, 1 );
-				lua_pushnil( L2 );
-				return 1;
-			}
+					if ( lua_pcall( L2, 1, 1, 0 ) != LUA_OK ) {
+						const char *err = lua_tostring( L2, -1 );
+						if ( r && r->rm ) {
+							std::wstring msg = L"[RainJIT:Fetch] response:json() - parse failed: " + utf8_to_wstring( err ? err : "unknown error" );
+							RmLog( r->rm, LOG_ERROR, msg.c_str() );
+						}
+						lua_pop( L2, 1 );
+						lua_pushnil( L2 );
+						return 1;
+					}
 
-			return 1;
-		}, 1 );
+					return 1;
+				},
+				1 );
 		lua_setfield( L, -2, "json" );
 
 		// :save(path) - resolves Rainmeter variables and relative paths via absPath
 		lua_pushlightuserdata( L, rain );
-		lua_pushcclosure( L, []( lua_State *L2 ) -> int {
-			Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
+		lua_pushcclosure(
+				L,
+				[]( lua_State *L2 ) -> int {
+					Rain *r = static_cast<Rain *>( lua_touserdata( L2, lua_upvalueindex( 1 ) ) );
 
-			if ( !lua_istable( L2, 1 ) ) {
-				lua_pushboolean( L2, 0 );
-				lua_pushstring( L2, "Invalid response table" );
-				return 2;
-			}
+					if ( !lua_istable( L2, 1 ) ) {
+						lua_pushboolean( L2, 0 );
+						lua_pushstring( L2, "Invalid response table" );
+						return 2;
+					}
 
-			const char *filePath = luaL_checkstring( L2, 2 );
-			if ( !filePath || !*filePath ) {
-				lua_pushboolean( L2, 0 );
-				lua_pushstring( L2, "Invalid file path" );
-				return 2;
-			}
+					const char *filePath = luaL_checkstring( L2, 2 );
+					if ( !filePath || !*filePath ) {
+						lua_pushboolean( L2, 0 );
+						lua_pushstring( L2, "Invalid file path" );
+						return 2;
+					}
 
-			// Resolve Rainmeter variables and canonicalize path
-			std::wstring wPath = utf8_to_wstring( filePath );
-			if ( r ) {
-				std::wstring resolved = r->absPath( wPath );
-				if ( !resolved.empty() )
-					wPath = resolved;
-			}
+					// Resolve Rainmeter variables and canonicalize path
+					std::wstring wPath = utf8_to_wstring( filePath );
+					if ( r ) {
+						std::wstring resolved = r->absPath( wPath );
+						if ( !resolved.empty() )
+							wPath = resolved;
+					}
 
-			if ( wPath.empty() ) {
-				lua_pushboolean( L2, 0 );
-				lua_pushstring( L2, "Invalid file path encoding" );
-				return 2;
-			}
+					if ( wPath.empty() ) {
+						lua_pushboolean( L2, 0 );
+						lua_pushstring( L2, "Invalid file path encoding" );
+						return 2;
+					}
 
-			lua_getfield( L2, 1, "__body" );
-			if ( !lua_isstring( L2, -1 ) ) {
-				lua_pop( L2, 1 );
-				lua_pushboolean( L2, 0 );
-				lua_pushstring( L2, "No body data in response" );
-				return 2;
-			}
+					lua_getfield( L2, 1, "__body" );
+					if ( !lua_isstring( L2, -1 ) ) {
+						lua_pop( L2, 1 );
+						lua_pushboolean( L2, 0 );
+						lua_pushstring( L2, "No body data in response" );
+						return 2;
+					}
 
-			size_t bodySize = 0;
-			const char *bodyData = lua_tolstring( L2, -1, &bodySize );
-			lua_pop( L2, 1 );
+					size_t bodySize = 0;
+					const char *bodyData = lua_tolstring( L2, -1, &bodySize );
+					lua_pop( L2, 1 );
 
-			if ( !bodyData || bodySize == 0 ) {
-				lua_pushboolean( L2, 0 );
-				lua_pushstring( L2, "Empty response body" );
-				return 2;
-			}
+					if ( !bodyData || bodySize == 0 ) {
+						lua_pushboolean( L2, 0 );
+						lua_pushstring( L2, "Empty response body" );
+						return 2;
+					}
 
-			if ( !fs::CreateDirectoriesRecursive( wPath ) ) {
-				lua_pushboolean( L2, 0 );
-				lua_pushstring( L2, "Failed to create directory" );
-				return 2;
-			}
+					if ( !fs::CreateDirectoriesRecursive( wPath ) ) {
+						lua_pushboolean( L2, 0 );
+						lua_pushstring( L2, "Failed to create directory" );
+						return 2;
+					}
 
-			bool ok = fs::SaveToFile( wPath, reinterpret_cast<const BYTE *>( bodyData ), bodySize );
-			lua_pushboolean( L2, ok ? 1 : 0 );
-			lua_pushstring( L2, ok ? nullptr : "Failed to write file" );
-			return ok ? 1 : 2;
-		}, 1 );
+					bool ok = fs::SaveToFile( wPath, reinterpret_cast<const BYTE *>( bodyData ), bodySize );
+					lua_pushboolean( L2, ok ? 1 : 0 );
+					lua_pushstring( L2, ok ? nullptr : "Failed to write file" );
+					return ok ? 1 : 2;
+				},
+				1 );
 		lua_setfield( L, -2, "save" );
 
 		lua_setmetatable( L, -2 );
@@ -477,7 +490,7 @@ namespace lua {
 
 
 
-	/// MÉTODOS DO OBJETO FETCH
+	/// FETCH OBJECT METHODS
 	int response_save( lua_State *L ) {
 		// Get response table from stack
 		if ( !lua_istable( L, 1 ) ) {
@@ -553,19 +566,19 @@ namespace lua {
 	int fetch_send( lua_State *L ) {
 		auto ctx = GetFetchContext( L, 1 );
 
-		// Sempre prepara para retornar self
-		lua_pushvalue( L, 1 ); // self na stack para retorno
+		// Always prepare to return self
+		lua_pushvalue( L, 1 ); // self on the stack as the return value
 
 		if ( !ctx )
-			return 1; // Retorna self (contexto inválido)
+			return 1; // Returns self (invalid context)
 
 
 		std::lock_guard<std::mutex> lock( ctx->mutex );
 		if ( ctx->threadActive )
-			return 1; // Já está em andamento
+			return 1; // Already in progress
 
 
-		// Configura estado
+		// Configure state
 		ctx->threadActive = true;
 		ctx->completed = false;
 		ctx->cancelled = false;
@@ -590,16 +603,16 @@ namespace lua {
 
 
 	int fetch_callback( lua_State *L ) {
-		// Preserva self para retorno
+		// Preserve self as the return value
 		lua_pushvalue( L, 1 );
 		auto ctx = GetFetchContext( L, 1 );
 		if ( !ctx )
-			return 1; // Retorna self
+			return 1; // Returns self
 
 
 		std::lock_guard<std::mutex> lock( ctx->mutex );
 
-		// Limpa callback anterior
+		// Release the previous callback
 		if ( ctx->refCallback != LUA_NOREF && ctx->rain && ctx->rain->L )
 			luaL_unref( ctx->rain->L, LUA_REGISTRYINDEX, ctx->refCallback );
 
@@ -640,7 +653,7 @@ namespace lua {
 
 	int fetch_dispatch( lua_State *L ) {
 		auto ctx = GetFetchContext( L, 1 );
-		lua_pushvalue( L, 1 ); // Retorna self
+		lua_pushvalue( L, 1 ); // Returns self
 
 		if ( !ctx )
 			return 1;
@@ -652,10 +665,16 @@ namespace lua {
 		{
 			std::lock_guard<std::mutex> lock( ctx->mutex );
 			if ( ctx->completed ) {
-				fire = true;
-				response = ctx->response;
-				refCallback = ctx->refCallback;
-				ctx->completed = false; // Reseta para evitar re-execução
+				// A cancelled request is consumed silently: its callback never runs,
+				// whatever result the worker thread ended up producing.
+				fire = !ctx->cancelled.load();
+
+				if ( fire ) {
+					response = ctx->response;
+					refCallback = ctx->refCallback;
+				}
+
+				ctx->completed = false; // Reset to avoid running the callback twice
 			}
 		}
 
@@ -681,7 +700,7 @@ namespace lua {
 			}
 
 			else
-				lua_pop( L, 1 ); // Remove não-função
+				lua_pop( L, 1 ); // Remove the non-function value
 		}
 
 		return 1;
@@ -691,16 +710,16 @@ namespace lua {
 
 	int fetch_cancel( lua_State *L ) {
 		auto ctx = GetFetchContext( L, 1 );
-		lua_pushvalue( L, 1 ); // Prepara retorno self
+		lua_pushvalue( L, 1 ); // Prepare the return value (self)
 
-		if ( ctx ) {
-			std::lock_guard<std::mutex> lock( ctx->mutex );
-			ctx->cancelled = true;
-			ctx->threadActive = false;
-			ctx->completed = true;
-			ctx->response.error = "Request cancelled";
-			ctx->response.status = core::FetchResponse::STATUS_CANCELLED;
-		}
+		// Only meaningful while a worker thread is running (threadActive) or when its
+		// result is finished but not yet dispatched (completed). In both cases the
+		// callback is suppressed (see fetch_dispatch) and, if a worker is still
+		// running, its blocking network call is aborted by closing the handles.
+		// The worker thread itself finalizes the state (threadActive / completed /
+		// STATUS_CANCELLED), so no state is faked here.
+		if ( ctx && ( ctx->threadActive.load() || ctx->completed.load() ) )
+			ctx->requestCancel();
 
 		return 1;
 	}
@@ -716,9 +735,7 @@ namespace lua {
 			ctx->request.driver = driver;
 
 			if ( ctx->request.driver != "winhttp" && ctx->request.driver != "wininet" ) {
-				std::wstring msg = L"[RainJIT:Fetch] Unknown driver \"" +
-				                   utf8_to_wstring( ctx->request.driver ) +
-				                   L"\" - falling back to \"winhttp\".";
+				std::wstring msg = L"[RainJIT:Fetch] Unknown driver \"" + utf8_to_wstring( ctx->request.driver ) + L"\" - falling back to \"winhttp\".";
 				if ( ctx->rain && ctx->rain->rm )
 					RmLog( ctx->rain->rm, LOG_WARNING, msg.c_str() );
 				ctx->request.driver = "winhttp";
@@ -738,7 +755,7 @@ namespace lua {
 		if ( lua_istable( L, -1 ) ) {
 			lua_pushnil( L );
 			while ( lua_next( L, -2 ) != 0 ) {
-				const char *key   = lua_tostring( L, -2 );
+				const char *key = lua_tostring( L, -2 );
 				const char *value = lua_tostring( L, -1 );
 				if ( key && value )
 					ctx->request.headers[utf8_to_wstring( key )] = utf8_to_wstring( value );
@@ -750,7 +767,7 @@ namespace lua {
 		// Parse body
 		lua_getfield( L, 2, "body" );
 		if ( lua_isstring( L, -1 ) ) {
-			size_t      len;
+			size_t len;
 			const char *body = lua_tolstring( L, -1, &len );
 			ctx->request.body.assign( body, body + len );
 		}
@@ -773,9 +790,7 @@ namespace lua {
 				target = static_cast<int>( lua_tointeger( L, -1 ) );
 
 				if ( ctx->request.driver == "wininet" && target > 0 ) {
-					std::wstring msg = L"[RainJIT:Fetch] driver=\"wininet\" - \"" +
-					                   utf8_to_wstring( field ) +
-					                   L"\" is not supported by WinINet and will be ignored.";
+					std::wstring msg = L"[RainJIT:Fetch] driver=\"wininet\" - \"" + utf8_to_wstring( field ) + L"\" is not supported by WinINet and will be ignored.";
 					if ( ctx->rain && ctx->rain->rm )
 						RmLog( ctx->rain->rm, LOG_WARNING, msg.c_str() );
 				}
@@ -783,10 +798,10 @@ namespace lua {
 			lua_pop( L, 1 );
 		};
 
-		checkPhaseTimeout( "dnsTimeout",     ctx->request.dnsTimeout     );
-		checkPhaseTimeout( "connectTimeout",  ctx->request.connectTimeout );
-		checkPhaseTimeout( "sendTimeout",     ctx->request.sendTimeout    );
-		checkPhaseTimeout( "receiveTimeout",  ctx->request.receiveTimeout );
+		checkPhaseTimeout( "dnsTimeout", ctx->request.dnsTimeout );
+		checkPhaseTimeout( "connectTimeout", ctx->request.connectTimeout );
+		checkPhaseTimeout( "sendTimeout", ctx->request.sendTimeout );
+		checkPhaseTimeout( "receiveTimeout", ctx->request.receiveTimeout );
 
 		// Parse followRedirects
 		ctx->request.followRedirects = true;
@@ -835,7 +850,7 @@ namespace lua {
 		lua_newtable( L );
 		lua_pushstring( L, "__index" );
 
-		// Tabela de métodos usando luaL_Reg
+		// Method table using luaL_Reg
 		lua_newtable( L );
 
 		// clang-format off
@@ -853,8 +868,8 @@ namespace lua {
 			lua_setfield( L, -2, m->name );
 		}
 
-		lua_rawset( L, -3 ); // Define __index na metatable
-		lua_setmetatable( L, -2 ); // Aplica metatable ao objeto
+		lua_rawset( L, -3 ); // Set __index on the metatable
+		lua_setmetatable( L, -2 ); // Apply the metatable to the object
 
 		// Store self reference in Lua registry
 		lua_pushvalue( L, -1 );
@@ -871,7 +886,7 @@ namespace lua {
 		const char *url = luaL_checkstring( L, 1 );
 
 		auto ctx = std::make_shared<core::FetchContext>( rain );
-		ctx->request.url    = utf8_to_wstring( url );
+		ctx->request.url = utf8_to_wstring( url );
 		ctx->request.method = utf8_to_wstring( string::ToUpperCase( method ) );
 
 		if ( lua_istable( L, 2 ) )
@@ -925,12 +940,12 @@ namespace lua {
 
 		lua_newtable( L );
 
-		// Método async
+		// Async method
 		lua_pushlightuserdata( L, rain );
 		lua_pushcclosure( L, fetch_async, 1 );
 		lua_setfield( L, -2, "async" );
 
-		// Métodos síncronos
+		// Synchronous methods
 		const char *sync_methods[] = { "get", "post", "put", "patch", "delete", "head", "options" };
 		for ( const char *method : sync_methods ) {
 			lua_pushlightuserdata( L, rain );
@@ -939,7 +954,7 @@ namespace lua {
 			lua_setfield( L, -2, method );
 		}
 
-		// __call metamethod (para fetch(url) estilo fetch.get)
+		// __call metamethod (so that fetch(url) behaves like fetch.get)
 		lua_newtable( L );
 		lua_pushlightuserdata( L, rain );
 
@@ -954,7 +969,7 @@ namespace lua {
 
 
 	void RegisterModule( lua_State *L, Rain *rain ) {
-		// Cria a janela de notificação para esta medida
+		// Create the notification window for this measure
 		CreateNotifyWindow( rain );
 
 		lua_getglobal( L, "package" );

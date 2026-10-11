@@ -20,6 +20,7 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 #include <type_traits>
 #include <utility>
 
@@ -483,7 +484,7 @@ namespace tooltip {
 
 
 
-	void Options::apply( lua_State *L, int index, Dirty &d, ParseError &err ) {
+	void Options::apply( lua_State *L, int index, Dirty &d, ParseError &err, std::string *unknown ) {
 		if ( index < 0 )
 			index = lua_gettop( L ) + index + 1;
 
@@ -530,6 +531,10 @@ namespace tooltip {
 		readBool( L, index, "clickThrough", ClickThrough, d.Style, err );
 		readTimeout( L, index, "timeout", Timeout, d.Timer, err );
 
+		// fadeDuration is read on use (show / hide / destroy), so it needs no dirty flag
+		bool fadeChanged = false;
+		readTimeout( L, index, "fadeDuration", FadeDuration, fadeChanged, err );
+
 		// backdrop (changing any of these needs a new window attribute and a redraw,
 		// because the drawn corner radius follows the backdrop corner)
 		static const std::pair<const char *, Backdrop> kBackdrops[] = { { "none", Backdrop::None }, { "acrylic", Backdrop::Acrylic }, { "mica", Backdrop::Mica }, { "micaalt", Backdrop::MicaAlt } };
@@ -543,10 +548,43 @@ namespace tooltip {
 		readChoice( L, index, "backdrop", Effect, backdropChange, err, kBackdrops, "\"acrylic\", \"mica\", \"micaAlt\", \"none\" or false", &noBackdrop );
 		readChoice( L, index, "backdropCorner", BackdropCorner, backdropChange, err, kCorners, "\"round\", \"small\", \"none\" or \"default\"", &defaultCorner );
 		readDark( L, index, "dark", Dark, backdropChange, err );
+		readOptColor( L, index, "backdropTint", BackdropTint, backdropChange, err );
 
 		if ( backdropChange ) {
 			d.Style = true;
 			d.Render = true;
+		}
+
+		// unknown keys are reported (not an error), so a typo like `fontName` is not silent
+		if ( unknown ) {
+			static const char *const kKnown[] = { "x", "y", "offsetX", "offsetY", "font", "fontSize", "fontStyle", "textColor", "title", "titleFont", "titleFontSize", "titleFontStyle", "titleColor", "icon", "iconSize", "iconGap", "image", "imageWidth", "imageHeight", "imageOpacity", "backgroundColor", "borderColor", "borderWidth", "radius", "margin", "maxWidth", "align", "opacity", "timeout", "fadeDuration", "topmost", "clickThrough", "backdrop", "backdropCorner", "backdropTint", "dark" };
+
+			lua_pushnil( L );
+
+			while ( lua_next( L, index ) != 0 ) {
+				// key at -2, value at -1. Only string keys are inspected (lua_tostring would
+				// convert a number key in place and break the traversal).
+				if ( lua_type( L, -2 ) == LUA_TSTRING ) {
+					const char *key = lua_tostring( L, -2 );
+					bool known = false;
+
+					for ( const char *name : kKnown ) {
+						if ( std::strcmp( name, key ) == 0 ) {
+							known = true;
+							break;
+						}
+					}
+
+					if ( !known ) {
+						if ( !unknown->empty() )
+							unknown->append( ", " );
+
+						unknown->append( key );
+					}
+				}
+
+				lua_pop( L, 1 );
+			}
 		}
 	}
 

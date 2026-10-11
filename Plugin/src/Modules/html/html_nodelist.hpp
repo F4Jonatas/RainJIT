@@ -1,6 +1,7 @@
 /**
  * @file html_nodelist.hpp
  * @brief HtmlNodeList userdata definitions.
+ * @license GPL v2.0 License
  */
 
 #pragma once

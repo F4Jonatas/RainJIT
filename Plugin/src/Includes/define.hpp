@@ -1,4 +1,7 @@
-
+/**
+ * @file define.hpp
+ * @license GPL v2.0 License
+ */
 
 #pragma once
 

@@ -5,8 +5,14 @@
 [paused]
 	updateDivider = -1
 
-[font-rFont]
-	fontFace = rFont
+[segoe-font]
+	fontFace = "Segoe UI"
+
+[segoe-semibold-font]
+	fontFace = "Segoe UI SemiBold"
+
+[segoe-icons-font]
+	fontFace = "Segoe Fluent Icons"
 
 [antialias]
 	antialias = 1

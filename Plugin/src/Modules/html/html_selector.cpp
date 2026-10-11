@@ -1,6 +1,7 @@
 /**
  * @file html_selector.cpp
  * @brief CSS-lite selector implementation.
+ * @license GPL v2.0 License
  */
 
 #include "html_selector.hpp"

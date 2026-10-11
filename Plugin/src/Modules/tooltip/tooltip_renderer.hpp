@@ -1,12 +1,16 @@
 /**
  * @file tooltip_renderer.hpp
- * @brief GDI+ renderer that draws a tooltip into a Surface.
+ * @brief Direct2D / DirectWrite renderer that draws a tooltip into a Surface.
  * @license GPL v2.0 License
  *
  * @details
  * Layout (top to bottom): title row (icon + title), image, text.
  * Blocks are separated by a fixed gap and aligned according to Options::Alignment.
  * The surface is sized to fit the content, margins and border included.
+ *
+ * Text is laid out by DirectWrite (system font fallback) and drawn by Direct2D
+ * with color glyphs enabled, so symbols and emoji are rendered instead of boxes.
+ * GDI+ is used only to decode image files (see Renderer::load).
  */
 
 #pragma once
@@ -60,7 +64,7 @@ namespace tooltip {
 		 * @param request Content and options.
 		 * @return true on success.
 		 *
-		 * @pre GDI+ must be running (see Runtime::acquire).
+		 * @pre GDI+ and the text engine must be running (see Runtime::acquire).
 		 */
 		static bool render( Surface &surface, const RenderRequest &request ) noexcept;
 
