@@ -1,0 +1,14 @@
+.qodo
+.vs
+.ai/*
+*.vcxproj.user
+*zip
+
+build
+.vscode/tasks.json
+
+src/Modules/interval
+src/Modules/github
+
+packages/luasocket
+packages/luajit-

@@ -1,0 +1,10 @@
+
+/bin/imagemagick/
+/meter/modl.lua
+/string/utils.lua
+/paleta
+/xcgui
+/dotenv
+gdip.lua
+array.lua
+_json.lua

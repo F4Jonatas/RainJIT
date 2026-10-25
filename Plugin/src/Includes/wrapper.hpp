@@ -1,0 +1,147 @@
+/**
+ * @file wrapper.hpp
+ * @brief Embedded Lua scripts for RainJIT plugin.
+ * @license GPL v2.0 License
+ *
+ * This file contains Lua scripts defined as string literals
+ * that are compiled and executed directly by LuaJIT runtime
+ * during Measure initialization.
+ *
+ * @namespace luaWrapper
+ * @brief Wrapper Lua script resources.
+ */
+
+#pragma once
+
+namespace luaWrapper {
+
+	/**
+	 * @brief Console and basic utilities Lua script.
+	 *
+	 * Overrides global Lua `print` function to redirect output
+	 * to Rainmeter log using `!Log` bang.
+	 *
+	 * @details
+	 * The overridden print function:
+	 * - Converts all arguments to strings
+	 * - Joins them with tab characters
+	 * - Sends to Rainmeter log at Debug level
+	 *
+	 * @example
+	 * @code{.lua}
+	 * print("Hello", "RainJIT", 123, {x = 1})
+	 * -- Output in Rainmeter log (Debug level):
+	 * -- Hello RainJIT 123 table: 0x...
+	 * @endcode
+	 *
+	 * @note The original Lua print function is replaced.
+	 */
+	static const char *main = R"lua(
+	--- Override global print() to log to Rainmeter
+	local function FORMATER( ... )
+		local messages = {}
+		local count = select( '#', ... )
+
+		for i = 1, count do
+			local v = select( i, ... )
+			table.insert( messages, tostring( v ))
+		end
+
+		return table.concat( messages, '    ' ):gsub( '"', '”' )
+	end
+
+	local function LOGRAR( level, ... )
+		rain:bang( '!Log "' .. FORMATER( ... ) .. '" ' .. level )
+	end
+
+	print = setmetatable(
+		{
+			info  = function( ... ) LOGRAR( 'Notice' , ... ) end,
+			warn  = function( ... ) LOGRAR( 'Warning', ... ) end,
+			error = function( ... ) LOGRAR( 'Error'  , ... ) end
+		},
+		{
+			__call = function( _, ... ) LOGRAR( 'Debug', ... ) end
+		}
+	)
+
+	--[[ Old version
+	function print( ... )
+		local messages = {}
+		local count = select( '#', ... )
+
+		for i = 1, count do
+			local v = select( i, ... )
+			table.insert( messages, tostring( v ))
+		end
+
+		local message = table.concat( messages, '    ' )
+		message = message:gsub( '"', '”' )
+		rain:bang( '!Log "' .. message .. '" Debug' )
+	end
+	]]--
+
+
+	-- Loads a native Lua module implemented as a DLL.
+	local path = {
+		x64 = {
+			'#SKINSPATH#@Vault\\lua\\bin\\x64\\',
+			'#CURRENTPATH#\\lua\\bin\\x64\\',
+			'#@#\\lua\\bin\\x64\\'
+		},
+		x86 = {
+			'#SKINSPATH#@Vault\\lua\\bin\\x86\\',
+			'#CURRENTPATH#\\lua\\bin\\x86\\',
+			'#@#\\lua\\bin\\x86\\'
+		}
+	}
+
+
+	function import( module )
+		local ffi = require( 'ffi' )
+
+		if package.loaded[ module ] then
+			return package.loaded[ module ]
+		end
+
+		local init = 'luaopen_' .. module:gsub( '%.', '_' )
+		local rel = module:gsub( '%.', '\\' ) .. '.dll'
+
+		local paths = path[ ffi.arch ]
+
+		local loader, lastErr, lastFile
+
+		for i = 1, #paths do
+			local file = rain:var( paths[ i ] .. rel )
+
+			local ok, l, err, when = pcall( package.loadlib, file, init )
+
+			if not ok then
+				lastErr = ( 'loadlib crashed for %q (file=%s): %s' ):format( module, tostring( file ), tostring( l ) )
+			elseif l then
+				loader = l
+				lastErr = nil
+				break
+			else
+				lastErr = ( 'loadlib failed for %q (file=%s, init=%s): %s [%s]' ):format( module, file, init, err, tostring( when ) )
+			end
+
+			lastFile = file
+		end
+
+		if not loader then
+			error( lastErr or ( 'module %q not found in any search path' ):format( module ) )
+		end
+
+		local result = loader()
+
+		if result == nil then
+			result = true
+		end
+
+		package.loaded[ module ] = result
+		return result
+	end
+)lua";
+
+} // namespace luaWrapper

@@ -1,0 +1,40 @@
+--- a/json5_input.hpp
++++ b/json5_input.hpp
+@@ -1,3 +1,18 @@
++/*
++ * Modification notice
++ * -------------------
++ * This file is derived from json5 by P-i-N (https://github.com/P-i-N/json5,
++ * upstream commit 11084bf, Copyright (c) 2020 P-i-N, MIT License - see the
++ * LICENSE file next to this header).
++ *
++ * Changes made for the RainJIT json module (everything else is unchanged):
++ *  1. parser::parse_value: JSON null is now stored as value( nullptr ).
++ *     Upstream used value(), which is value-initialized to the number 0.
++ *  2. parser::parse_object: quoted keys are read with parse_string(), so keys
++ *     such as "content-type", "1" or non-ASCII names are accepted. Upstream
++ *     only accepted quoted keys made of [A-Za-z0-9_].
++ */
++
+ #pragma once
+ 
+ #include "json5_builder.hpp"
+@@ -187,7 +202,7 @@
+ 				else if ( lit == token_type::literal_false )
+ 					result = value( false );
+ 				else if ( lit == token_type::literal_null )
+-					result = value();
++					result = value( nullptr ); // RainJIT: was value(), which is the number 0
+ 				else
+ 					return make_error( error::invalid_literal );
+ 			}
+@@ -245,7 +260,8 @@
+ 				if ( expectComma )
+ 					return make_error( error::comma_expected );
+ 
+-				if ( auto err = parse_identifier( keyOffset ) )
++				// RainJIT: quoted keys go through parse_string() (any characters allowed)
++				if ( auto err = ( tt == token_type::string ) ? parse_string( keyOffset ) : parse_identifier( keyOffset ) )
+ 					return err;
+ 			}
+ 			break;

@@ -1,0 +1,41 @@
+name: Build Project (MSVC)
+
+on:
+  push:
+    paths:
+      - 'Plugin/**'
+      - '.github/workflows/build.yml'
+
+  pull_request:
+    paths:
+      - 'Plugin/**'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ATL component for Visual Studio
+        shell: pwsh
+        run: |
+          $vsPath = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          Write-Host "Visual Studio encontrado em: $vsPath"
+
+          $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+          & $installer modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.ATL --quiet --norestart --wait
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Instalação do componente ATL falhou com código $LASTEXITCODE"
+            exit 1
+          }
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build (Release)
+        run: |
+          msbuild Plugin/RainJIT.sln /p:Configuration=Release /p:Platform=x64

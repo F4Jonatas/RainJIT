@@ -1,0 +1,31 @@
+return {
+	January   = 'Janeiro',
+	February  = 'Fevereiro',
+	March     = 'Março',
+	April     = 'Abril',
+	May       = 'Maio',
+	June      = 'Junho',
+	July      = 'Julho',
+	August    = 'Agosto',
+	September = 'Setembro',
+	October   = 'Outubro',
+	November  = 'Novembro',
+	December  = 'Dezembro',
+
+	Sun = 'Dom',
+	Mon = 'Seg',
+	Tue = 'Ter',
+	Wed = 'Qua',
+	Thu = 'Qui',
+	Fri = 'Sex',
+	Sat = 'Sáb',
+
+	['New Moon']        = 'Lua Nova',
+	['Waxing Crescent'] = 'Lua Crescente',
+	['First Quarter']   = 'Lua Crescente',
+	['Waxing Gibbous']  = 'Lua Crescente',
+	['Full Moon']       = 'Lua Cheia',
+	['Waning Gibbous']  = 'Lua Minguante',
+	['Last Quarter']    = 'Lua Minguante',
+	['Waning Crescent'] = 'Lua Minguante'
+}

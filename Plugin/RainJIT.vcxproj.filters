@@ -1,0 +1,336 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\RainJIT.cpp" />
+    <ClCompile Include="src\rain.cpp" />
+    <ClCompile Include="src\binding.cpp" />
+    <ClCompile Include="src\Modules\hotkey\hotkey.cpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\core.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\http.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\lua.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\attribute.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\char_ref.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\error.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\parser.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_buffer.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_piece.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tag.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tokenizer.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\utf8.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\util.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\vector.c">
+      <Filter>Packages\Gumbo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\depot\depot.cpp">
+      <Filter>Modules\depot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_document.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_node.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_nodelist.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\html\html_selector.cpp">
+      <Filter>Modules\html</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\xml\xml.cpp">
+      <Filter>Modules\xml</Filter>
+    </ClCompile>
+    <ClCompile Include="packages\pugixml\src\pugixml.cpp">
+      <Filter>Packages\pugixml</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\hotkey\keyboard.cpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\hotkey\mouse.cpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\fetch\wininet.cpp">
+      <Filter>Modules\fetch</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_core.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_options.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_renderer.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_runtime.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_window.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\tooltip\tooltip_text.cpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_create.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_document.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_events.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_external.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_lifetime.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_methods.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_object.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_options.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_policy.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_security.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_site.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_url.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_util.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_window.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\webview\trident_theme.cpp">
+      <Filter>Modules\webview</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\json5\json.cpp">
+      <Filter>Modules\json5</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\utils\filesystem.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\strings.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\util.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\binding.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\rain.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\lua.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\wrapper.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\hotkey\hotkey.hpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\core.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\fetch.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\http.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\lua.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Includes\define.hpp">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\rainmeter\include\RainmeterAPI.hpp">
+      <Filter>Packages\Rainmeter</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\depot\depot.hpp">
+      <Filter>Modules\depot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_document.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_node.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_nodelist.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\html\html_selector.hpp">
+      <Filter>Modules\html</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\gumbo\src\strings.h">
+      <Filter>Packages\Gumbo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\xml\xml.hpp">
+      <Filter>Modules\xml</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\pugixml\src\pugiconfig.hpp">
+      <Filter>Packages\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="packages\pugixml\src\pugixml.hpp">
+      <Filter>Packages\pugixml</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\trident.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\comProxy.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\luaVariant.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\hotkey\keyboard.hpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\hotkey\mouse.hpp">
+      <Filter>Modules\hotkey</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\sanitize.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\fetch\wininet.hpp">
+      <Filter>Modules\fetch</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_gdiplus.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_options.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_renderer.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_runtime.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_surface.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_window.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\tooltip\tooltip_text.hpp">
+      <Filter>Modules\tooltip</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\webview\trident_internal.hpp">
+      <Filter>Modules\webview</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\json5\json.hpp">
+      <Filter>Modules\json5</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RainJIT.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Modules">
+      <UniqueIdentifier>{f634f97f-8120-4743-8d68-8f72b381e679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\depot">
+      <UniqueIdentifier>{92e7c36b-e92a-44aa-8db9-75d0f35a6598}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\hotkey">
+      <UniqueIdentifier>{947a6567-512f-4ba2-9dac-a597c9f54a90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\fetch">
+      <UniqueIdentifier>{cc70566e-759a-4426-8fdd-207db5ef73c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{a72643db-b822-46b7-8967-9d2d87270e3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{6bd68a40-59f6-4087-bd93-dc1e329b36f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages">
+      <UniqueIdentifier>{080f140f-bfd1-4b30-9a02-b59ff9a6f4ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages\Rainmeter">
+      <UniqueIdentifier>{b9359d30-8c24-4c1e-961e-d3bfe9a111dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages\Gumbo">
+      <UniqueIdentifier>{5ddb3a8e-9794-483f-8350-3eff01563f6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\html">
+      <UniqueIdentifier>{cb8057e9-8f70-4a2c-ab4b-d6e9283f83bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\xml">
+      <UniqueIdentifier>{39ae4480-6e5e-4a2d-b476-3172e7c5ebdd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Packages\pugixml">
+      <UniqueIdentifier>{689380ae-0ebf-4ea9-a16b-227df6d0256a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\webview">
+      <UniqueIdentifier>{983529f9-08a8-4f66-b4c3-2208659a5f61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\tooltip">
+      <UniqueIdentifier>{dc40088f-5a57-4395-a731-2707a044aa81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\json5">
+      <UniqueIdentifier>{3bfb203c-9e16-42e3-bc5f-286cc656bb2f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

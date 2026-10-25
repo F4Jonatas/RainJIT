@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0" xmlns:cc="http://cyber.law.harvard.edu/rss/creativeCommonsRssModule.html">
+    <channel>
+        <title><![CDATA[UX Planet - Medium]]></title>
+        <description><![CDATA[UX Planet is a one-stop resource for everything related to user experience. - Medium]]></description>
+        <link>https://uxplanet.org?source=rss----819cc2aaeee0---4</link>
+        <image>
+            <url>https://cdn-images-1.medium.com/proxy/1*TGH72Nnw24QL3iV9IOm4VA.png</url>
+            <title>UX Planet - Medium</title>
+            <link>https://uxplanet.org?source=rss----819cc2aaeee0---4</link>
+        </image>
+        <generator>Medium</generator>
+        <lastBuildDate>Sat, 24 Oct 2026 12:02:05 GMT</lastBuildDate>
+        <atom:link href="https://uxplanet.org/feed" rel="self" type="application/rss+xml"/>
+        <webMaster><![CDATA[yourfriends@medium.com]]></webMaster>
+        <atom:link href="http://medium.superfeedr.com" rel="hub"/>
+        <item>
+            <title><![CDATA[Deel vs. Rippling for Contractor Management: Which Platform Gets the User Experience Right?]]></title>
+            <link>https://uxplanet.org/deel-vs-rippling-for-contractor-management-which-platform-gets-the-user-experience-right-275775f329d8?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/275775f329d8</guid>
+            <category><![CDATA[hr]]></category>
+            <category><![CDATA[product-management]]></category>
+            <category><![CDATA[management]]></category>
+            <category><![CDATA[business]]></category>
+            <dc:creator><![CDATA[uxplanet.org]]></dc:creator>
+            <pubDate>Sat, 24 Oct 2026 11:35:41 GMT</pubDate>
+            <atom:updated>2026-10-24T11:35:41.020Z</atom:updated>
+            <content:encoded><![CDATA[<figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/1*otqwC9-CMIHfNGZ4VqEgfg.png" /></figure><h4><em>Two powerful platforms, two different approaches to managing global talent compared from a product designer’s perspective.</em></h4><p>Imagine you’re running a product design team. You have a UX researcher in Germany, a UI designer in Brazil, and a motion designer in Japan. They’re all independent contractors, and you need to onboard them, manage agreements, and make sure they get paid on time.</p><p>At first, managing 3 contractors might seem straightforward. But as your team grows, and you hire a few more people, things become complicated. Different currencies, local regulations, invoices, approvals, and payment schedules can quickly turn a simple process into an administrative nightmare.</p><p>This is exactly the problem that platforms like <a href="https://get.deel.com/kr9ohhmsm5a7">Deel</a> and Rippling aim to solve.</p><p>Both offer tools for managing international contractors, but they approach the problem differently. In this article, I’ll focus on <em>Contractor Management</em> because I’ll explore the process of hiring independent creative professionals, rather than employing full-time staff through an EOR.</p><h3>First, let’s understand what we’re comparing</h3><p>Before jumping into the comparison, it’s important to distinguish three services that people often confuse with platforms:</p><ul><li><em>Contractor Management: </em>Helps companies onboard, manage, and pay independent professionals. The company typically contracts directly with the freelancer, while the platform handles administrative workflows and provides compliance tools.</li><li><em>Employer of Record (EOR): </em>Allows companies to hire employees in countries where they don’t have a legal entity. The EOR becomes the legal employer and manages employment contracts, statutory payroll, taxes, and benefits.</li><li><em>Global Payroll:</em> Helps companies process employee salaries, taxes, and statutory deductions across countries where they already have their own employing entities.</li></ul><p>For my article, I’ll focus on <em>Contractor Management</em> because I’ll dive into case of hiring independent creative professionals, not employing full-time staff through an EOR.</p><h3>Deel vs. Rippling: Side-by-side comparison for contract management</h3><p>To illustrate what the two platforms are capable of, I’ll compare them in five key areas:</p><h4>1. Onboarding: The first impression matters</h4><p>Onboarding is one of the most important experiences in any enterprise product. A poorly designed onboarding flow creates friction before a user even starts working with a product. And for freelance designers, who might work with several companies simultaneously, complicated administrative tasks are especially frustrating.</p><p>The good news is that both Deel and Rippling have created strong onboarding experiences, but they approach onboarding a bit differently.</p><p>Deel approaches onboarding for contractors from the perspective of <em>international hiring</em>.<strong> </strong>Its workflow includes creating localized contracts, checking worker classification, collecting documents, and setting up payments. Contractors also receive a dedicated portal where they can review agreements, manage documents, and check payment information.</p><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/0*VXbbDYQ9bxdgek6-" /><figcaption>Deel onboarding scenario.</figcaption></figure><p>Rippling treats onboarding for contractors as an <em>integration</em> task. Its contractor onboarding can combine contract signing, Know Your Customer (KYC) verification, payment details, and workplace access provisioning within one flow.</p><p>This can be especially beneficial when hiring a freelance product designer who needs access to your organization’s design tools and communication channels. With an integrated system, administrative and IT tasks can be coordinated instead of treated as entirely separate processes.</p><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/0*-ImxvZKK9cII3UrM" /><figcaption>Rippling workflow.</figcaption></figure><p>Does that mean Rippling’s onboarding is better? Not at all. I think that when it comes to onboarding, the right strategy depends on what problem your organization needs to solve. If you don’t plan to transition contractors into full-time employees later on, Rippling’s onboarding scenario could be overkill.</p><h4>2. Managing payments: Reducing uncertainty</h4><p>Payment is probably the most critical (and emotionally important) part of the contractor experience.</p><p>When I think about the user experience of financial tools, I always evaluate how the tool answers one key question:</p><blockquote><em>Does the interface help me understand what’s happening with my money?</em></blockquote><p>Think of a freelance product designer who has completed a project and submitted an invoice. They want to know whether the invoice was approved, when payment will arrive, and how much they’ll actually receive.</p><p>Both Deel and Rippling offer self-service invoicing and payment tracking.</p><p><a href="https://get.deel.com/kr9ohhmsm5a7">Deel</a> offers automated invoicing, consolidated global payments, and more than 15 payout options, including Wise and Revolut. This flexibility can be particularly valuable for international freelancers who have different payment preferences.</p><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/0*LNkoDrS3y9guHxKq" /><figcaption>Deel payment status for employees.</figcaption></figure><p>Rippling supports automatically generated invoices based on contractual terms or tracked hours. The platform also offers customizable approval routing and payment status visibility for contractors.</p><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/0*opDYRaA2a6sH3LGs" /><figcaption>Rippling contractor payroll.</figcaption></figure><p>In my opinion, both platforms offer fairly similar experiences. If you want to decide which one works best for your organization, here’s my recommendation: look closely at how each system communicates pending approvals, expected payout dates, currency conversion, and payment exceptions.</p><p>And, what is even more important, ask your contractors what they think of the platform because a beautiful dashboard doesn’t help much when a contractor doesn’t understand why their payment is delayed.</p><h4>3. Automation: Eliminating repetitive work</h4><p>One of the most interesting differences between Deel and Rippling is how they position automation. Two platforms offer two very different approaches to eliminating repetitive work:</p><p>Deel automates tasks closely associated with global contracting, such as generating agreements, collecting compliance information, preparing invoices, and processing payouts. Deel also offers solid workflow automation and IT lifecycle management (including managing access to internal systems).</p><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/0*PgzpaIqZwreo5Sin" /><figcaption>Deel workflow automation capabilitites.</figcaption></figure><p>Rippling offers automation across a wider organizational ecosystem. Contractor information can be used in workflows involving HR, finance, permissions, and workplace applications.</p><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/1*BlZkcx_AxBagNDg3d9um3A.png" /><figcaption>Rippling workflow automation.</figcaption></figure><p>Imagine a situation where a contractor designer finishes a six-month engagement. The company needs to process the final invoice, close the contract, and remove access to internal systems. In a fragmented environment, different people may be responsible for each task.</p><p>Rippling’s unified workforce model is particularly appealing for coordinating these dependencies when a contractor is integrated into an organization’s workflows much like a regular full-time employee.</p><h4>4. Compliance: Making complexity manageable</h4><p>Compliance is an area where seemingly small product decisions can have significant consequences.</p><p>A company hiring independent contractors internationally needs to consider local regulations and worker classification. A freelancer who operates like a full-time employee may create misclassification risks, even if the contract describes them as independent.</p><p>Both Deel and Rippling provide compliance capabilities, including worker classification safeguards. Both also offer Contractor of Record services for companies that want the provider to formally engage contractors and assume specified compliance responsibilities.</p><p>The great thing about Deel is that it publishes a starting price of $325 per month for Contractor of Record while Rippling requires a quote.</p><h4>5. Pricing: Transparency is part of the user experience</h4><p>Pricing is another interesting point of comparison.</p><p>Transparent starting prices allow us to evaluate basic affordability before talking to sales.</p><p>Deel publishes a starting price of <em>$49 per contractor per month</em> for its standard contractor management service. Rippling, on the other hand, uses <em>customized pricing</em> based on the selected products and the size of the workforce. Its broader platform starts at $8 per employee per month plus a monthly base fee, but that’s not a published all-inclusive price for global contractor management.</p><p>In my opinion, Deel is more transparent when it comes to pricing.</p><h3>Deel vs. Rippling: Side-by-side comparison</h3><figure><img alt="" src="https://cdn-images-1.medium.com/max/1024/1*_2JFV-nHcHQ-mkxNQSmvxQ.png" /></figure><h3>Final verdict: Which would I choose for a distributed product design team?</h3><p>The answer to this question depends on the nature of your organization and your goals.</p><p>I think that if you run a small or medium-sized product design team that primarily works with international freelancers, I’d choose <a href="https://get.deel.com/kr9ohhmsm5a7">Deel</a>.</p><p>On the other hand, I’d choose Rippling if contractor management is part of a broader workforce strategy, especially if you plan to transition contractors into full-time employees at some point in their careers.</p><p><em>Written by Nick Babich</em></p><img src="https://medium.com/_/stat?event=post.clientViewed&referrerSource=full_rss&postId=275775f329d8" width="1" height="1" alt=""><hr><p><a href="https://uxplanet.org/deel-vs-rippling-for-contractor-management-which-platform-gets-the-user-experience-right-275775f329d8">Deel vs. Rippling for Contractor Management: Which Platform Gets the User Experience Right?</a> was originally published in <a href="https://uxplanet.org">UX Planet</a> on Medium, where people are continuing the conversation by highlighting and responding to this story.</p>]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[Can Claude Code Design Professional UI Animations? I Tested 3 Approaches]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/can-claude-code-design-professional-ui-animations-i-tested-3-approaches-b6a855f0eadf?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/1280/1*wwn95f2wrQrxLVAxZ08upw.png" width="1280"></a></p><p class="medium-feed-snippet">Animation design is an essential part of product design. Well-crafted animations immediately create a sense of attention to detail and&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/can-claude-code-design-professional-ui-animations-i-tested-3-approaches-b6a855f0eadf?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/can-claude-code-design-professional-ui-animations-i-tested-3-approaches-b6a855f0eadf?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/b6a855f0eadf</guid>
+            <category><![CDATA[design]]></category>
+            <category><![CDATA[ux]]></category>
+            <category><![CDATA[coding]]></category>
+            <category><![CDATA[ui]]></category>
+            <category><![CDATA[web-development]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Fri, 23 Oct 2026 13:21:50 GMT</pubDate>
+            <atom:updated>2026-10-23T13:27:48.794Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[I Tested 3 Claude Code Skills for Web Design: Which One Is Best?]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/i-tested-3-claude-code-skills-for-web-design-which-one-is-best-521137220dc1?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/1280/1*itdqcB-z3R2Ob1PnfaCgkw.png" width="1280"></a></p><p class="medium-feed-snippet">Frontend Design vs. UI/UX Pro Max vs. Taste Skill &#x2014; same prompt, same AI model, very different results.</p><p class="medium-feed-link"><a href="https://uxplanet.org/i-tested-3-claude-code-skills-for-web-design-which-one-is-best-521137220dc1?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/i-tested-3-claude-code-skills-for-web-design-which-one-is-best-521137220dc1?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/521137220dc1</guid>
+            <category><![CDATA[design]]></category>
+            <category><![CDATA[web-development]]></category>
+            <category><![CDATA[web-design]]></category>
+            <category><![CDATA[front-end-development]]></category>
+            <category><![CDATA[ui]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Thu, 22 Oct 2026 13:48:42 GMT</pubDate>
+            <atom:updated>2026-10-22T13:51:47.068Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[Claude Haiku 5.5 vs Sonnet 5.5 vs Opus 5.5: Which Model Should You Use for Which Task?]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/claude-haiku-5-5-vs-sonnet-5-5-vs-opus-5-5-which-model-should-you-use-for-which-task-558e2b26cb3c?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/1935/1*WZSvdjeGCkQaQA3EcZojGQ.png" width="1935"></a></p><p class="medium-feed-snippet">An in-depth guide to choosing the right Claude model for product design, coding, prototyping, research, and everyday work; 20 practical&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/claude-haiku-5-5-vs-sonnet-5-5-vs-opus-5-5-which-model-should-you-use-for-which-task-558e2b26cb3c?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/claude-haiku-5-5-vs-sonnet-5-5-vs-opus-5-5-which-model-should-you-use-for-which-task-558e2b26cb3c?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/558e2b26cb3c</guid>
+            <category><![CDATA[ai]]></category>
+            <category><![CDATA[software-development]]></category>
+            <category><![CDATA[coding]]></category>
+            <category><![CDATA[claude]]></category>
+            <category><![CDATA[design]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Tue, 20 Oct 2026 17:24:48 GMT</pubDate>
+            <atom:updated>2026-10-20T17:27:15.750Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[I Tried Designing an Entire Product in Claude Code Without Figma]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/i-tried-designing-an-entire-product-in-claude-code-without-figma-d5b76360db38?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/2277/1*zGegK-x9e9IHlpLCo6HGDQ.png" width="2277"></a></p><p class="medium-feed-snippet">Here are 5 thigns I learned</p><p class="medium-feed-link"><a href="https://uxplanet.org/i-tried-designing-an-entire-product-in-claude-code-without-figma-d5b76360db38?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/i-tried-designing-an-entire-product-in-claude-code-without-figma-d5b76360db38?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/d5b76360db38</guid>
+            <category><![CDATA[ux-design]]></category>
+            <category><![CDATA[design]]></category>
+            <category><![CDATA[product-design]]></category>
+            <category><![CDATA[ux]]></category>
+            <category><![CDATA[ui]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Mon, 19 Oct 2026 13:14:52 GMT</pubDate>
+            <atom:updated>2026-10-19T13:14:51.979Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[Building Your Own Skill for Claude Code? Here’s What You Need to Know]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/building-your-own-skill-for-claude-code-heres-what-you-need-to-know-beece61249ed?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/2056/1*u3XdCo9vQpkf9j_KferI8A.png" width="2056"></a></p><p class="medium-feed-snippet">A practical guide to creating custom Skills for Claude Code, from understanding SKILL.md to building, testing, and optimizing your first&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/building-your-own-skill-for-claude-code-heres-what-you-need-to-know-beece61249ed?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/building-your-own-skill-for-claude-code-heres-what-you-need-to-know-beece61249ed?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/beece61249ed</guid>
+            <category><![CDATA[artificial-intelligence]]></category>
+            <category><![CDATA[design]]></category>
+            <category><![CDATA[ai]]></category>
+            <category><![CDATA[coding]]></category>
+            <category><![CDATA[ux]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Fri, 16 Oct 2026 12:57:57 GMT</pubDate>
+            <atom:updated>2026-10-16T12:57:57.659Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[Dashboard design becomes easier with Claude]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/dashboard-design-becomes-easier-with-claude-daaf2d9376d4?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/1280/1*LAjGxnAqOWYyjWLmbdty6Q.png" width="1280"></a></p><p class="medium-feed-snippet">Claude Dashboard is a new artifact recently introduced by Anthropic. Dashboard design is one of the most common product design tasks, so I&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/dashboard-design-becomes-easier-with-claude-daaf2d9376d4?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/dashboard-design-becomes-easier-with-claude-daaf2d9376d4?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/daaf2d9376d4</guid>
+            <category><![CDATA[coding]]></category>
+            <category><![CDATA[artificial-intelligence]]></category>
+            <category><![CDATA[design]]></category>
+            <category><![CDATA[ui]]></category>
+            <category><![CDATA[ai]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Thu, 15 Oct 2026 17:16:04 GMT</pubDate>
+            <atom:updated>2026-10-15T17:21:36.273Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[Reverse Engineer Anything: What the Viral GitHub Repo Actually Does]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/reverse-engineer-anything-what-the-viral-github-repo-actually-does-c5ea949123a5?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/2015/1*9jSv6TXcs6UW_JU5GYs8aw.png" width="2015"></a></p><p class="medium-feed-snippet">A hands-on take on REA, the tool for Claude Code and Codex that lets it decompile apps, the benefits this tool brings, and the limitations&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/reverse-engineer-anything-what-the-viral-github-repo-actually-does-c5ea949123a5?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/reverse-engineer-anything-what-the-viral-github-repo-actually-does-c5ea949123a5?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/c5ea949123a5</guid>
+            <category><![CDATA[software-development]]></category>
+            <category><![CDATA[coding]]></category>
+            <category><![CDATA[ai]]></category>
+            <category><![CDATA[web-development]]></category>
+            <category><![CDATA[design]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Wed, 14 Oct 2026 13:30:17 GMT</pubDate>
+            <atom:updated>2026-10-15T12:22:47.873Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[Want to Make Product Development with Claude Code More Predictable? Use Agent Skills!]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/want-to-make-product-development-with-claude-code-more-predictable-use-agent-skills-f37d056f67cc?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/1900/1*wvljyLJP2N9FXghYHO_7hA.png" width="1900"></a></p><p class="medium-feed-snippet">If you use Claude Code for product design and development, you know that AI performance can be inconsistent. Sometimes it works&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/want-to-make-product-development-with-claude-code-more-predictable-use-agent-skills-f37d056f67cc?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/want-to-make-product-development-with-claude-code-more-predictable-use-agent-skills-f37d056f67cc?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/f37d056f67cc</guid>
+            <category><![CDATA[design]]></category>
+            <category><![CDATA[web-development]]></category>
+            <category><![CDATA[software-development]]></category>
+            <category><![CDATA[ux]]></category>
+            <category><![CDATA[ui]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Tue, 13 Oct 2026 12:08:06 GMT</pubDate>
+            <atom:updated>2026-10-13T15:33:30.682Z</atom:updated>
+        </item>
+        <item>
+            <title><![CDATA[5 Best Claude Code Mods You Should Try in 2026]]></title>
+            <description><![CDATA[<div class="medium-feed-item"><p class="medium-feed-image"><a href="https://uxplanet.org/5-best-claude-code-mods-you-should-try-in-2026-580eee0aec57?source=rss----819cc2aaeee0---4"><img src="https://cdn-images-1.medium.com/max/1280/1*q3k779oUcn-LHSEZ9_HRww.png" width="1280"></a></p><p class="medium-feed-snippet">Mods let you customize your Claude Code to fit your specific needs. Previously, I&#x2019;ve discussed how to create a new mod for Claude Code&#x2026;</p><p class="medium-feed-link"><a href="https://uxplanet.org/5-best-claude-code-mods-you-should-try-in-2026-580eee0aec57?source=rss----819cc2aaeee0---4">Continue reading on UX Planet »</a></p></div>]]></description>
+            <link>https://uxplanet.org/5-best-claude-code-mods-you-should-try-in-2026-580eee0aec57?source=rss----819cc2aaeee0---4</link>
+            <guid isPermaLink="false">https://medium.com/p/580eee0aec57</guid>
+            <category><![CDATA[ai]]></category>
+            <category><![CDATA[software-development]]></category>
+            <category><![CDATA[artificial-intelligence]]></category>
+            <category><![CDATA[coding]]></category>
+            <category><![CDATA[web-development]]></category>
+            <dc:creator><![CDATA[Nick Babich]]></dc:creator>
+            <pubDate>Mon, 12 Oct 2026 20:15:04 GMT</pubDate>
+            <atom:updated>2026-10-12T20:15:04.619Z</atom:updated>
+        </item>
+    </channel>
+</rss>

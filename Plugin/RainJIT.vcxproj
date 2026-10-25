@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Modules\fetch\wininet.cpp" />
+    <ClCompile Include="src\Modules\hotkey\keyboard.cpp" />
+    <ClCompile Include="src\Modules\hotkey\mouse.cpp" />
+    <ClCompile Include="packages\gumbo\src\attribute.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\char_ref.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\error.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\parser.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_buffer.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\string_piece.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tag.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\tokenizer.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\utf8.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\util.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\gumbo\src\vector.c">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4267;4244</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4267;4244</DisableSpecificWarnings>
+    </ClCompile>
+    <ClCompile Include="packages\pugixml\src\pugixml.cpp" />
+    <ClCompile Include="src\Modules\depot\depot.cpp" />
+    <ClCompile Include="src\Modules\fetch\core.cpp" />
+    <ClCompile Include="src\Modules\fetch\http.cpp" />
+    <ClCompile Include="src\Modules\fetch\lua.cpp" />
+    <ClCompile Include="src\Modules\hotkey\hotkey.cpp" />
+    <ClCompile Include="src\Modules\html\html.cpp" />
+    <ClCompile Include="src\Modules\html\html_document.cpp" />
+    <ClCompile Include="src\Modules\html\html_node.cpp" />
+    <ClCompile Include="src\Modules\html\html_nodelist.cpp" />
+    <ClCompile Include="src\Modules\html\html_selector.cpp" />
+    <ClCompile Include="src\Modules\json5\json.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_core.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_options.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_renderer.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_runtime.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_window.cpp" />
+    <ClCompile Include="src\Modules\webview\trident.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_create.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_document.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_events.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_external.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_lifetime.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_methods.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_object.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_options.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_policy.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_security.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_site.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_theme.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_url.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_util.cpp" />
+    <ClCompile Include="src\Modules\webview\trident_window.cpp" />
+    <ClCompile Include="src\Modules\xml\xml.cpp" />
+    <ClCompile Include="src\RainJIT.cpp" />
+    <ClCompile Include="src\rain.cpp" />
+    <ClCompile Include="src\binding.cpp" />
+    <ClCompile Include="src\Modules\tooltip\tooltip_text.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Modules\fetch\wininet.hpp" />
+    <ClInclude Include="src\Modules\hotkey\keyboard.hpp" />
+    <ClInclude Include="src\Modules\hotkey\mouse.hpp" />
+    <ClInclude Include="src\Modules\json5\json.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_gdiplus.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_options.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_renderer.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_runtime.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_surface.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_window.hpp" />
+    <ClInclude Include="src\Modules\webview\comProxy.hpp" />
+    <ClInclude Include="src\Modules\webview\luaVariant.hpp" />
+    <ClInclude Include="packages\gumbo\src\strings.h" />
+    <ClInclude Include="packages\pugixml\src\pugiconfig.hpp" />
+    <ClInclude Include="packages\pugixml\src\pugixml.hpp" />
+    <ClInclude Include="packages\rainmeter\include\RainmeterAPI.hpp" />
+    <ClInclude Include="src\Includes\define.hpp" />
+    <ClInclude Include="src\Modules\depot\depot.hpp" />
+    <ClInclude Include="src\Modules\fetch\core.hpp" />
+    <ClInclude Include="src\Modules\fetch\fetch.hpp" />
+    <ClInclude Include="src\Modules\fetch\http.hpp" />
+    <ClInclude Include="src\Modules\fetch\lua.hpp" />
+    <ClInclude Include="src\Modules\hotkey\hotkey.hpp" />
+    <ClInclude Include="src\Includes\binding.hpp" />
+    <ClInclude Include="src\Includes\lua.hpp" />
+    <ClInclude Include="src\Includes\rain.hpp" />
+    <ClInclude Include="src\Includes\wrapper.hpp" />
+    <ClInclude Include="src\Modules\html\html.hpp" />
+    <ClInclude Include="src\Modules\html\html_document.hpp" />
+    <ClInclude Include="src\Modules\html\html_node.hpp" />
+    <ClInclude Include="src\Modules\html\html_nodelist.hpp" />
+    <ClInclude Include="src\Modules\html\html_selector.hpp" />
+    <ClInclude Include="src\Modules\webview\sanitize.hpp" />
+    <ClInclude Include="src\Modules\webview\trident.hpp" />
+    <ClInclude Include="src\Modules\webview\trident_internal.hpp" />
+    <ClInclude Include="src\Modules\xml\xml.hpp" />
+    <ClInclude Include="src\utils\filesystem.hpp" />
+    <ClInclude Include="src\utils\strings.hpp" />
+    <ClInclude Include="src\utils\util.hpp" />
+    <ClInclude Include="src\Modules\tooltip\tooltip_text.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="RainJIT.rc" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{11DF61A2-5B61-4DB5-9B5E-55F0D9485E44}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>RainJIT</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>RainJIT</TargetName>
+    <OutDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>RainJIT</TargetName>
+    <OutDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</IntDir>
+    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>RainJIT</TargetName>
+    <OutDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>RainJIT</TargetName>
+    <OutDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\$(PlatformShortName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;$(SolutionDir)packages;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-debug.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;$(SolutionDir)packages;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalModuleDependencies>
+      </AdditionalModuleDependencies>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalLibraryDirectories>$(MSBuildProjectDirectory);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-debug.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;$(SolutionDir)packages;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <MergeSections>.rdata=.text</MergeSections>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-release.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGINEMPTY_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\rainmeter\include;$(SolutionDir)src;$(SolutionDir)packages\luajit\include;$(SolutionDir)packages\gumbo\src;$(SolutionDir)packages\pugixml\src;$(SolutionDir)packages;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <MergeSections>.rdata=.text</MergeSections>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>$(SolutionDir)packages\rainmeter\lib\$(PlatformShortName)\Rainmeter.lib;winhttp.lib;$(SolutionDir)packages\luajit\lib\$(PlatformShortName)\lua51_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <PostBuildEvent>
+      <Command>powershell.exe -NoProfile -ExecutionPolicy Bypass -File "../assets/scripts/post-building-release.ps1" -buildFile "$(OutDirFullPath)$(TargetFileName)"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

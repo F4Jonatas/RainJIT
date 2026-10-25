@@ -1,0 +1,126 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Config Project",
+			"type": "shell",
+			"command": "mshta",
+			"args": [
+				"${workspaceFolder}/.vscode/scripts/config.hta"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"icon": {
+				"id": "server-process",
+				"color": "terminal.ansiMagenta"
+			}
+		},
+		{
+			"label": "Open Obsidian Vault",
+			"type": "process",
+			"command": "powershell.exe",
+			"args": [
+				"-NoProfile",
+				"-Command",
+				"$path = Join-Path '${workspaceFolder}' 'Obsidian'; $uri = 'obsidian://open?path=' + [uri]::EscapeDataString($path); Start-Process $uri"
+			],
+			"icon": {
+				"id": "repo",
+				"color": "terminal.ansiCyan"
+			}
+		},
+		// {
+		// 	"label": "Open Claude",
+		// 	"type": "shell",
+		// 	"command": ".\\start.bat",
+		// 	"options": {
+		// 			"cwd": "D:\\Program Files\\Open Claude"
+		// 	},
+		// 	"problemMatcher": []
+		// },
+		// "C:\Program Files\Rainmeter\SkinInstaller.exe" /Pack "dist\MeuSkin" "dist\MeuSkin.rmskin" /S /V
+		{
+			"label": "Build MSVC",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/.vscode/scripts/build.ps1",
+				"-SolutionPath",
+				"${workspaceFolder}/Plugin/RainJIT.sln",
+				"-Configuration",
+				"${input:config}",
+				"-Platform",
+				"${input:platform}",
+				"-Target",
+				"${input:buildMode}"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "Run Code Analysis",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"${workspaceFolder}/.vscode/scripts/build.ps1",
+				"-SolutionPath",
+				"${workspaceFolder}/Plugin/RainJIT.sln",
+				"-Configuration",
+				"${input:config}",
+				"-Platform",
+				"${input:platform}",
+				"-Target",
+				"Analysis"
+			],
+			"problemMatcher": "$msCompile",
+			"group": {
+				"kind": "test"
+			}
+		}
+	],
+	"inputs": [
+		{
+			"id": "config",
+			"type": "pickString",
+			"description": "Configuração:",
+			"options": [
+				"Debug",
+				"Release"
+			],
+			"default": "Debug"
+		},
+		{
+			"id": "platform",
+			"type": "pickString",
+			"description": "Plataforma:",
+			"options": [
+				"x64",
+				"x86"
+			],
+			"default": "x64"
+		},
+		{
+			"id": "buildMode",
+			"type": "pickString",
+			"description": "Modo de build:",
+			"options": [
+				"Build",
+				"Rebuild"
+			],
+			"default": "Build"
+		}
+	]
+}
