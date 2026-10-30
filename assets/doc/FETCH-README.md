@@ -68,7 +68,6 @@ Behind the scenes, two network mechanisms are available. WinHTTP is the default:
 ## :green_book: Features
 
 - **Dual API**: Synchronous methods for simplicity, asynchronous for performance
-- **Auto-Dispatch**: Integrated automatic callback processing via [**PostMessage**](https://learn.microsoft.com/pt-br/windows/win32/api/winuser/nf-winuser-postmessagea) (hidden window)
 - **Immediate Cancellation**: `:cancel()` aborts a blocked network call right away and guarantees the callback never runs
 - **Lightweight Objects**: the request and the response are userdata that share one metatable (no table and no closures are created per response)
 - **Binary Support**: Perfect for images, files, and any binary data
@@ -110,7 +109,7 @@ Before we delve deeper into the subject, let's understand the main difference.
 
 ## :jigsaw: Quick Example
 
-### Basic Usage
+### Sync Usage
 
 ```lua
 local fetch = require("fetch")
@@ -119,17 +118,32 @@ local fetch = require("fetch")
 local response = fetch("https://api.github.com/users/octocat")
 
 if response.ok then
+  print("Status:", response.status)
+  print("Data:", response:text())
+else
+  print("Error:", response.error)
+end
+```
+
+### Async Usage
+
+```lua
+fetch.async("https://api.github.com/users/octocat")
+:send(function(response)
+  if response.ok then
     print("Status:", response.status)
     print("Data:", response:text())
-else
+  else
     print("Error:", response.error)
-end
+  end
+end)
 ```
 
 ---
 
 <br>
 <br>
+
 
 ## :book: Module `fetch`
 
