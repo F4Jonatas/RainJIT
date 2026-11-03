@@ -1,4 +1,3 @@
--- cSpell:ignoreRegExp leftdouble|wheeldown|wheelup|lgradient|CURRENTPATH|listdir|getn|strokecolor
 
 local depot   = require( 'depot' )
 local meter   = require( 'meter' )

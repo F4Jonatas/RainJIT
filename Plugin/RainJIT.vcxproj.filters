@@ -154,6 +154,15 @@
     <ClCompile Include="src\Modules\json5\json.cpp">
       <Filter>Modules\json5</Filter>
     </ClCompile>
+    <ClCompile Include="src\Modules\websocket\websocket_core.cpp">
+      <Filter>Modules\websocket</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\websocket\websocket_lua.cpp">
+      <Filter>Modules\websocket</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Modules\websocket\websocket_network.cpp">
+      <Filter>Modules\websocket</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\utils\filesystem.hpp">
@@ -279,6 +288,18 @@
     <ClInclude Include="src\Modules\json5\json.hpp">
       <Filter>Modules\json5</Filter>
     </ClInclude>
+    <ClInclude Include="src\Modules\websocket\websocket_core.hpp">
+      <Filter>Modules\websocket</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\websocket\websocket_lua.hpp">
+      <Filter>Modules\websocket</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\websocket\websocket_network.hpp">
+      <Filter>Modules\websocket</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Modules\websocket\websocket.hpp">
+      <Filter>Modules\websocket</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="RainJIT.rc" />
@@ -331,6 +352,9 @@
     </Filter>
     <Filter Include="Modules\json5">
       <UniqueIdentifier>{3bfb203c-9e16-42e3-bc5f-286cc656bb2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Modules\websocket">
+      <UniqueIdentifier>{d21c50f0-d502-46d8-9196-608a9b61ef79}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -1,4 +1,3 @@
--- cSpell:ignoreRegExp ROOTCONFIGPATH|apikey
 
 
 require( 'math.utils' )

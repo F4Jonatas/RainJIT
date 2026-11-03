@@ -3,6 +3,12 @@
 -- and artist. The player COM object is created on demand and released
 -- (GC'd) on pause or stop, so it only exists while actually streaming.
 --
+-- The real `player.playState` is the only source of truth for what the
+-- player is doing. The user's *intent* (play or pause) lives in
+-- `desiredState` and is persisted in the depot; `syncState` reconciles the
+-- two on every tick, so the skin recovers by itself when the stream dies
+-- silently (suspend, hibernate, shutdown/boot, network loss...).
+--
 -- @author F4Jonatas
 -- @license GPL v2.0 License
 
@@ -25,7 +31,8 @@ local iRadio = dp:get( 'radio-index', 1 )
 -- @local (table) radio
 local radio = { 'energy98', 'jbfm', 'hunterpop' }
 
--- @local (string)
+--- Name of the currently selected station.
+-- @local (string) radioTitle
 local radioTitle
 
 --- Meter name constants.
@@ -36,6 +43,19 @@ local radioTitle
 local METER_PLAY = 'controls-play_plause'
 local METER_NEXT = 'controls-next'
 local METER_PREV = 'controls-prev'
+
+--- Maximum gap, in seconds, between two update ticks before the skin
+-- assumes the machine was suspended/hibernated. The old stream is dead
+-- after that even if WMPlayer still reports it as playing.
+-- @local (number) SUSPEND_GAP
+local SUSPEND_GAP = 10
+
+--- Number of consecutive ticks the player may stay in a non-Playing state
+-- (buffering, reconnecting, stopped, ended...) while playback is wanted,
+-- before the stream is considered lost. Also covers the initial connection
+-- right after the skin loads (e.g. at boot, before the network is up).
+-- @local (number) STALL_TICKS
+local STALL_TICKS = 15
 
 --- Display text for each WMPlayer `playState` that isn't Playing (3).
 -- Playing is handled separately in `loadTitle`, since it shows the live
@@ -62,12 +82,31 @@ local play = meter( METER_PLAY, 2 )
 local next = meter( METER_NEXT, 2 )
 local prev = meter( METER_PREV, 2 )
 
---- Last WMPlayer `playState` observed by `loadTitle`.
--- Used to avoid re-issuing `play()`/`pause()` commands every tick when the
--- player briefly passes through transient states (buffering, transitioning,
--- reconnecting, etc.).
--- @local (number) lastKnownState
-local lastKnownState
+-- Forward declarations
+local player
+local loadRadio
+local loadTitle
+
+--- What the person wants: 3 = playing, 2 = paused (WMPlayer `playState` values).
+-- Restored from the depot; updated only by `setPlayIcon`.
+-- @local (number) desiredState
+local desiredState = dp:get( 'radio-state', 3 )
+
+--- Last state drawn on the play/pause button, to skip redundant redraws.
+-- @local (number) shownState
+local shownState
+
+--- Label shown in the `song` meter while no player exists.
+-- @local (string) idleLabel
+local idleLabel = PLAYSTATE_TEXT[ 2 ]
+
+--- Consecutive ticks spent in a non-Playing state while `desiredState` is 3.
+-- @local (number) stallTicks
+local stallTicks = 0
+
+--- `os.time()` of the last update tick, used to detect suspend/resume.
+-- @local (number) lastTick
+local lastTick = os.time()
 
 luacom.config.abort_on_error     = false
 luacom.config.abort_on_API_error = false
@@ -79,7 +118,7 @@ end
 
 
 --- Creates the WMPlayer COM object if it does not exist yet.
--- @return table The player object.
+-- @return (table) The player object.
 local function ensurePlayer()
 	if not player then
 		player = luacom.CreateObject( 'WMPlayer.OCX' )
@@ -92,11 +131,11 @@ end
 
 
 
---- Releases the WMPlayer COM object, freeing its resources.
--- Called once playback is paused or stopped, i.e. as soon as the player
--- is no longer actually in use.
+--- Stops and releases the WMPlayer COM object, freeing its resources.
+-- Safe to call when the player is already gone or its COM object is dead.
 local function releasePlayer()
 	if player then
+		pcall( function() player.controls:stop() end )
 		player = nil
 		collectgarbage()
 	end
@@ -104,11 +143,15 @@ end
 
 
 
---- Sets the play/pause button icon and persists the preference, without
--- touching the COM object. Used when the UI needs to reflect a state
--- (e.g. on skin load) without that alone justifying creating the player.
--- @param state number WMPlayer state to represent (2 = paused, 3 = playing)
+--- Sets the play/pause button icon, records the wanted state and persists
+-- it, without touching the COM object. Redraws only when the state changes.
+-- @param (number) state - 2 = paused (play glyph), 3 = playing (pause glyph).
 local function setPlayIcon( state )
+	desiredState = state
+
+	if state == shownState then return end
+	shownState = state
+
 	if state == 3 then
 		play:text( '[\\XEB33]' ):update()
 	else
@@ -120,56 +163,43 @@ end
 
 
 
---- Updates the play/pause icon and issues the matching command to the
--- player. Unlike `setPlayIcon`, this does create the player if needed,
--- since issuing play()/pause() is itself a sign it's being used.
--- @param state number WMPlayer state to apply (2 = paused, 3 = playing)
-local function buttonPlayPause( state )
-	setPlayIcon( state )
+--- Starts playback: creates the player, points it at the current
+-- station's stream and plays. Does nothing if a player already exists.
+local function startPlayback()
+	if player then return end
 
-	if state == 3 then
-		ensurePlayer().controls:play()
-	else
-		ensurePlayer().controls:pause()
-	end
+	setPlayIcon( 3 )
+	stallTicks = 0
+
+	ensurePlayer()
+	loadRadio()
+	player.controls:play()
 end
 
 
 
---- Toggles playback between playing (3) and paused (2) and updates the UI.
--- Shared by the on-skin play/pause button and the media-key hotkey, so
--- the toggle logic exists in exactly one place. Creates the player the
--- first time playback starts, and releases it as soon as it's paused.
-local function togglePlayPause()
-	if player and player.state == 3 then
-		player.state = 2
-		buttonPlayPause( player.state )
-		releasePlayer()
+--- Pauses playback and releases the player, so nothing stays alive
+-- while the radio isn't in use.
+-- @param (string) [label] - Text shown in the `song` meter while idle (defaults to "Paused").
+local function pausePlayback( label )
+	idleLabel  = label or PLAYSTATE_TEXT[ 2 ]
+	stallTicks = 0
 
-	else
-		local isNewPlayer = not player
-		ensurePlayer()
-
-		-- A freshly created player has no stream assigned yet.
-		if isNewPlayer then
-			loadRadio()
-		end
-
-		player.state = 3
-		buttonPlayPause( player.state )
-	end
-end
-
-
-
---- Stops playback and releases the player, if one exists.
--- Shared by the media-key stop hotkey.
-local function stopAndRelease()
-	if not player then return end
-
-	player.controls:stop()
 	setPlayIcon( 2 )
 	releasePlayer()
+end
+
+
+
+--- Toggles playback between playing and paused and updates the UI.
+-- Shared by the on-skin play/pause button and the media-key hotkey, so
+-- the toggle logic exists in exactly one place.
+local function togglePlayPause()
+	if desiredState == 3 then
+		pausePlayback()
+	else
+		startPlayback()
+	end
 end
 
 
@@ -177,7 +207,7 @@ end
 --- Moves the station selection forward or backward (clamped to the list
 -- bounds) and reloads the stream. Shared by the on-skin prev/next
 -- buttons and the media-key hotkey.
--- @param direction number +1 to advance to the next station, -1 for the previous
+-- @param (number) direction - +1 to advance to the next station, -1 for the previous.
 local function changeStation( direction )
 	if direction > 0 then
 		iRadio = math.min( iRadio + 1, #radio )
@@ -191,9 +221,52 @@ end
 
 
 
+--- Reconciles the skin and the script variables with what the player is
+-- really doing. Called at the start of every tick by `loadTitle`.
+--
+-- While playback is wanted (`desiredState == 3`), it falls back to paused
+-- and releases the player when:
+--
+-- * a suspend/hibernate resume is detected (gap between ticks above `SUSPEND_GAP`);
+-- * the player object is missing;
+-- * the player stays out of the Playing state for `STALL_TICKS` ticks.
+--
+-- @return (number|nil) The current `playState`, or `nil` when no player exists.
+local function syncState()
+	local now     = os.time()
+	local resumed = now - lastTick > SUSPEND_GAP
+	lastTick = now
+
+	if desiredState ~= 3 then
+		return nil
+	end
+
+	if resumed or not player then
+		pausePlayback()
+		return nil
+	end
+
+	local playState = player.playState or 0
+
+	if playState == 3 then
+		stallTicks = 0
+	else
+		stallTicks = stallTicks + 1
+
+		if stallTicks >= STALL_TICKS then
+			pausePlayback( 'Stream lost' )
+			return nil
+		end
+	end
+
+	return playState
+end
+
+
+
 --- Rainmeter lifecycle hook: runs on every update cycle.
--- @param au number Update accumulator.
--- @param dt number Delta time.
+-- @param (number) au - Update accumulator.
+-- @param (number) dt - Delta time.
 function rain:update( au, dt )
 	loadTitle()
 end
@@ -201,8 +274,8 @@ end
 
 
 --- Click handler shared by the play/pause, previous and next meters.
--- @param self table The meter that was clicked.
--- @param event table The click event.
+-- @param (table) self - The meter that was clicked.
+-- @param (table) event - The click event.
 local function click( self, event )
 	if self.name == METER_PLAY then
 		togglePlayPause()
@@ -217,26 +290,19 @@ end
 
 --- Rainmeter lifecycle hook: runs once when the skin is (re)loaded.
 -- Restores the station info (title, cover, next/prev affordance) without
--- creating the player. The player itself is only created here if the
--- previous session was actually playing when the skin was last closed;
--- otherwise it stays uncreated until the person presses play.
+-- creating the player. The player is only created here if the previous
+-- session was playing (including after a shutdown/boot); `syncState` then
+-- validates the real state on the following ticks. Otherwise it stays
+-- uncreated until the person presses play.
 function rain:init()
-	local savedState = dp:get( 'radio-state', 3 )
-
-	if savedState == 3 then
-		ensurePlayer()
-	end
-
-	loadRadio()
-
-	if savedState == 3 then
-		-- @see https://learn.microsoft.com/en-us/previous-versions/windows/desktop/wmp/player-playstate
-		player.settings.autoStart = true
-		player.state = 3
-		buttonPlayPause( player.state )
+	if desiredState == 3 then
+		startPlayback()
 	else
 		setPlayIcon( 2 )
+		loadRadio()
 	end
+
+	lastTick = os.time()
 end
 
 
@@ -245,65 +311,51 @@ play:event( 'leftdown', click )
 next:event( 'leftdown', click )
 prev:event( 'leftdown', click )
 
---- Fetches and displays the currently playing track/artist for the
--- selected station. Called once per update tick.
+--- Syncs the state and displays the matching text for the `song` meter.
+-- Called once per update tick.
 --
--- Text is driven by the real WMPlayer `playState` (Playing, Paused,
--- Buffering, Reconnecting, etc.) rather than the state we last requested,
--- so the displayed title always reflects what the player is actually
--- doing. Only Playing triggers the now-playing fetch; every other state
--- shows a fixed label. When no player exists at all (nothing in use),
--- it shows "Stopped" without touching the COM object.
+-- Text is driven by the real WMPlayer `playState` (Playing, Buffering,
+-- Reconnecting, etc.). Only Playing triggers the now-playing fetch;
+-- every other state shows a fixed label. When no player exists (nothing
+-- in use), the idle label and station name are shown without touching
+-- the COM object.
 function loadTitle()
-	if not player then
-		song:text( PLAYSTATE_TEXT[ 1 ] ..'\n'.. radioTitle ):update()
+	local playState = syncState()
+
+	if not playState then
+		song:text( idleLabel ..'\n'.. ( radioTitle or '' ) ):update()
 		return
 	end
 
-	local playState = player.playState
-
-	if playState ~= lastKnownState then
-		lastKnownState = playState
-
-		-- Only Paused/Playing map to a known button icon; other states
-		-- are left alone rather than being forced into "paused".
-		if playState == 2 or playState == 3 then
-			buttonPlayPause( playState )
-		end
+	if playState ~= 3 then
+		song:text( PLAYSTATE_TEXT[ playState ] or 'Unknown' ):update()
+		return
 	end
 
-	if playState == 3 then
-		-- It needs to be an asynchronous method. Otherwise, the entire Rainmeter process will freeze for a moment.
-		fetch.async( 'https://api.radio.de/stations/now-playing?stationIds='.. radio[ iRadio ] )
-			:send( function( self, response )
-				if not response.ok then
-					error( 'Failed to fetch radio.net data.\nError: '.. response.error )
+	-- It needs to be an asynchronous method. Otherwise, the entire Rainmeter process will freeze for a moment.
+	fetch.async( 'https://api.radio.de/stations/now-playing?stationIds='.. radio[ iRadio ] )
+		:send( function( self, response )
+			-- The player may have been released while the request was in flight.
+			if desiredState ~= 3 or not player then return end
 
-				else
-					local data = response:json()
-					if not data then
-						error( 'Failed to parse JSON data.\nError: '.. response.error )
-					end
+			if not response.ok then
+				error( 'Failed to fetch radio.net data.\nError: '.. response.error )
 
-					if #data > 0 then
-						local music  = data[1].title:match( '%s*-%s*(.*)$' )
-						local artist = data[1].title:match( '^(.*)%s*-%s*' )
-						song:text( music ..'\n'.. artist ):update()
-					else
-						song:text( 'Listening\n'.. radioTitle ):update()
-					end
+			else
+				local data = response:json()
+				if not data then
+					error( 'Failed to parse JSON data.\nError: '.. response.error )
 				end
-			end )
 
-		return
-	end
-
-	local text = PLAYSTATE_TEXT[ playState ] or 'Unknown'
-	if playState == 2 and radioTitle then
-		text = text ..'\n'.. radioTitle
-	end
-
-	song:text( text ):update()
+				if #data > 0 then
+					local music  = data[1].title:match( '%s*-%s*(.*)$' )
+					local artist = data[1].title:match( '^(.*)%s*-%s*' )
+					song:text( music ..'\n'.. artist ):update()
+				else
+					song:text( 'Listening\n'.. ( radioTitle or '' ) ):update()
+				end
+			end
+		end )
 end
 
 
@@ -332,7 +384,7 @@ end
 --- Refreshes the station's own info: name, cover art/gradient and the
 -- next/prev affordance for the list bounds. If a player already exists
 -- (i.e. playback is in use), it is also pointed at the new stream URL
--- and its volume restored; loadRadio never creates the player itself.
+-- and its volume restored; `loadRadio` never creates the player itself.
 function loadRadio()
 	if iRadio == #radio then
 		next:fontalpha( 100 ):update()
@@ -364,13 +416,13 @@ function loadRadio()
 		if player then
 			player.url = data.streams[1].url
 			player.settings.volume = dp:get( 'volume', 50 )
-
-			if player.state ~= 3 then
-				player.controls:stop()
-			end
 		end
 
 		downloadCover( data )
+
+		-- These requests are synchronous and can block for a while; that
+		-- delay must not be mistaken for a suspend by `syncState`.
+		lastTick = os.time()
 	end
 end
 
@@ -393,7 +445,7 @@ hotkey.keyboard({
 	-- @param (table) event - Key event with a `vk` field naming the virtual key pressed.
 	callback = function( event )
 		if event.vk == 'VK_MEDIA_STOP' then
-			stopAndRelease()
+			pausePlayback( PLAYSTATE_TEXT[ 1 ] )
 
 		elseif event.vk == 'VK_MEDIA_PLAY_PAUSE' then
 			togglePlayPause()
@@ -410,9 +462,8 @@ hotkey.keyboard({
 
 			dp:set( 'volume', volume )
 
-
 		elseif event.vk == 'VK_MEDIA_NEXT_TRACK' or event.vk == 'VK_MEDIA_PREV_TRACK' then
-				changeStation( event.vk == 'VK_MEDIA_PREV_TRACK' and -1 or 1 )
+			changeStation( event.vk == 'VK_MEDIA_PREV_TRACK' and -1 or 1 )
 		end
 
 		return false

@@ -339,7 +339,7 @@ Get the section option and converts the value to the appropriate Lua type (`bool
 -- @param (any) [default] - Default value if option doesn't exist
 -- @return (number|boolean|string|nil)
 
-rain:option("MeterText", "Text", "My content") -- string
+rain:option("MeterText", "Text", "My default") -- string
 rain:option("MeterText", "FontSize")           -- number
 
 -- [MeterText]
@@ -394,7 +394,7 @@ Executes a **Rainmeter** default [**Bang**](https://docs.rainmeter.net/manual/ba
 -- @param (string) arg
 -- @return (nil)
 
-rain:bang("!SetOption", "MeterText", "Text", "Hello")
+rain:bang("SetOption", "MeterText", "Text", "Hello")
 
 -- Multiple Bangs using raw string
 rain:bang([[
@@ -748,6 +748,7 @@ If you are contributing documentation or changes to the source code, please ensu
 - [**Trident**](./assets/doc/TRIDENT-README.md) — **_RainJIT_** — (_Inspiration_ [**PluginWebView**](https://github.com/khanhas/PluginWebView))
 - [**XML**](./assets/doc/XML-README.md) — **_RainJIT_**
 - [**HTML**](./assets/doc/HTML-README.md) — **_RainJIT_**
+- [**WebSocket**](./assets/doc/WEBSOCKET-README.md) — **_RainJIT_** — (_Inspiration_ [**µWebSockets**](https://github.com/uNetworking/uWebSockets))
 - [**JSON/JSON5**](./assets/doc/JSON-README.md) — **_RainJIT_**
 
 <br>

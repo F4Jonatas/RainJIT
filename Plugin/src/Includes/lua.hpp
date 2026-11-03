@@ -21,6 +21,7 @@
 #include "modules/xml/xml.hpp"
 #include "modules/tooltip/tooltip.hpp"
 #include "modules/json5/json.hpp"
+#include "modules/websocket/websocket.hpp"
 // #include "modules/interval/interval.hpp"
 
 
@@ -181,6 +182,7 @@ namespace Lua {
 		// interval::RegisterModule(rain->L, rain);
 		tooltip::RegisterModule( rain->L, rain );
 		json::RegisterModule( rain->L, rain );
+		websocket::RegisterModule( rain->L, rain );
 		exposeRainToLua( rain->L, rain );
 	}
 

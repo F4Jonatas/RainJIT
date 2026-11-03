@@ -1,4 +1,3 @@
--- cSpell:ignoreRegExp leftdouble|wheeldown|wheelup|lgradient|CURRENTPATH|listdir|getn|strokecolor
 
 local lfs    = require( 'lfs.utils' )
 local depot  = require( 'depot' )

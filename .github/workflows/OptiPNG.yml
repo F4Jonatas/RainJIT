@@ -1,0 +1,67 @@
+name: OptiPNG
+
+on:
+  push:
+
+permissions:
+  contents: write
+
+jobs:
+  optimize:
+    name: Optimize changed PNG files
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Detect and optimize changed PNG files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          before="${{ github.event.before }}"
+          after="${{ github.sha }}"
+          changed_files="${RUNNER_TEMP}/optipng-changed-files"
+
+          if [[ "$before" =~ ^0+$ ]]; then
+            git ls-tree -r --name-only -z "$after" > "$changed_files"
+          else
+            git diff --name-only --diff-filter=ACMR -z "$before" "$after" > "$changed_files"
+          fi
+
+          mapfile -d '' -t png_files < <(
+            while IFS= read -r -d '' file; do
+              [[ "$file" =~ \.[Pp][Nn][Gg]$ ]] || continue
+              [[ -f "$file" ]] || continue
+              printf '%s\0' "$file"
+            done < "$changed_files"
+          )
+
+          if ((${#png_files[@]} == 0)); then
+            echo "No new or modified PNG files found."
+            exit 0
+          fi
+
+          echo "Found ${#png_files[@]} PNG file(s)."
+
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes optipng
+
+          optipng -o2 -quiet -- "${png_files[@]}"
+
+          git add -- "${png_files[@]}"
+
+          if git diff --cached --quiet; then
+            echo "OptiPNG made no changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit -m "chore(images): optimize PNG files"
+          git push origin "HEAD:${GITHUB_REF}"

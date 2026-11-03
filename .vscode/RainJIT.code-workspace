@@ -91,11 +91,10 @@
 
 		"material-icon-theme.files.customClones": [
 			{
-				"name": "markdown-file",
-				"base": "markdown",
-				"color": "deep-purple-300",
-				// "fileExtensions": ["md"]
-				"fileNames": ["Private.md"]
+				"name": "i18n-file",
+				"base": "i18n",
+				"color": "light-green-500",
+				"fileNames": ["cspell.json"]
 			}
 		],
 

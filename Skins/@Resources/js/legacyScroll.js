@@ -1,11 +1,14 @@
 /**
  * Custom scrollbar for Trident (IE7+) and modern browsers.
  *
+ * Features: draggable thumb, track click, optional arrow buttons, mouse wheel,
+ * keyboard navigation, smooth (animated) scrolling and auto-hide.
+ *
  * SPDX-License-Identifier: GPL-2.0-only
  *
  * @license GPL v2.0 License
  * @author F4Jonatas
- * @release 0.1.3
+ * @release 0.1.4
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,6 +35,18 @@
  * @option {number}      [autoHideDelay=1500]             - Idle time (ms) before hiding.
  * @option {boolean}     [buttons=true]                   - Whether to create up/down arrow buttons.
  * @option {number|null} [trackHeight=null]               - Fixed track height in px. If set, buttons are automatically disabled.
+ * @option {boolean}     [smooth=true]                    - Smooth (animated) scrolling for wheel, keyboard and track clicks.
+ *                                                          Enabled only when the browser supports animation frames and the user
+ *                                                          has not requested reduced motion; otherwise scrolling is instant.
+ *                                                          Dragging the thumb and the arrow buttons are always instant.
+ * @option {number}      [smoothFactor=0.18]              - Easing speed per 16.7 ms frame, from 0.01 (slow) to 1 (instant).
+ * @option {boolean}     [keyboard=true]                  - Keyboard navigation: Up/Down (line), PageUp/PageDown and
+ *                                                          Space/Shift+Space (page), Home/End (limits). Acts while the
+ *                                                          scrollbar has focus or is under the mouse; ignored while typing
+ *                                                          in form fields.
+ * @option {number}      [wheelStep=30]                   - Pixels scrolled per mouse wheel notch.
+ * @option {number}      [keyStep=40]                     - Pixels scrolled per Up/Down key press.
+ * @option {number}      [pageOverlap=40]                 - Pixels kept visible between pages (PageUp/PageDown/Space).
  *
  * @example
  * // Basic usage
@@ -46,20 +61,35 @@
  * });
  *
  * @example
+ * // Slower smooth scrolling, keyboard disabled
+ * legacyScroll.scrollbar('content', { smoothFactor: 0.1, keyboard: false });
+ *
+ * @example
+ * // Instant scrolling (no animation)
+ * legacyScroll.scrollbar('content', { smooth: false });
+ *
+ * @example
  * // After replacing the container content (e.g. via innerHTML), rebind the
  * // scrollbar without rebuilding it. Events and scroll position are kept.
  * document.getElementById('content').innerHTML = html;
  * legacyScroll.update('content');
+ *
+ * @example
+ * // Feature detection results
+ * if ( legacyScroll.supports.animation ) { ... }
  */
 (function() {
 
 	// Internal state
 	var containers = [],              // all scrollbar instances
 		activeCont = null,              // currently dragged container
+		hoverCont = null,               // container under the mouse (keyboard target)
+		focusCont = null,               // container that owns the focus (keyboard target)
 		scrollTimer = null,             // timer for arrow smooth scrolling
 		scrollSpeed = 0,                // direction and speed for arrows
 		scrollDelay = 400,              // initial delay before acceleration
 		styleId = 'legacyScrollStyles', // ID of injected <style> element
+		FRAME_MS = 16.67,               // reference frame duration used by the easing
 
 		// Default options
 		_defaults = {
@@ -74,7 +104,13 @@
 			autoHide:         false,
 			autoHideDelay:    1500,
 			buttons:          true,
-			trackHeight:      null
+			trackHeight:      null,
+			smooth:           true,
+			smoothFactor:     0.18,
+			keyboard:         true,
+			wheelStep:        30,
+			keyStep:          40,
+			pageOverlap:      40
 		};
 
 	/* ---------- Helpers ---------- */
@@ -142,6 +178,54 @@
 	}
 
 	/**
+	 * Cross-browser event binding (addEventListener / attachEvent).
+	 * Unlike the `onxxx` properties, several handlers can coexist.
+	 * @param {HTMLElement|Document|Window} el
+	 * @param {string} name - event name without the "on" prefix.
+	 * @param {Function} fn
+	 */
+	function addEvent(el, name, fn) {
+		if (el.addEventListener) {
+			el.addEventListener(name, fn, false);
+		} else if (el.attachEvent) {
+			el.attachEvent('on' + name, fn);
+		}
+	}
+
+	/**
+	 * Current time in milliseconds (IE7+ safe).
+	 * @returns {number}
+	 */
+	function now() {
+		return (new Date()).getTime();
+	}
+
+	/**
+	 * Tells whether the pointer moved from inside a wrapper to outside of it.
+	 * @param {HTMLElement} wrapper
+	 * @param {Event} e - mouseout event.
+	 * @returns {boolean} true when the related target is still inside the wrapper.
+	 */
+	function stillInside(wrapper, e) {
+		var rel = e.relatedTarget || e.toElement;
+		return !!(rel && (rel === wrapper || (wrapper.contains && wrapper.contains(rel))));
+	}
+
+	/**
+	 * Tells whether an element handles keyboard input by itself.
+	 * @param {HTMLElement} el
+	 * @returns {boolean}
+	 */
+	function isEditable(el) {
+		if (!el) return false;
+		var tag = (el.tagName || '').toUpperCase();
+		return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+			tag === 'BUTTON' || el.isContentEditable === true;
+	}
+
+	/* ---------- Feature detection ---------- */
+
+	/**
 	 * Detect CSS transition support (used for fade effect in autoHide).
 	 *
 	 * The `in` operator on el.style must be wrapped in try/catch:
@@ -159,6 +243,42 @@
 			supportsTransition = false;
 		}
 	})();
+
+	/**
+	 * Detect animation frame support (required by the smooth scrolling) and
+	 * the "reduce motion" user preference. Without requestAnimationFrame
+	 * (IE7/8/9) scrolling silently falls back to instant jumps.
+	 */
+	var frameRequest = null,
+		prefersReducedMotion = false;
+	(function() {
+		try {
+			frameRequest = window.requestAnimationFrame ||
+				window.webkitRequestAnimationFrame ||
+				window.mozRequestAnimationFrame ||
+				window.msRequestAnimationFrame || null;
+		} catch(e) {
+			frameRequest = null;
+		}
+
+		try {
+			if (window.matchMedia) {
+				prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches === true;
+			}
+		} catch(e) {
+			prefersReducedMotion = false;
+		}
+	})();
+
+	var supportsAnimation = !!frameRequest;
+
+	/**
+	 * Schedule a callback for the next animation frame.
+	 * @param {Function} fn
+	 */
+	function requestFrame(fn) {
+		frameRequest.call(window, fn);
+	}
 
 	/* ---------- Dynamic style injection ---------- */
 
@@ -196,7 +316,7 @@
 
 	/**
 	 * Single source of truth for the maximum scrollable pixels.
-	 * Used by refreshOne, drag, wheel and arrows — keeps ratio consistent.
+	 * Used by refreshOne, drag, wheel, keyboard and arrows — keeps ratio consistent.
 	 * @param {Object} data - instance data
 	 * @returns {number}
 	 */
@@ -307,6 +427,108 @@
 		}
 	}
 
+	/* ---------- Scroll position engine (instant + smooth) ---------- */
+
+	/**
+	 * Clamp a scroll position to the valid range of an instance.
+	 * @param {Object} data - instance data
+	 * @param {number} pos - desired position in px.
+	 * @returns {number}
+	 */
+	function clampPos(data, pos) {
+		if (isNaN(pos)) pos = 0;
+		return Math.max(0, Math.min(pos, getMaxScroll(data)));
+	}
+
+	/**
+	 * Apply a scroll position immediately (moves content and thumb).
+	 * @param {Object} data - instance data
+	 * @param {number} pos - position in px (already clamped).
+	 */
+	function applyPos(data, pos) {
+		data.scrollPos = pos;
+		data.inner.style.top = '-' + Math.floor(pos) + 'px';
+		refreshOne(data.container);
+	}
+
+	/**
+	 * Cancel any running smooth animation and drop its pending target.
+	 * @param {Object} data - instance data
+	 */
+	function stopAnimation(data) {
+		data.animating = false;
+		data.animToken++;               // invalidates any frame already scheduled
+		data.target    = data.scrollPos;
+	}
+
+	/**
+	 * Position the scroll is heading to: the animation target while animating,
+	 * otherwise the current position. New relative scrolls accumulate on it.
+	 * @param {Object} data - instance data
+	 * @returns {number}
+	 */
+	function getTarget(data) {
+		return data.animating ? data.target : (data.scrollPos || 0);
+	}
+
+	/**
+	 * One frame of the easing animation (frame-rate independent).
+	 * @param {Object} data - instance data
+	 * @param {number} token - animation id; stale frames are ignored.
+	 */
+	function animateStep(data, token) {
+		if (token !== data.animToken || !data.animating) return;
+
+		data.target = clampPos(data, data.target);
+
+		var t  = now();
+		var dt = t - data.animLast;
+		data.animLast = t;
+		if (dt <= 0)  dt = FRAME_MS;
+		if (dt > 64)  dt = 64;          // avoid a huge jump after a stalled frame
+
+		var diff = data.target - data.scrollPos;
+		if (Math.abs(diff) <= 0.5) {
+			applyPos(data, data.target);
+			data.animating = false;
+			return;
+		}
+
+		var k    = 1 - Math.pow(1 - data.smoothFactor, dt / FRAME_MS);
+		var step = diff * k;
+		if (Math.abs(step) < 1) {
+			step = (diff > 0 ? 1 : -1) * Math.min(1, Math.abs(diff));
+		}
+
+		applyPos(data, data.scrollPos + step);
+		requestFrame(function() { animateStep(data, token); });
+	}
+
+	/**
+	 * Scroll an instance to a position, animated when smooth scrolling is on.
+	 * @param {Object} data - instance data
+	 * @param {number} pos - target position in px.
+	 * @param {boolean} [instant=false] - force an immediate jump.
+	 */
+	function scrollToPos(data, pos, instant) {
+		pos = clampPos(data, pos);
+
+		if (instant || !data.smooth) {
+			stopAnimation(data);
+			applyPos(data, pos);
+			return;
+		}
+
+		data.target = pos;
+
+		if (!data.animating) {
+			data.animating = true;
+			data.animLast  = now();
+			var token = ++data.animToken;
+			requestFrame(function() { animateStep(data, token); });
+		}
+	}
+
 	/* ---------- Arrow button smooth scrolling ---------- */
 
 	/**
@@ -340,6 +562,7 @@
 	function startArrowScroll(cont, direction) {
 		clearScrollTimer(null);
 		var data = cont._lsdata;
+		stopAnimation(data);
 		addClass(data.thumb, 'ls-thumb-active');
 		activeCont = cont;
 		scrollSpeed = direction;
@@ -358,11 +581,7 @@
 		}
 		var d      = cont._lsdata;
 		var curPos = d.scrollPos || 0;
-		var maxScroll = getMaxScroll(d);
-		var newPos = Math.max(0, Math.min(curPos + Math.ceil(20 * scrollSpeed), maxScroll));
-		d.inner.style.top = '-' + Math.floor(newPos) + 'px';
-		d.scrollPos = newPos;
-		refreshOne(cont);
+		applyPos(d, clampPos(d, curPos + Math.ceil(20 * scrollSpeed)));
 		scrollTimer = setTimeout(function() {
 			arrowScrollStep(cont);
 		}, scrollDelay);
@@ -370,6 +589,16 @@
 	}
 
 	/* ---------- Main bar events (drag, track click, wheel, native scroll) ---------- */
+
+	/**
+	 * Give the keyboard focus to the scrollbar wrapper (when keyboard is on).
+	 * The thumb/track cancel the default mousedown, so focus is set manually.
+	 * @param {Object} data - instance data
+	 */
+	function focusWrapper(data) {
+		if (!data.keyboard) return;
+		try { data.wrapper.focus(); } catch(e) {}
+	}
 
 	/**
 	 * Attach all necessary mouse and wheel events to the scrollbar components.
@@ -380,10 +609,12 @@
 		var thumb = data.thumb,
 			track = data.track;
 
-		// Thumb drag
+		// Thumb drag (always instant: the thumb must follow the mouse)
 		thumb.onmousedown = function(e) {
 			e = e || window.event;
 			if (data.sg) return false;
+			stopAnimation(data);
+			focusWrapper(data);
 			activeCont           = container;
 			data.sg              = true;
 			data.dragStartY      = e.screenY;
@@ -394,10 +625,12 @@
 			return false;
 		};
 
-		// Click on track (jump to position)
+		// Click on track (jump to position, animated when smooth is on)
 		track.onmousedown = function(e) {
 			e = e || window.event;
 			if (data.sg) return false;
+
+			focusWrapper(data);
 
 			var mouseY = e.clientY + (document.body.scrollTop || document.documentElement.scrollTop || 0);
 			var trackTopAbs = 0;
@@ -406,17 +639,15 @@
 
 			var clickPos = mouseY - trackTopAbs;
 			var thumbH   = thumb.offsetHeight;
-			var newScrollTop = (clickPos - thumbH / 2) / data.ratio;
-			var maxScroll = getMaxScroll(data);
-			newScrollTop = Math.max(0, Math.min(newScrollTop, maxScroll));
-			data.inner.style.top = '-' + Math.floor(newScrollTop) + 'px';
-			data.scrollPos = newScrollTop;
-			refreshOne(container);
+			var newScrollTop = clampPos(data, (clickPos - thumbH / 2) / data.ratio);
 
+			scrollToPos(data, newScrollTop);
+
+			// A drag started from the click continues from the clicked position.
 			activeCont           = container;
 			data.sg              = true;
 			data.dragStartY      = e.screenY;
-			data.dragStartScroll = data.scrollPos || 0;
+			data.dragStartScroll = newScrollTop;
 			addClass(thumb, 'ls-thumb-active');
 			if (thumb.setCapture)     thumb.setCapture();
 			if (container.setCapture) container.setCapture();
@@ -427,6 +658,7 @@
 		if (data.up) {
 			data.up.onmousedown = function() {
 				if (scrollSpeed !== 0) return false;
+				focusWrapper(data);
 				startArrowScroll(container, -1);
 				return false;
 			};
@@ -438,6 +670,7 @@
 		if (data.down) {
 			data.down.onmousedown = function() {
 				if (scrollSpeed !== 0) return false;
+				focusWrapper(data);
 				startArrowScroll(container, 1);
 				return false;
 			};
@@ -465,15 +698,8 @@
 
 				if (data._autoHideShow) data._autoHideShow();   // reveal on wheel
 
-				var delta     = e.wheelDelta ? e.wheelDelta / 120 : -e.detail / 3;
-				var maxScroll = getMaxScroll(data);
-				var oldPos    = data.scrollPos || 0;
-				var newPos    = Math.max(0, Math.min(oldPos - delta * 30, maxScroll));
-				if (newPos !== oldPos) {
-					data.inner.style.top = '-' + Math.floor(newPos) + 'px';
-					data.scrollPos = newPos;
-					refreshOne(container);
-				}
+				var delta = e.wheelDelta ? e.wheelDelta / 120 : -e.detail / 3;
+				scrollToPos(data, getTarget(data) - delta * data.wheelStep);
 				return false;
 			};
 		}
@@ -481,9 +707,75 @@
 		// Native scroll event (programmatic / touchpad)
 		container.onscroll = function() {
 			// sync scrollPos from native scroll if it occurs
+			stopAnimation(data);
 			data.scrollPos = container.scrollTop;
+			data.target    = data.scrollPos;
 			refreshOne(container);
 		};
+
+		// Track which instance is under the mouse / focused (keyboard target)
+		addEvent(wrapper, 'mouseover', function() {
+			hoverCont = container;
+		});
+		addEvent(wrapper, 'mouseout', function(e) {
+			e = e || window.event;
+			if (stillInside(wrapper, e)) return;
+			if (hoverCont === container) hoverCont = null;
+		});
+
+		if (data.keyboard) {
+			wrapper.tabIndex = 0;                 // focusable by click or script
+			wrapper.style.outline = 'none';       // no focus ring
+			wrapper.hideFocus = true;             // IE7/8 equivalent of outline: none
+
+			addEvent(wrapper, 'focus', function() { focusCont = container; });
+			addEvent(wrapper, 'blur',  function() {
+				if (focusCont === container) focusCont = null;
+			});
+		}
+	}
+
+	/* ---------- Keyboard ---------- */
+
+	/**
+	 * Document-level key handler: scrolls the focused or hovered instance.
+	 * Up/Down: one line. PageUp/PageDown and Space/Shift+Space: one page.
+	 * Home/End: first/last position.
+	 * @param {KeyboardEvent} e
+	 */
+	function onKeyDown(e) {
+		e = e || window.event;
+
+		var cont = focusCont || hoverCont;
+		if (!cont || !cont._lsdata) return;
+
+		var data = cont._lsdata;
+		if (!data.keyboard) return;
+		if (e.altKey || e.ctrlKey || e.metaKey) return;
+		if (isEditable(e.target || e.srcElement)) return;
+
+		var page   = Math.max(data.keyStep, cont.clientHeight - data.pageOverlap);
+		var target = null;
+
+		switch (e.keyCode) {
+			case 38: target = getTarget(data) - data.keyStep; break;                   // Up
+			case 40: target = getTarget(data) + data.keyStep; break;                   // Down
+			case 33: target = getTarget(data) - page;         break;                   // PageUp
+			case 34: target = getTarget(data) + page;         break;                   // PageDown
+			case 32: target = getTarget(data) + (e.shiftKey ? -page : page); break;    // Space
+			case 36: target = 0;                              break;                   // Home
+			case 35: target = getMaxScroll(data);             break;                   // End
+			default: return;
+		}
+
+		// Keep the page itself from scrolling together with the instance.
+		e.cancelBubble = true;
+		e.returnValue  = false;
+		if (e.stopPropagation) e.stopPropagation();
+		if (e.preventDefault)  e.preventDefault();
+
+		if (data._autoHideShow) data._autoHideShow();   // reveal on key scroll
+		scrollToPos(data, target);
 	}
 
 	/* ---------- Auto-hide logic ---------- */
@@ -575,7 +867,7 @@
 		data._autoHideTimer = hideTimer;
 	}
 
-	/* ---------- Global event handlers (drag, mouseup, resize) ---------- */
+	/* ---------- Lifecycle (destroy, update) ---------- */
 
 	/**
 	 * Fully removes the scrollbar for a container: unwraps the container,
@@ -593,7 +885,8 @@
 
 		var d = container._lsdata;
 
-		// Stop pending timers
+		// Stop pending timers and animations
+		stopAnimation( d );
 		if ( scrollTimer ) { clearTimeout( scrollTimer ); scrollTimer = null; }
 		scrollSpeed = 0;
 
@@ -601,6 +894,8 @@
 			activeCont = null;
 			if ( container.releaseCapture ) container.releaseCapture();
 		}
+		if ( hoverCont === container ) hoverCont = null;
+		if ( focusCont === container ) focusCont = null;
 		if ( document.onselectstart ) document.onselectstart = null;
 
 		// Move children from inner back into the container
@@ -647,7 +942,8 @@
 	 * moves, so wheel, drag and arrows would act on an orphan node. This
 	 * recreates `inner` when needed, moves the new content into it, keeps the
 	 * scroll position (clamped to the new range) and refreshes the geometry.
-	 * The wrapper and all event handlers are preserved.
+	 * The wrapper and all event handlers are preserved. Any running smooth
+	 * animation is cancelled.
 	 *
 	 * @public
 	 * @param {HTMLElement|string} target - container element or its id.
@@ -663,6 +959,8 @@
 
 		var data  = container._lsdata;
 		var inner = data.inner;
+
+		stopAnimation( data );
 
 		// Setting innerHTML on the container detaches `inner`: create a new one.
 		if ( inner.parentNode !== container ) {
@@ -682,18 +980,16 @@
 
 		// Measure with the content at the top, then restore a clamped position.
 		inner.style.top = '0px';
-		var maxScroll = getMaxScroll( data );
-		var pos = Math.max( 0, Math.min( data.scrollPos || 0, maxScroll ));
-		inner.style.top = '-' + Math.floor( pos ) + 'px';
-		data.scrollPos = pos;
+		applyPos( data, clampPos( data, data.scrollPos || 0 ));
+		data.target = data.scrollPos;
 
-		refreshOne( container );
 		return container;
 	}
 
+	/* ---------- Global event handlers (drag, mouseup, resize, keyboard) ---------- */
 
 	/**
-	 * Initialise global mouse/resize listeners and inject the shared stylesheet.
+	 * Initialise global mouse/keyboard/resize listeners and inject the shared stylesheet.
 	 * Must be called with a valid DOM element so injectStyles can insert the <style> tag.
 	 * Guarded by window._legacyScrollInit so it runs only once.
 	 * @param {HTMLElement} dom - any element already in the document
@@ -713,11 +1009,8 @@
 			var mouseY    = e.screenY;
 			var deltaY    = mouseY - data.dragStartY;
 			var newScrollTop = data.dragStartScroll + deltaY / data.ratio;
-			var maxScroll    = getMaxScroll(data);
-			newScrollTop     = Math.max(0, Math.min(newScrollTop, maxScroll));
-			data.inner.style.top = '-' + Math.floor(newScrollTop) + 'px';
-			data.scrollPos = newScrollTop;
-			refreshOne(activeCont);
+			stopAnimation(data);
+			applyPos(data, clampPos(data, newScrollTop));
 		}
 
 		function onMouseUp() {
@@ -734,10 +1027,12 @@
 		if (document.addEventListener) {
 			document.addEventListener('mousemove', onMouseMove, false);
 			document.addEventListener('mouseup', onMouseUp, false);
+			document.addEventListener('keydown', onKeyDown, false);
 			window.addEventListener('resize', onResize, false);
 		} else if (document.attachEvent) {
 			document.attachEvent('onmousemove', onMouseMove);
 			document.attachEvent('onmouseup', onMouseUp);
+			document.attachEvent('onkeydown', onKeyDown);
 			window.attachEvent('onresize', onResize);
 		}
 	}
@@ -830,6 +1125,10 @@
 		if (down) wrapper.appendChild(down);
 
 		// ---- 3. Store instance data ----
+		var factor = parseFloat(opts.smoothFactor);
+		if (isNaN(factor)) factor = _defaults.smoothFactor;
+		factor = Math.max(0.01, Math.min(factor, 1));
+
 		var data = {
 			container:       container,
 			wrapper:         wrapper,
@@ -845,7 +1144,21 @@
 			sg:              false,
 			dragStartY:      0,
 			dragStartScroll: 0,
-			scrollPos:       0
+			scrollPos:       0,
+
+			// Smooth scrolling: requested AND supported AND not reduced motion
+			smooth:          !!opts.smooth && supportsAnimation && !prefersReducedMotion,
+			smoothFactor:    factor,
+			target:          0,
+			animating:       false,
+			animToken:       0,
+			animLast:        0,
+
+			// Keyboard and step sizes
+			keyboard:        !!opts.keyboard,
+			wheelStep:       opts.wheelStep,
+			keyStep:         opts.keyStep,
+			pageOverlap:     opts.pageOverlap
 		};
 		container._lsdata = data;
 		containers.push(container);
@@ -876,6 +1189,16 @@
 		scrollbar: scrollbar,
 		update:    update,
 		refresh:   refreshAll,
-		destroy:   destroy
+		destroy:   destroy,
+
+		/**
+		 * Feature detection results.
+		 * @type {{animation: boolean, transition: boolean, reducedMotion: boolean}}
+		 */
+		supports: {
+			animation:     supportsAnimation,
+			transition:    supportsTransition,
+			reducedMotion: prefersReducedMotion
+		}
 	};
 })();

@@ -13,14 +13,39 @@
 <br>
 <br>
 
+## Summary
+<details>
+
+<summary><ins>Table of contents</ins></summary>
+
+- [Overview](#overview)
+- [Features](#green_book-features)
+- [Quick Example](#jigsaw-quick-example)
+- [Module `json`](#book-module-json)
+  - [`JSON.null`](#diamond_shape_with_a_dot_inside-property-jsonnull)
+  - [Table `options`](#diamond_shape_with_a_dot_inside-table-options)
+  - [Method `JSON.parse()`](#large_orange_diamond-method-jsonparse)
+  - [Method `JSON.stringify()`](#large_orange_diamond-method-jsonstringify)
+  - [Method `JSON.load()`](#large_orange_diamond-method-jsonload)
+  - [Method `JSON.save()`](#large_orange_diamond-method-jsonsave)
+  - [Method `JSON.array()`](#large_orange_diamond-method-jsonarray)
+  - [Method `JSON.object()`](#large_orange_diamond-method-jsonobject)
+- [Behavior and Limits](#warning-behavior-and-limits)
+- [License](#scroll-license)
+
+</details>
+
+<br>
+<br>
+
 
 ## Overview
 
-This module reads and writes JSON from Lua. It is built around two familiar functions, `JSON.parse()` and `JSON.stringify()`, so anyone who has used JSON in JavaScript can use it without learning a new API. Two helpers, `JSON.load()` and `JSON.save()`, do the same work directly on files and understand **Rainmeter** variables such as `#@#`.
+This module reads and writes **JSON** from Lua. It is built around two familiar functions, [**`JSON.parse()`**](#large_orange_diamond-method-jsonparse) and [**`JSON.stringify()`**](#large_orange_diamond-method-jsonstringify), so anyone who has used **JSON** in JavaScript can use it without learning a new API. Two helpers, [**`JSON.load()`**](#large_orange_diamond-method-jsonload) and [**`JSON.save()`**](#large_orange_diamond-method-jsonsave), do the same work directly on files and understand [**Rainmeter Variables**](https://docs.rainmeter.net/manual/variables/nesting-variables/) such as `#@#`.
 
-The reader accepts **JSON5**, a superset of JSON designed to be pleasant to write and maintain by hand. It allows comments (`//` and `/* */`), keys without quotes, single-quoted strings and trailing commas. These features make configuration files easier to read, easier to document and less fragile: a forgotten comma or a missing quote no longer breaks the whole file, and every setting can carry a note explaining what it does.
+The reader accepts **JSON5**, a superset of **JSON** designed to be pleasant to write and maintain by hand. It allows comments (`//` and `/* */`), keys without quotes, single-quoted strings and trailing commas. These features make configuration files easier to read, easier to document and less fragile: a forgotten comma or a missing quote no longer breaks the whole file, and every setting can carry a note explaining what it does.
 
-Regular JSON is still fully supported. Every valid JSON document is also a valid JSON5 document, so existing files, data exported by other tools and responses from web services are read without any change. When writing, the module produces **strict JSON by default**, so the result can be consumed by any other parser. JSON5-style output (unquoted keys) is available as an opt-in option.
+Regular **JSON** is still fully supported. Every valid **JSON** document is also a valid **JSON5** document, so existing files, data exported by other tools and responses from web services are read without any change. When writing, the module produces **strict JSON by default**, so the result can be consumed by any other parser. [**JSON5-style**](https://spec.json5.org/) output (unquoted keys) is available as an opt-in option.
 
 <br>
 <br>
@@ -28,10 +53,10 @@ Regular JSON is still fully supported. Every valid JSON document is also a valid
 
 ## :green_book: Features
 
-- Familiar API (`JSON.parse`, `JSON.stringify`)
+- Familiar API ([**`JSON.parse()`**](#large_orange_diamond-method-jsonparse), [**`JSON.stringify()`**](#large_orange_diamond-method-jsonstringify))
 - Reads **JSON** and **JSON5** (comments, unquoted keys, single quotes, trailing commas)
 - Writes strict **JSON**, with optional pretty printing and [**JSON5-style**](https://spec.json5.org/) keys
-- File helpers with **Rainmeter** variable support (`JSON.load`, `JSON.save`)
+- File helpers with **Rainmeter** variable support ([**`JSON.load()`**](#large_orange_diamond-method-jsonload), [**`JSON.save()`**](#large_orange_diamond-method-jsonsave))
 - Atomic file writes and automatic creation of missing directories
 - `JSON.null` sentinel, so `null` never breaks array length
 - Empty arrays and objects keep their type (`JSON.array`, `JSON.object`)
@@ -84,7 +109,7 @@ JSON.save("#@#settings.json", cfg, { pretty = true })
 
 ### :diamond_shape_with_a_dot_inside: Property `JSON.null`
 
-Sentinel that represents JSON `null`.<br>
+Sentinel that represents **JSON** `null`.<br>
 It is a light userdata (a `NULL` pointer), so it can be stored inside tables and compared with `==`. Using it instead of `nil` keeps array positions intact: `[1, null, 3]` is read as a table with 3 elements.
 
 ```lua
@@ -99,26 +124,27 @@ print(JSON.stringify({ 1, JSON.null, 3 }))  -- [1,null,3]
 
 <br>
 
+
 ### :diamond_shape_with_a_dot_inside: Table `options`
 
 Options accepted by [**`JSON.stringify()`**](#large_orange_diamond-method-jsonstringify) and [**`JSON.save()`**](#large_orange_diamond-method-jsonsave).
-
-| Field           | Type             | Default | Description                                                                                                  |
-| :---            | :--:             | :--:    | :---                                                                                                         |
-| `pretty`        | boolean          | `false` | Write one element per line                                                                                   |
-| `indent`        | number \| string | `2`     | Indentation unit: a number of spaces (`0`-`16`) or a string made only of spaces and tabs                    |
-| `json5`         | boolean          | `false` | Write keys that are valid identifiers without quotes                                                         |
-| `escapeUnicode` | boolean          | `false` | Escape every non-ASCII character as `\uXXXX` (ASCII-only output)                                             |
-
-> [!NOTE]
+> [!IMPORTANT]
 > Setting `indent` turns `pretty` on, unless `pretty = false` is given explicitly.
+
+
+| Field           | Type             | Default | Description                                                                              |
+| :---            | :--:             | :--:    | :---                                                                                     |
+| `pretty`        | boolean          | `false` | Write one element per line                                                               |
+| `indent`        | number \| string | `2`     | Indentation unit: a number of spaces (`0`-`16`) or a string made only of spaces and tabs |
+| `json5`         | boolean          | `false` | Write keys that are valid identifiers without quotes                                     |
+| `escapeUnicode` | boolean          | `false` | Escape every non-ASCII character as `\uXXXX` (ASCII-only output)                         |
 
 <br>
 
 
 ### :large_orange_diamond: Method `JSON.parse()`
 
-Parse JSON or JSON5 text and return the result as a Lua table.<br>
+Parse **JSON** or **JSON5** text and return the result as a Lua table.<br>
 Objects become tables with string keys, arrays become sequences, `null` becomes [**`JSON.null`**](#diamond_shape_with_a_dot_inside-property-jsonnull).
 
 > [!IMPORTANT]
@@ -145,7 +171,7 @@ end
 
 ### :large_orange_diamond: Method `JSON.stringify()`
 
-Convert a Lua value to JSON text.<br>
+Convert a Lua value to **JSON** text.<br>
 Tables whose keys are exactly `1..n` are written as arrays, any other table is written as an object. Keys are always written in sorted order, so the same data always produces the same text.
 
 > [!IMPORTANT]
@@ -166,11 +192,11 @@ print(raw) -- {"a":1,"b":[1,2]}
 
 print(JSON.stringify({ name = "Rain", list = { 1, 2 } }, { indent = 4 }))
 -- {
---     "list": [
---         1,
---         2
---     ],
---     "name": "Rain"
+--   "list": [
+--     1,
+--     2
+--   ],
+--   "name": "Rain"
 -- }
 
 print(JSON.stringify({ alpha = 1, ["my-key"] = 2 }, { json5 = true }))
@@ -203,7 +229,7 @@ local cfg, err = JSON.load("#@#settings.json")
 
 ### :large_orange_diamond: Method `JSON.save()`
 
-Convert a value to JSON and write it to a file.<br>
+Convert a value to **JSON** and write it to a file.<br>
 A trailing newline is added. Missing directories are created automatically and **Rainmeter** variables are expanded in the path.
 
 > [!IMPORTANT]
@@ -226,7 +252,7 @@ JSON.save("#@#settings.json", { width = 100 }, { pretty = true })
 
 ### :large_orange_diamond: Method `JSON.array()`
 
-Mark a table so it is always written as a JSON array.<br>
+Mark a table so it is always written as a **JSON** array.<br>
 This is useful for empty tables, which would otherwise be written as `{}`. Called without arguments, it creates a new marked table.
 
 > [!NOTE]
@@ -247,7 +273,7 @@ print(raw) -- {"items":[]}
 
 ### :large_orange_diamond: Method `JSON.object()`
 
-Mark a table so it is always written as a JSON object.<br>
+Mark a table so it is always written as a **JSON** object.<br>
 Useful when a table with keys `1..n` must stay an object. Called without arguments, it creates a new marked table.
 
 ```lua
@@ -287,7 +313,7 @@ print(raw) -- {"1":"a","2":"b"}
 Licensed under the **GPL v2.0 License**.
 
 The reader uses [**JSON5**](https://github.com/P-i-N/json5), developed [**by P-i-N**](https://github.com/P-i-N) and licensed under the **MIT License - Copyright (c) 2020 P-i-N**.<br>
-Two minor modifications have been made (`null` is read as `null` instead of `0`, and quoted keys now accept any characters).<br>
+[**Two minor modifications have been made**](../../Plugin/packages/json5/RAINJIT.patch) (`null` is read as `null` instead of `0`, and quoted keys now accept any characters).<br>
 The original copyright and permission notice has been preserved.
 
 <br>

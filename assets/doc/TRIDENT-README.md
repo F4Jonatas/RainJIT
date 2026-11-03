@@ -47,11 +47,11 @@
 
 ## Overview
 
-Trident is a lightweight embedded browser module for RainJIT built around the legacy Windows WebBrowser control. It allows Rainmeter skins to render real-time HTML, CSS, and JavaScript directly inside the Rainmeter process without external runtimes such as Chromium or WebView2.
+**Trident** is a lightweight embedded browser module for **RainJIT** built around the legacy Windows WebBrowser control. It allows **Rainmeter** skins to render real-time HTML, CSS, and JavaScript directly inside the **Rainmeter** process without external runtimes such as [**Chromium**](https://github.com/chromium/chromium/tree/main) or [**WebView2**](https://github.com/MicrosoftEdge/WebView2Browser).
 
-The module is designed for simple desktop UI workloads where low memory usage, fast startup, and minimal system overhead matter more than modern web compatibility. All browser communication and event dispatching run on Rainmeter's existing STA thread without external processes or background worker threads.
+The module is designed for simple desktop UI workloads where low memory usage, fast startup, and minimal system overhead matter more than modern web compatibility. All browser communication and event dispatching run on **Rainmeter** existing STA thread without external processes or background worker threads.
 
-Trident also includes optional HTML sanitization, JavaScript-to-Lua communication, navigation interception, a light/dark theme with custom attributes, and transparent layered window support, making it suitable for lightweight widgets, overlays, and interactive desktop components.
+**Trident** also includes optional HTML sanitization, JavaScript-to-Lua communication, navigation interception, a light/dark theme with custom attributes, and transparent layered window support, making it suitable for lightweight widgets, overlays, and interactive desktop components.
 
 <br>
 <br>
@@ -62,16 +62,13 @@ Trident also includes optional HTML sanitization, JavaScript-to-Lua communicatio
 - **JavaScript ⇄ Lua Bridge**: Post events from JS with `window.external.call(name, data)` and expose Lua functions to the page with `browser:bind(name, fn)`
 - **Link Interception**: Return `false` from the `"navigate"` callback to cancel a navigation, or let it proceed
 - **Navigation Policy**: Every navigation (links, `location=`, forms, redirects, frames) goes through a URL validator; `navigation = "locked"` freezes the top level
-- **HTML Sanitization**: Gumbo-based pipeline with granular `allow_*` flags per control
+- **HTML Sanitization**: [**Gumbo-based**](https://github.com/google/gumbo-parser) pipeline with granular `allow_*` flags per control
 - **Theme and Data Attributes**: `theme` (`light` / `dark` / Windows) and a `data` table written as `data-*` attributes on `<html>`, updated at run time with `browser:redraw()`
-- **Color-Key Transparency**: `WS_EX_LAYERED` with the body painted in the key color on `DocumentComplete`
 - **Rounded Corners**: Native `SetWindowRgn` via `cornerRadius` option
 - **Show / Hide**: Toggle the popup without destroying it via `browser:show()` / `browser:hide()`
-- **Immediate Events**: Dispatched through a hidden window message, without waiting for the Update tick
-- **Layout Constraints**: Skin clipping, padding reduction, position tracking and z-order tracking via `SetWindowSubclass`
-- **Path Resolution**: `url`, `navigate()`, and `execScript()` accept Rainmeter variables, `./` relative paths, `host:port`, and absolute paths
+- **Immediate Events**: Dispatched through a hidden window message, without waiting for the [**Update tick**](https://docs.rainmeter.net/manual/skins/rainmeter-section/#Update)
+- **Path Resolution**: `url`, `navigate()`, and `execScript()` accept **Rainmeter** variables, `./` relative paths, `host:port`, and absolute paths
 - **Live DOM Access**: `browser.document` and `browser.window` expose the COM objects of the page to Lua
-- **Rich Event System**: Progress, errors, popup control, downloads, and command state
 - **Process Hardening**: VBScript is blocked, ActiveX/downloads/credentials/cookies are denied by default, drops are filtered
 
 <br>
@@ -127,191 +124,251 @@ end
 <br>
 
 
-## Architecture
+## :book: Module `webview.trident`
 
-### COM Threading Model
+### :large_orange_diamond: Method `trident.create()`
 
-COM is initialized using `OleInitialize` on the first `trident.create()` call in the process. This initializes both COM and the OLE subsystem in apartment-threaded (STA) mode, which is required for `IWebBrowser2`, `DWebBrowserEvents2`, and in-place activation to work correctly. All COM calls happen on the Rainmeter skin thread — there is no worker thread.
+Creates a new browser control. Returns a browser object on success, or `nil`, `errorMessage` on failure. **Always capture both return values.**
 
-> **Note:** Using `CoInitializeEx` instead of `OleInitialize` causes periodic ~1 second freezes because MSHTML internally depends on OLE services that are only initialized by `OleInitialize`.
-
-### Event Delivery
-
-`EventSink::Invoke()` is called by Trident on the skin thread (same STA). Ordinary events are pushed into a bounded queue (at most 512 events and 2 MB of text per skin) and a message is posted to a hidden message-only window, which drains the queue and calls the Lua callback right away. `ProcessMessages()`, called from Rainmeter's Update cycle, drains the queue as a fallback. Because everything runs on the skin thread, no cross-thread Lua calls are ever made.
-
-The `BeforeNavigate2`, `NewWindow2/3`, and `WindowClosing` events are dispatched **synchronously** (not via the queue) so that the Lua callback's return value can set the COM `Cancel` flag before MSHTML reads it. See [**Link Navigation**](#link-navigation).
-
-### Re-entrancy
-
-Lua callbacks run inside COM events and inside nested message loops (`write()`, `execScript()`). Calling `quit()` from such a callback does not free anything on the spot: the control is disarmed (every later method call is a no-op), its callbacks stop, and the real teardown runs from a posted message once no such frame is left on the stack. `navigate()`, `back()`, `forward()`, `refresh()`, `write()` and `redraw()` called from inside a browser event are queued the same way and run right after the event. `write()` then returns `true, "deferred"`.
-
-### Window Lifecycle
-
-Each browser occupies a `WS_POPUP` window owned by the skin window (not a child window). This is necessary because Rainmeter's skin window uses `WS_EX_LAYERED` with `UpdateLayeredWindow`, and child windows cannot be layered independently — they inherit the parent's alpha.
-
-The popup follows the skin through a `SetWindowSubclass` hook (position, size, visibility). Its z-order is always **relative to the skin**: it is kept directly above the skin window and takes over the skin's topmost state, whatever the skin's z-position is (Normal, On Desktop, Topmost...) and whenever Rainmeter changes it. Clicking inside the browser brings the skin to the front without activating it, and the popup is placed above it in the same step, so the skin never covers the browser.
-
-### JavaScript Bridge
-
-`window.external` is provided through `IDocHostUIHandler::GetExternal()`, installed before the page is parsed and again on `DocumentComplete`. It enables bidirectional communication between the page and Lua. See [**JavaScript Bridge**](#javascript-bridge).
-
-### Local Security Manager
-
-An `IInternetSecurityManager` is provided to MSHTML via `IServiceProvider` on the browser site. It maps `file://` URLs under the skin directory to the local-machine zone and allows only a small set of actions for them, so HTML, CSS and scripts of the skin can reference local assets with relative paths (`./assets/img.png`, `../shared/style.css`). Dangerous actions (ActiveX, shell execute, Java, control downloads) are denied for every URL unless `allowActiveX = true`.
-
----
-
-## The IE7 Trident Engine
-
-Trident uses MSHTML (also called Trident), the HTML/CSS rendering engine that powered Internet Explorer. Understanding its capabilities and quirks is essential for writing skins that work reliably.
-
-### What version of Trident do you get?
-
-By default, `IWebBrowser2` renders in IE7 compatibility mode regardless of the Windows version. This is a deliberate Microsoft default — it prevents old ActiveX hosts from breaking.
-
-To unlock modern rendering, you have two options:
-
-#### 1. Per‑page (recommended for skins)
-
-Include a `<meta>` tag at the very beginning of your `<head>`:
-
-```html
-<!doctype html>
-<html>
-  <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta http-equiv="content-type" content="text/html;charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    …
-  </head>
-  …
-</html>
-```
-
-- `IE=edge` tells Trident to use the **highest available** document mode (usually IE11 Edge mode, value `11001`).
-- This works without any registry modification and affects only that page.
-- Put it before any other element — the parser needs to see it early to switch modes.
-
-#### 2. Process‑wide (fallback)
-
-Declare a `FEATURE_BROWSER_EMULATION` registry key under:
-
-```
-HKCU\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION
-ProcessName.exe = <DWORD value>
-```
-
-Common values:
-
-| IE version emulated | Value  |
-| :--:                | :--:   |
-| IE7 (default)       | 7000   |
-| IE8                 | 8000   |
-| IE9                 | 9000   |
-| IE10                | 10000  |
-| IE11                | 11000  |
-| IE11 (Edge mode)    | 11001  |
-
----
-
-### What Trident can do — default vs. modern mode
-
-#### A. In default IE7 mode
-
-- HTML 4.01 / CSS 2.1 layout (block, inline, float, positioned elements).
-- JScript 5.x (roughly ES3), no `JSON` object, no `Array.prototype.forEach`, and no `window.eval` (`browser:execScript()` works around this).
-- `document.write()`, `innerHTML`, `execScript()` — reliable.
-- Attribute selectors such as `[data-theme="dark"]` — supported, which is what the theme feature relies on.
-- No `XMLHttpRequest` (only legacy `ActiveXObject("Microsoft.XMLHTTP")`).
-- No `localStorage` / `sessionStorage`.
-- No SVG, no `@font-face`, no CSS transitions or animations.
-
-#### B. With `IE=edge` (IE11 Edge mode)
-
-In addition to everything above, you gain:
-
-- Full ES5 JavaScript: `Array.prototype.forEach`, `Object.keys`, `Function.prototype.bind`, strict mode, `JSON.parse/stringify`, `Date.now()`, etc.
-- `XMLHttpRequest` (same-origin only).
-- `localStorage` and `sessionStorage`.
-- Partial SVG support (basic shapes, paths, filters).
-- Custom fonts via `@font-face` (TrueType/OpenType).
-- CSS transitions and basic CSS animations.
-- Basic CSS3: `border-radius`, `box-shadow`, `text-shadow`, `opacity`, `rgba()` colors.
-- `querySelector` / `querySelectorAll`.
-- `classList` API.
-
-> **Note:** Even in Edge mode, Trident is **not** a modern evergreen browser. ES6+ features (`let`, `const`, arrow functions, Promises, `fetch`, template literals) still require a transpiled polyfill bundle.
-
----
-
-### What Trident cannot do (even with `IE=edge`)
-
-- **CSS Grid**, **CSS Custom Properties** (`var(--x)`), `light-dark()`, `prefers-color-scheme`, `calc()` with mixed units. For themes and per-skin values use [data attributes](#theme-and-data-attributes).
-- **ES6+** unless polyfilled via Babel/TypeScript targeting ES5.
-- **WebSocket**, **WebRTC**, **WebGL**.
-- **Service Workers**, Web Workers, or any thread API.
-- `<video>` / `<audio>` with modern codecs (H.264 may work via DirectShow; VP8/9 and AV1 will not).
-- `FormData`, `FileReader`, `Blob` constructor, `URL.createObjectURL`.
-- `MutationObserver` (only deprecated `DOMSubtreeModified` events are available).
-- **VBScript** — always blocked by the module (see [**Security**](#security)).
-
----
-
-<br>
-<br>
-
-
-## Path Resolution
-
-All functions that accept a URL or file path — `url` in `create()`, `navigate()`, and `execScript()` (for `.js` files) — share the same resolution logic:
-
-| Input form               | Example                     | Resolved as                                                         |
-| :--:                     | :--:                        | :--:                                                                |
-| Absolute URL with scheme | `https://example.com`       | Passed through unchanged                                            |
-| `file://` URL            | `file:///C:/skins/foo.html` | Passed through unchanged                                            |
-| `host:port`              | `127.0.0.1:8080/app`        | `http://127.0.0.1:8080/app`                                         |
-| Drive or UNC path        | `C:\skins\foo.html`         | Converted to a `file:///` URL                                       |
-| `./` relative path       | `./web/index.html`          | Expanded to `#CURRENTPATH#web\index.html`, then made absolute       |
-| Rainmeter variable       | `#@#web\index.html`         | Variables expanded, then made absolute                              |
-| Bare filename            | `index.html`                | Resolved relative to the skin like any Rainmeter path               |
-
-Local paths are converted to properly percent-encoded `file:///` URLs. A trailing `?query` or `#fragment` is kept as URL syntax unless the whole string names an existing file. Non-ASCII characters are left as they are.
-
-### Relative paths inside HTML and CSS
-
-When navigating to a `file://` URL, MSHTML resolves relative references (`./img.png`, `../style.css`) relative to the document's directory automatically — this is standard browser behavior.
-
-`browser:write(html)` always writes into an `about:blank` document, which has no base URL. Relative references inside written HTML therefore do not resolve against the skin folder: use absolute `file:///` URLs (permitted by `allow_local` or `sanitize = false`), or put the page in a file and use `navigate()`.
-
-> **Security:** Local access is limited to the skin folder. See [**Security**](#security).
-
----
-
-<br>
-<br>
-
-
-## API Reference
-
-### `trident.create(config)` → browser | nil, error
-
-Creates a new browser control. Returns a browser object on success, or `nil, errorMessage` on failure. **Always capture both return values.**
+> [!NOTE]
+> The control lives until `browser:quit()` or until the skin unloads; keeping the return value is optional.
 
 ```lua
+-- @usage trident.create(config)
+-- @param (taable) config - Request config
+-- @return (table|nil) Browser instance
+-- @return (string|nil) Error message
+
 local browser, err = trident.create({...})
 if not browser then
-    print("trident error: " .. tostring(err))
-    return
+  print("trident error: " .. tostring(err))
+  return
 end
 ```
 
-The control lives until `browser:quit()` or until the skin unloads; keeping the return value is optional.
+<br>
 
-**Config table fields:**
+
+### :large_orange_diamond: Method `browser:navigate()`
+
+Navigates to the given URL. Accepts `./` relative paths, **Rainmeter** variables, `host:port` and absolute paths. The URL goes through the sanitizer's URL validation (unless `allow_urls` / `sanitize = false`) and through the unconditional navigation policy (VBScript and disallowed local files are always refused); refused navigations are logged.
+
+```lua
+-- @usage browser:navigate(url)
+-- @param (string) url -
+
+browser:navigate("./pages/settings.html")
+browser:navigate("#@#web\\index.html")
+browser:navigate("https://example.com")
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:write()`
+
+Replaces the page with HTML (`document.open()` + `document.write()` + `document.close()`). The HTML is passed through the sanitizer according to the control's `sanitize` option; with `sanitize = false` it is written as is, except that content mentioning VBScript is refused.
+
+The content is always written into an `about:blank` document. If the page currently shown came from a URL or a file, the control first navigates to `about:blank` (writing into a remote document would keep its origin) and the HTML is written when it has loaded; in that case the call returns `true, "deferred"`. The same happens right after `create()`, before the first document exists.
+
+The `documentcomplete` event caused by `write()` itself is not forwarded to the callback, so writing from inside a `documentcomplete` handler does not loop.
+
+```lua
+-- @usage browser:write(html)
+-- @param (string) html -
+-- @return
+
+callback = function(browser, event)
+  if event.type == "documentcomplete" and not browser.written then
+    browser.written = true
+    local ok, err = browser:write([[
+      <html><head><meta http-equiv="X-UA-Compatible" content="IE=edge"></head>
+      <body><h1>Hello</h1></body></html>
+    ]])
+    if not ok then print("write failed: " .. tostring(err)) end
+  end
+end
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:execScript()`
+
+Runs JavaScript in the current document. The argument is the **body of a function**: use `return` to get a value back. If the argument is a single line ending in `.js`, it is treated as a file (`./`, Rainmeter variables and absolute paths are accepted) and the file's text is used as the body.
+
+The result keeps its type: number, string, boolean, `nil` (`null` / `undefined`), or a COM proxy for objects. On failure it returns `nil, message`. It works in every document mode, including IE7/IE8 where `window.eval` does not exist.
+
+```lua
+-- @usage browser:execScript(script)
+-- @param (string) script -
+-- @return (string|number|boolean|nil|table)
+-- @return (string) Message
+
+-- Inline script (note the return)
+local count = browser:execScript("return document.getElementsByTagName('li').length")
+
+-- Script from file
+browser:execScript("./js/init.js")
+browser:execScript("#@#js\\app.js")
+
+-- Return value types
+-- JS: true/false       → Lua: boolean
+-- JS: 42 / 3.14        → Lua: number
+-- JS: "hello"          → Lua: string
+-- JS: null / undefined → Lua: nil
+-- JS: object           → Lua: COM proxy
+```
+
+> **Note:** `execScript` bypasses `sanitize` by design — Lua callers are considered trusted.
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:bind()`
+
+Exposes a Lua function to the page as `window.external.<name>(...)`. Arguments and return value are converted between JavaScript and Lua.
+
+
+> [!NOTE]
+> An error raised by `fn` reaches the page as a script error carrying the Lua message. The name `call` is reserved for the event channel and cannot be bound. Reading a bound member without calling it (`if (window.external.getSkinValue) ...`) yields a callable reference, so feature tests work.
+
+> [!IMPORTANT]
+> **Who may use `window.external`**
+> `window.external` is only exposed to `about:blank` documents, local files inside the skin folder, and origins listed in `externalOrigins`. The calling frame must be trusted too (a third-party iframe inside a trusted page cannot use it). `external = false` disables it completely. Origins are matched as parsed scheme/host/port: `"https://a.com"` equals `"https://A.com:443"`, never `"https://a.com.evil.com"` or `"https://a.com@evil.com"`.
+
+```lua
+-- @usage browser:bind(name, fn)
+-- @param (string) name -
+-- @param (function) fn -
+
+browser:bind("getSkinValue", function(key)
+  return SKIN:GetVariable(key)
+end)
+```
+
+```js
+var v = window.external.getSkinValue("Width");
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:redraw()`
+
+Re-applies the theme and the `data-*` attributes to the page.
+
+```lua
+-- @usage browser:redraw([data [, theme]])
+-- @param (table) data - Set/Replace every data-* attribute by the ones in the table (the theme is kept)
+-- @param (string) theme - Set theme. "light", "dark", or (""|"auto") to follow Windows
+-- @return (table|nil) - Atributes now in effect or nil if error
+-- @return (string|"light"|"dark") - Theme in use or error message
+
+-- follow the Windows theme when the user changes it
+local data, theme = browser:redraw()
+print(theme, data.accent)
+
+-- new set of attributes: everything else is dropped and the theme is kept
+browser:redraw({ accent = "blue" })
+
+-- force the dark theme and attributes is kept
+browser:redraw(nil, "dark")
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:show() · browser:hide()`
+
+Shows or hides the browser popup window without destroying it. The control remains alive and all COM interfaces stay connected.
+
+```lua
+browser:hide()
+-- ... later ...
+browser:show()
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:quit()`
+
+Destroys the browser control, disconnects the event sink, removes the subclass hooks, and releases all COM interfaces. The browser object becomes inert after this call: every method does nothing (or returns `nil, "The browser is closed"`). It is also called automatically when the browser object is garbage-collected and when the skin unloads. Called from inside a callback, it is deferred until the callback returns.
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:setTransparent()`
+
+Enables or disables color-key transparency at runtime. If `colorKey` (`0xRRGGBB`) is provided it overrides the one set at creation time.
+
+```lua
+-- @usage browser:setTransparent(enable [, colorKey)
+```
+<br>
+
+
+### :large_orange_diamond: Method `browser:setContextMenu()`
+
+Enables or disables the browser context menu at runtime.
+
+```lua
+-- @usage browser:setContextMenu(enable)
+```
+<br>
+
+
+### :large_orange_diamond: Method `browser:getURL()`
+
+Returns the current location URL as a UTF-8 string, or `nil` if unavailable.
+
+```lua
+-- @usage browser:getURL()
+-- @return (string|nil)
+```
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:back() forward`
+
+Navigate backward or forward in the session history.
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:refresh()`
+
+Reloads the current page.
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:stop()`
+
+Cancels any ongoing navigation or download.
+
+<br>
+
+
+### :large_orange_diamond: Method `browser:reposition()`
+
+Forces the popup window to recalculate and reapply its position, size and z-order based on the current parent window location. Useful after the skin's position changes programmatically.
+
+<br>
+
+
+### :diamond_shape_with_a_dot_inside: Property Create fileds
+
+> [!IMPORTANT]
+> **Transparency — Color-key**<br>
+> Pure per-pixel alpha (like a PNG with partial transparency) is not supported. Only the exact key color is made transparent — anti-aliased edges will have a fringe.<br><br>
+> **Tip:** Pick a color that never appears intentionally in your HTML. Pure magenta (`#FF00FF`) or pure cyan (`#00FFFF`) are common choices.
 
 | Field              | Type     | Default         | Description                                                                                                                  |
 | :--:               | :--:     | :--:            | :--:                                                                                                                         |
-| `url`              | string   | `"about:blank"` | Initial URL. Accepts `./`, Rainmeter variables, `host:port` and absolute paths.                                              |
+| `url`              | string   | `"about:blank"` | Initial URL. Accepts `./`, **Rainmeter** variables, `host:port` and absolute paths.                                          |
 | `width`            | number   | `800`           | Desired width in pixels.                                                                                                     |
 | `height`           | number   | `600`           | Desired height in pixels.                                                                                                    |
 | `left`             | number   | `0`             | X offset relative to the parent skin window.                                                                                 |
@@ -339,136 +396,10 @@ The control lives until `browser:quit()` or until the skin unloads; keeping the 
 | `allowCookies`     | boolean  | `false`         | `true` allows first-party cookies (third-party cookies are always denied).                                                   |
 | `callback`         | function | `nil`           | Event handler. See [**Event System**](#event-system).                                                                        |
 
----
+<br>
 
-### `browser:navigate(url)`
 
-Navigates to the given URL. Accepts `./` relative paths, Rainmeter variables, `host:port` and absolute paths. The URL goes through the sanitizer's URL validation (unless `allow_urls` / `sanitize = false`) and through the unconditional navigation policy (VBScript and disallowed local files are always refused); refused navigations are logged.
-
-```lua
-browser:navigate("./pages/settings.html")
-browser:navigate("#@#web\\index.html")
-browser:navigate("https://example.com")
-```
-
----
-
-### `browser:write(html)` → true | true, "deferred" | nil, error
-
-Replaces the page with HTML (`document.open()` + `document.write()` + `document.close()`). The HTML is passed through the sanitizer according to the control's `sanitize` option; with `sanitize = false` it is written as is, except that content mentioning VBScript is refused.
-
-The content is always written into an `about:blank` document. If the page currently shown came from a URL or a file, the control first navigates to `about:blank` (writing into a remote document would keep its origin) and the HTML is written when it has loaded; in that case the call returns `true, "deferred"`. The same happens right after `create()`, before the first document exists.
-
-The `documentcomplete` event caused by `write()` itself is not forwarded to the callback, so writing from inside a `documentcomplete` handler does not loop.
-
-```lua
-callback = function(browser, event)
-  if event.type == "documentcomplete" and not browser.written then
-    browser.written = true
-    local ok, err = browser:write([[
-      <html><head><meta http-equiv="X-UA-Compatible" content="IE=edge"></head>
-      <body><h1>Hello</h1></body></html>
-    ]])
-    if not ok then print("write failed: " .. tostring(err)) end
-  end
-end
-```
-
----
-
-### `browser:execScript(script)` → value | nil, error
-
-Runs JavaScript in the current document. The argument is the **body of a function**: use `return` to get a value back. If the argument is a single line ending in `.js`, it is treated as a file (`./`, Rainmeter variables and absolute paths are accepted) and the file's text is used as the body.
-
-The result keeps its type: number, string, boolean, `nil` (`null` / `undefined`), or a COM proxy for objects. On failure it returns `nil, message`. It works in every document mode, including IE7/IE8 where `window.eval` does not exist.
-
-```lua
--- Inline script (note the return)
-local count = browser:execScript("return document.getElementsByTagName('li').length")
-
--- Script from file
-browser:execScript("./js/init.js")
-browser:execScript("#@#js\\app.js")
-
--- Return value types
--- JS: true/false       → Lua: boolean
--- JS: 42 / 3.14        → Lua: number
--- JS: "hello"          → Lua: string
--- JS: null / undefined → Lua: nil
--- JS: object           → Lua: COM proxy
-```
-
-> **Note:** `execScript` bypasses `sanitize` by design — Lua callers are considered trusted.
-
----
-
-### `browser:bind(name, fn)`
-
-Exposes a Lua function to the page as `window.external.<name>(...)`. Arguments and return value are converted between JavaScript and Lua. See [**JavaScript Bridge**](#javascript-bridge).
-
----
-
-### `browser:redraw([data [, theme]])` → data, theme | nil, error
-
-Re-applies the theme and the `data-*` attributes to the page. See [**Theme and Data Attributes**](#theme-and-data-attributes).
-
----
-
-### `browser:show()` / `browser:hide()`
-
-Shows or hides the browser popup window without destroying it. The control remains alive and all COM interfaces stay connected.
-
-```lua
-browser:hide()
--- ... later ...
-browser:show()
-```
-
----
-
-### `browser:setTransparent(enable [, colorKey])`
-
-Enables or disables color-key transparency at runtime. If `colorKey` (`0xRRGGBB`) is provided it overrides the one set at creation time.
-
----
-
-### `browser:setContextMenu(enable)`
-
-Enables or disables the browser context menu at runtime.
-
----
-
-### `browser:getURL()` → string | nil
-
-Returns the current location URL as a UTF-8 string, or `nil` if unavailable.
-
----
-
-### `browser:back()` / `browser:forward()`
-
-Navigate backward or forward in the session history.
-
----
-
-### `browser:refresh()`
-
-Reloads the current page.
-
----
-
-### `browser:stop()`
-
-Cancels any ongoing navigation or download.
-
----
-
-### `browser:reposition()`
-
-Forces the popup window to recalculate and reapply its position, size and z-order based on the current parent window location. Useful after the skin's position changes programmatically.
-
----
-
-### `browser.document` / `browser.window`
+### :diamond_shape_with_a_dot_inside: Property `browser.document` · `browser.window`
 
 Live properties (no parentheses) that return the page's `document` and `window` as COM proxies, or `nil` when there is no document yet. Properties and methods are dispatched through COM automation:
 
@@ -480,17 +411,12 @@ doc.title   = "New title"                 -- assignment works too
 browser.window.scrollTo(0, 0)
 ```
 
----
+<br>
 
-### `browser.hwnd`
+
+### :diamond_shape_with_a_dot_inside: Property `browser.hwnd`
 
 The window handle (light userdata) of the browser popup.
-
----
-
-### `browser:quit()`
-
-Destroys the browser control, disconnects the event sink, removes the subclass hooks, and releases all COM interfaces. The browser object becomes inert after this call: every method does nothing (or returns `nil, "The browser is closed"`). It is also called automatically when the browser object is garbage-collected and when the skin unloads. Called from inside a callback, it is deferred until the callback returns.
 
 ---
 
@@ -545,29 +471,6 @@ var theme = document.documentElement.getAttribute("data-theme");
 ### When the attributes are written
 
 As soon as the document exists (`NavigateComplete2`, so the first paint already matches the selectors), again on `DocumentComplete`, after `write()`, and on every `redraw()`.
-
-### `browser:redraw([data [, theme]])`
-
-| Call                       | Effect                                                                                                                              |
-| :--:                       | :--:                                                                                                                                |
-| `redraw()`                 | Reads the Windows theme again (when `theme` was not fixed) and writes `data-theme` and the data attributes again.                   |
-| `redraw({ ... })`          | **Replaces** every data attribute by the ones in the table. The ones that are gone are removed from `<html>`. The theme is kept.    |
-| `redraw({})`               | Removes every data attribute (the theme is kept).                                                                                   |
-| `redraw(nil, "dark")`      | Changes the theme. `"light"`, `"dark"`, or `""` / `"auto"` to follow Windows again.                                                 |
-
-It returns two values: a table with the data attributes now in effect (names without the `data-` prefix) and the theme in use (`"light"` or `"dark"`). With invalid arguments it returns `nil, message` and nothing changes. Called from inside a browser event, the page is updated right after the event.
-
-```lua
--- follow the Windows theme when the user changes it
-local data, theme = browser:redraw()
-print(theme, data.accent)
-
--- new set of attributes: everything else is dropped
-browser:redraw({ accent = "blue" })
-
--- force the dark theme
-browser:redraw(nil, "dark")
-```
 
 ---
 
@@ -678,24 +581,6 @@ end
 
 > **Security:** Nothing coming from the page is ever compiled or evaluated as Lua. Decode JSON with a JSON library inside `pcall`.
 
-### Lua → Page: `browser:bind(name, fn)`
-
-```lua
-browser:bind("getSkinValue", function(key)
-  return SKIN:GetVariable(key)
-end)
-```
-
-```js
-var v = window.external.getSkinValue("Width");
-```
-
-Arguments and return values are converted between JavaScript and Lua. An error raised by `fn` reaches the page as a script error carrying the Lua message. The name `call` is reserved for the event channel and cannot be bound. Reading a bound member without calling it (`if (window.external.getSkinValue) ...`) yields a callable reference, so feature tests work.
-
-### Who may use `window.external`
-
-`window.external` is only exposed to `about:blank` documents, local files inside the skin folder, and origins listed in `externalOrigins`. The calling frame must be trusted too (a third-party iframe inside a trusted page cannot use it). `external = false` disables it completely. Origins are matched as parsed scheme/host/port: `"https://a.com"` equals `"https://A.com:443"`, never `"https://a.com.evil.com"` or `"https://a.com@evil.com"`.
-
 ---
 
 <br>
@@ -738,20 +623,6 @@ With `navigation = "locked"` neither the user nor the page can change the top-le
 <br>
 
 
-## Transparency
-
-Color-key transparency works at two layers:
-
-1. **Window layer:** `SetLayeredWindowAttributes(hwndPopup, colorKey, 0, LWA_COLORKEY)` makes every pixel of the popup window that matches `colorKey` fully transparent to the desktop compositor.
-
-2. **Document layer:** On `DocumentComplete`, the module paints the document's `<body>` with the key color through `IHTMLStyle::put_backgroundColor` (an inline style, so it wins over the page's CSS). The layered window then punches that color out, and only your content pixels are visible.
-
-> **Note:** Pure per-pixel alpha (like a PNG with partial transparency) is not supported. Only the exact key color is made transparent — anti-aliased edges will have a fringe.
-
-> **Tip:** Pick a color that never appears intentionally in your HTML. Pure magenta (`#FF00FF`) or pure cyan (`#00FFFF`) are common choices.
-
----
-
 ## Layout & Padding
 
 The popup window position is derived from the parent skin's screen rectangle:
@@ -768,6 +639,40 @@ If `insideSkin` is `true`, the rectangle is first clipped to the parent window b
 Rounded corners are applied via `SetWindowRgn` with a rounded rectangle region on every reposition.
 
 ---
+
+<br>
+<br>
+
+
+## Path Resolution
+
+All functions that accept a URL or file path — `url` in `create()`, `navigate()`, and `execScript()` (for `.js` files) — share the same resolution logic:
+
+| Input form               | Example                     | Resolved as                                                         |
+| :--:                     | :--:                        | :--:                                                                |
+| Absolute URL with scheme | `https://example.com`       | Passed through unchanged                                            |
+| `file://` URL            | `file:///C:/skins/foo.html` | Passed through unchanged                                            |
+| `host:port`              | `127.0.0.1:8080/app`        | `http://127.0.0.1:8080/app`                                         |
+| Drive or UNC path        | `C:\skins\foo.html`         | Converted to a `file:///` URL                                       |
+| `./` relative path       | `./web/index.html`          | Expanded to `#CURRENTPATH#web\index.html`, then made absolute       |
+| Rainmeter variable       | `#@#web\index.html`         | Variables expanded, then made absolute                              |
+| Bare filename            | `index.html`                | Resolved relative to the skin like any **Rainmeter** path               |
+
+Local paths are converted to properly percent-encoded `file:///` URLs. A trailing `?query` or `#fragment` is kept as URL syntax unless the whole string names an existing file. Non-ASCII characters are left as they are.
+
+### Relative paths inside HTML and CSS
+
+When navigating to a `file://` URL, MSHTML resolves relative references (`./img.png`, `../style.css`) relative to the document's directory automatically — this is standard browser behavior.
+
+`browser:write(html)` always writes into an `about:blank` document, which has no base URL. Relative references inside written HTML therefore do not resolve against the skin folder: use absolute `file:///` URLs (permitted by `allow_local` or `sanitize = false`), or put the page in a file and use `navigate()`.
+
+> **Security:** Local access is limited to the skin folder. See [**Security**](#security).
+
+---
+
+<br>
+<br>
+
 
 ## Sanitization
 
@@ -802,6 +707,10 @@ sanitize = { "allow_scripts", "allow_events", "allow_style", "allow_css", "allow
 
 ---
 
+<br>
+<br>
+
+
 ## Security
 
 Besides the sanitizer, the module applies these protections regardless of the `sanitize` option:
@@ -820,6 +729,64 @@ Besides the sanitizer, the module applies these protections regardless of the `s
 > **Note:** The engine still runs inside the Rainmeter process and cannot be sandboxed from the module. Treat remote content accordingly.
 
 ---
+
+<br>
+<br>
+
+
+## The IE7 Trident Engine
+
+**Trident** uses MSHTML (also called **Trident**), the HTML/CSS rendering engine that powered Internet Explorer. Understanding its capabilities and quirks is essential for writing skins that work reliably.<br>
+By default, renders in IE7 compatibility mode regardless of the Windows version. This is a deliberate Microsoft default — it prevents old ActiveX hosts from breaking.
+
+To unlock slightly more modern rendering, you have two options:
+
+### 1. Per‑page (recommended for skins)
+
+Include a `<meta>` tag at the very beginning of your `<head>`
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    …
+  </head>
+  …
+</html>
+```
+
+- `IE=edge` tells **Trident** to use the **highest available** document mode (usually IE11 Edge mode, value `11001`).
+- This works without any [**registry**](https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/windows-registry-advanced-users) modification and affects only that page.
+- Put it before any other element — the parser needs to see it early to switch modes.
+
+### 2. Process‑wide (fallback)
+
+Declare a `FEATURE_BROWSER_EMULATION` [**registry**](https://learn.microsoft.com/en-us/troubleshoot/windows-server/performance/windows-registry-advanced-users) key under
+
+```
+HKCU\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION
+ProcessName.exe = <DWORD value>
+```
+
+Common values:
+
+| IE version emulated | Value  |
+| :--:                | :--:   |
+| IE7 (default)       | 7000   |
+| IE8                 | 8000   |
+| IE9                 | 9000   |
+| IE10                | 10000  |
+| IE11                | 11000  |
+| IE11 (Edge mode)    | 11001  |
+
+---
+
+<br>
+<br>
+
 
 ## Limitations
 
@@ -860,6 +827,7 @@ Licensed under the **GPL v2.0 License**.
 
 > [!NOTE]
 > This module uses the legacy Internet Explorer/Trident browser engine provided by **Microsoft Windows**.
+
 ---
 
 <br>

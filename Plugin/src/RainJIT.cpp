@@ -488,8 +488,11 @@ PLUGIN_EXPORT void Finalize( void *data ) {
 
 
 
-	fetch::CleanupAutoDispatch( rain );
 	fetch::CleanupContexts( rain );
+	fetch::CleanupAutoDispatch( rain );
+
+	websocket::CleanupContexts( rain );
+	websocket::CleanupAutoDispatch( rain );
 
 	hotkey::Cleanup( rain );
 	trident::Cleanup( rain );

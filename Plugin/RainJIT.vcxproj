@@ -106,6 +106,9 @@
     <ClCompile Include="src\Modules\tooltip\tooltip_renderer.cpp" />
     <ClCompile Include="src\Modules\tooltip\tooltip_runtime.cpp" />
     <ClCompile Include="src\Modules\tooltip\tooltip_window.cpp" />
+    <ClCompile Include="src\Modules\websocket\websocket_core.cpp" />
+    <ClCompile Include="src\Modules\websocket\websocket_lua.cpp" />
+    <ClCompile Include="src\Modules\websocket\websocket_network.cpp" />
     <ClCompile Include="src\Modules\webview\trident.cpp" />
     <ClCompile Include="src\Modules\webview\trident_create.cpp" />
     <ClCompile Include="src\Modules\webview\trident_document.cpp" />
@@ -143,6 +146,10 @@
     <ClInclude Include="src\Modules\tooltip\tooltip_runtime.hpp" />
     <ClInclude Include="src\Modules\tooltip\tooltip_surface.hpp" />
     <ClInclude Include="src\Modules\tooltip\tooltip_window.hpp" />
+    <ClInclude Include="src\Modules\websocket\websocket_core.hpp" />
+    <ClInclude Include="src\Modules\websocket\websocket_lua.hpp" />
+    <ClInclude Include="src\Modules\websocket\websocket_network.hpp" />
+    <ClInclude Include="src\Modules\websocket\websocket.hpp" />
     <ClInclude Include="src\Modules\webview\comProxy.hpp" />
     <ClInclude Include="src\Modules\webview\luaVariant.hpp" />
     <ClInclude Include="packages\gumbo\src\strings.h" />

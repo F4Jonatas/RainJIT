@@ -19,6 +19,7 @@ assets/images/*.*
 !assets/images/tooltip-logo.png
 !assets/images/glass-logo.png
 !assets/images/json-logo.png
+!assets/images/websocket-logo.png
 
 private.md
 .obsidian
