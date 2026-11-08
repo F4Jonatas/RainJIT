@@ -421,7 +421,7 @@ Licensed under the **GPL v2.0 License**.<br>
 
 
 <div align="center">
-  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+  For more information, visit the <b><a href="../../README.md">**RainJIT** documentation</a></b>
 </div>
 
 <br>

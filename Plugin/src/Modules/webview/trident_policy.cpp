@@ -419,8 +419,10 @@ namespace trident {
 		std::string lower = url;
 		std::transform( lower.begin(), lower.end(), lower.begin(), []( unsigned char c ) { return (char)std::tolower( c ); } );
 
-		// Unconditional (independent of sanitize / allow_urls): never VBScript.
+		// Unconditional (independent of sanitize / allow_urls): never VBScript, never a javascript: URL.
 		if ( sanitize::IsVbScriptUrl( url ) )
+			return false;
+		if ( sanitize::IsScriptUrl( url ) )
 			return false;
 		if ( lower.compare( 0, 8, "file:///" ) == 0 && LocalFileHasVbScript( url ) )
 			return false;

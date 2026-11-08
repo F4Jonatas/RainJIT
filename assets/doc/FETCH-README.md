@@ -28,9 +28,9 @@
   - [`:hasCompleted()`](#large_orange_diamond-method-requesthascompleted)
   - [`:cancel()`](#large_orange_diamond-method-requestcancel)
 - [Response Object](#diamond_shape_with_a_dot_inside-response-object)
-  - [`:text()` / `:bytes()`](#large_orange_diamond-methods-responsetext--responsebytes)
-  - [`:headers()` / `:cookies()`](#large_orange_diamond-methods-responseheaders--responsecookies)
-  - [`:xml()` / `:html()` / `:json()`](#large_orange_diamond-methods-responsexml--responsehtml--responsejson)
+  - [`:text()`·`:bytes()`](#large_orange_diamond-methods-responsetextresponsebytes)
+  - [`:headers()`·`:cookies()`](#large_orange_diamond-methods-responseheadersresponsecookies)
+  - [`:xml()`·`:html()`·`:json()`](#large_orange_diamond-methods-responsexmlresponsehtmlresponsejson)
   - [`:save()`](#large_orange_diamond-method-responsesave)
 - [`fetch.promiseAll`](#large_orange_diamond-api-fetchpromiseall)
   - [`promise()`](#large_orange_diamond-call-promise)
@@ -51,13 +51,13 @@
 
 ## Overview
 
-Fetch is the HTTP client for RainJIT. It brings to **Rainmeter** something that skin creators previously had to work around: background request execution, independent response handling, and full control over both the construction of a request and its returned content. Its API follows the patterns familiar to most developers—resembling Python’s `requests` library or JavaScript’s `fetch` API—making the creation of requests intuitive from the very first line of code.
+Fetch is the HTTP client for **RainJIT**. It brings to **Rainmeter** something that skin creators previously had to work around: background request execution, independent response handling, and full control over both the construction of a request and its returned content. Its API follows the patterns familiar to most developers—resembling Python’s `requests` library or JavaScript’s `fetch` API—making the creation of requests intuitive from the very first line of code.
 
 The module offers two modes of operation. Synchronous functions—such as `fetch.get`, `fetch.post`, and others—send a request and return the response within the same line; this approach is ideal for short scripts or for data that is needed immediately. Conversely, the asynchronous function, `fetch.async`, returns control to the script instantly while the request is processed on a separate thread. This allows the skin to remain responsive during network operations, preventing the **Rainmeter** process from freezing while a request is in progress.
 
-All standard HTTP methods are supported: GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS. Requests can include custom headers, content bodies (in text or binary format), credentials for Basic authentication, and cookies. Furthermore, an options table allows for the configuration of the HTTP version, the handling of redirects, and the choice of whether the URL should be sent exactly as written or percent-encoded into an ASCII-compatible format.
+All standard [**HTTP methods**](#globe_with_meridians-http-method-semantics) are supported: **GET**, **POST**, **PUT**, **PATCH**, **DELETE**, **HEAD**, and **OPTIONS**. Requests can include custom headers, content bodies (in text or binary format), credentials for Basic authentication, and cookies. Furthermore, an options table allows for the configuration of the HTTP version, the handling of redirects, and the choice of whether the URL should be sent exactly as written or percent-encoded into an ASCII-compatible format.
 
-The response is a lightweight object that provides comprehensive details about the outcome: whether the operation was successful, the HTTP status code, descriptions of any errors, as well as headers and cookies (with support for case-insensitive lookups). The response body is stored only once—as text or binary, depending on its content type—without being duplicated in memory. From this same object, you can read the raw response body, decode it using `response:json()`, `response:xml()`, or `response:html()`, or save it directly to a file using `response:save()`—making the downloading of images, compressed files, and other binary data a task that requires just a single line of code. Failures are indicated by specific negative status codes, ensuring that a network issue is never confused with a server-side error.
+The response is a lightweight object that provides comprehensive details about the outcome: whether the operation was successful, the HTTP status code, descriptions of any errors, as well as headers and cookies (with support for case-insensitive lookups). The response body is stored only once—as text or binary, depending on its content type—without being duplicated in memory. From this same object, you can read the raw response body, decode it using [**`response:json()`**](./JSON-README.md), [**`response:xml()`**](./HTML-README.md), or [**`response:html()`**](./XML-README.md), or save it directly to a file using [**`response:save()`**](#large_orange_diamond-method-responsesave)—making the downloading of images, compressed files, and other binary data a task that requires just a single line of code. Failures are indicated by specific negative status codes, ensuring that a network issue is never confused with a server-side error.
 
 Behind the scenes, two network mechanisms are available. WinHTTP is the default: it is fast, predictable, and respects the current Windows user's proxy settings. WinINet can be selected for specific requests and shares the user's cookies, proxies, and sessions—which is useful for websites that reject generic clients. Secure connections negotiate TLS protocols (from 1.0 to 1.3), redirects never downgrade a connection from HTTPS to HTTP, and logs never expose keys, credentials, or query strings. Requests are terminated along with the skin to which they belong, ensuring that no processes remain running in the background when a skin is unloaded.
 
@@ -76,7 +76,7 @@ Behind the scenes, two network mechanisms are available. WinHTTP is the default:
 - **Modern TLS**: TLS 1.0 through 1.3 negotiation flags enabled
 - **Identity Encoding by Default**: requests uncompressed responses (`Accept-Encoding: identity`) unless you set your own `Accept-Encoding` header — this avoids a known WinHTTP issue where automatic gzip/deflate decompression breaks chunked responses
 - **Cookie Management**: Automatic cookie extraction from responses
-- **JSON / XML / HTML Parsing**: `response:json()`, `response:xml()` and `response:html()` call the matching RainJIT module
+- **[JSON](./JSON-README.md) / [XML](./XML-README.md) / [HTML](./HTML-README.md) Parsing**: `response:json()`, `response:xml()` and `response:html()` call the matching **RainJIT** module
 - **Dual Driver**: WinHTTP (default) or WinINet (`driver = "wininet"`) — see [Request Options](#request-options-object)
 
 ---
@@ -641,7 +641,7 @@ When a request completes (synchronously or asynchronously), the result is a **us
 <br>
 
 
-### :large_orange_diamond: Methods `response:text()` / `response:bytes()`
+### :large_orange_diamond: Methods `response:text()·response:bytes()`
 
 Both return the raw response body as a Lua string (Lua strings are byte arrays, so no encoding conversion actually happens between the two — use whichever name reads better for your use case: `:text()` for textual content, `:bytes()` for binary content).
 
@@ -657,7 +657,7 @@ local body = response:text()
 <br>
 
 
-### :large_orange_diamond: Methods `response:headers()` / `response:cookies()`
+### :large_orange_diamond: Methods `response:headers()·response:cookies()`
 
 Return a key‑value Lua table — headers or cookies parsed from the response. Keys are lowercase and lookups are case‑insensitive.
 
@@ -674,13 +674,14 @@ print(c.session)
 <br>
 
 
-### :large_orange_diamond: Methods `response:xml()` / `response:html()` / `response:json()`
+### :large_orange_diamond: Methods `response:xml()·response:html()·response:json()`
 
-Parse the response body using the corresponding `xml`, `html`, or `json` module. Each method requires the relevant module to be available via `require()`.
+Parse the response body using the corresponding [**`xml`**](./XML-README.md), [**`html`**](./HTML-README.md), or [**`json`**](./JSON-README.md).<br>
+These parsers are already part of **RainJIT**.
 
 | Method | Equivalent to | On failure |
 | :-- | :-- | :-- |
-| `response:json()` | `json.decode( body )` | returns only `nil`; the reason is written to the **Rainmeter** log |
+| `response:json()` | `json.parse( body )` | returns only `nil`; the reason is written to the **Rainmeter** log |
 | `response:xml()`  | `xml.parse( body )`   | returns `nil, errorMessage` |
 | `response:html()` | `html.parse( body )`  | returns `nil, errorMessage` |
 
@@ -1177,7 +1178,7 @@ Licensed under the **GPL v2.0 License**.<br>
 
 
 <div align="center">
-  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+  For more information, visit the <b><a href="../../README.md">**RainJIT** documentation</a></b>
 </div>
 
 <br>

@@ -131,9 +131,9 @@ namespace trident {
 			}
 		}
 
-		// Unconditional VBScript / local-file guard (also runs when sanitize = false / allow_urls).
+		// Unconditional VBScript / javascript: / local-file guard (also runs when sanitize = false / allow_urls).
 		if ( !IsNavigationAllowed( ctrl, wurl ) ) {
-			RN_LOG( ctrl.rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] navigate() blocked (VBScript or disallowed URL): " + wurl ).c_str() );
+			RN_LOG( ctrl.rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] navigate() blocked (VBScript, javascript: or disallowed URL): " + wurl ).c_str() );
 			return;
 		}
 

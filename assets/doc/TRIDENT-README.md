@@ -61,7 +61,7 @@ The module is designed for simple desktop UI workloads where low memory usage, f
 
 - **JavaScript ⇄ Lua Bridge**: Post events from JS with `window.external.call(name, data)` and expose Lua functions to the page with `browser:bind(name, fn)`
 - **Link Interception**: Return `false` from the `"navigate"` callback to cancel a navigation, or let it proceed
-- **Navigation Policy**: Every navigation (links, `location=`, forms, redirects, frames) goes through a URL validator; `navigation = "locked"` freezes the top level
+- **Navigation Policy**: Every navigation (links, `location=`, forms, redirects, frames) goes through a URL validator; `navigation = "locked"` freezes the top level. `javascript:` and `vbscript:` URLs are **always** refused, whatever the flags
 - **HTML Sanitization**: [**Gumbo-based**](https://github.com/google/gumbo-parser) pipeline with granular `allow_*` flags per control
 - **Theme and Data Attributes**: `theme` (`light` / `dark` / Windows) and a `data` table written as `data-*` attributes on `<html>`, updated at run time with `browser:redraw()`
 - **Rounded Corners**: Native `SetWindowRgn` via `cornerRadius` option
@@ -69,7 +69,7 @@ The module is designed for simple desktop UI workloads where low memory usage, f
 - **Immediate Events**: Dispatched through a hidden window message, without waiting for the [**Update tick**](https://docs.rainmeter.net/manual/skins/rainmeter-section/#Update)
 - **Path Resolution**: `url`, `navigate()`, and `execScript()` accept **Rainmeter** variables, `./` relative paths, `host:port`, and absolute paths
 - **Live DOM Access**: `browser.document` and `browser.window` expose the COM objects of the page to Lua
-- **Process Hardening**: VBScript is blocked, ActiveX/downloads/credentials/cookies are denied by default, drops are filtered
+- **Process Hardening**: VBScript and `javascript:` URLs are blocked, ActiveX/downloads/credentials/cookies are denied by default, drops are filtered
 
 <br>
 <br>
@@ -98,13 +98,13 @@ local browser, err = trident.create({
 
   callback = function( browser, event )
     if event.type == "documentcomplete" then
-      browser:write( [[
+      browser:write([[
         <html>
           <body style="background:#FF00FF; color:white; font-family:sans-serif">
             <h2>Hello from Lua!</h2>
           </body>
         </html>
-      ]] )
+      ]])
     end
 
     if event.type == "navigateerror" then
@@ -135,9 +135,11 @@ Creates a new browser control. Returns a browser object on success, or `nil`, `e
 
 ```lua
 -- @usage trident.create(config)
--- @param (taable) config - Request config
--- @return (table|nil) Browser instance
--- @return (string|nil) Error message
+-- @param (table) config - Creation options.
+-- @return (table|nil) Browser object, or `nil` on failure.
+-- @return (string|nil) Error message, present only when the first value is `nil`.
+-- @raise bad argument #1 to 'create' (table expected, got <type>) when config is not a table.
+-- @see https://github.com/F4Jonatas/RainJIT/blob/main/assets/doc/TRIDENT-README.md#diamond_shape_with_a_dot_inside-property-create-fileds
 
 local browser, err = trident.create({...})
 if not browser then
@@ -151,11 +153,13 @@ end
 
 ### :large_orange_diamond: Method `browser:navigate()`
 
-Navigates to the given URL. Accepts `./` relative paths, **Rainmeter** variables, `host:port` and absolute paths. The URL goes through the sanitizer's URL validation (unless `allow_urls` / `sanitize = false`) and through the unconditional navigation policy (VBScript and disallowed local files are always refused); refused navigations are logged.
+Navigates to the given URL. Accepts `./` relative paths, **Rainmeter** variables, `host:port` and absolute paths. The URL goes through the sanitizer's URL validation (unless `allow_urls` / `sanitize = false`) and through the unconditional navigation policy: **`javascript:` URLs (and `jscript:`, `ecmascript:`, `livescript:`, `mocha:`), `vbscript:` URLs, UNC paths and disallowed local files are always refused**, whatever the flags. Refused navigations are only logged (see [**Security**](#security)); the page stays as it is.
 
 ```lua
 -- @usage browser:navigate(url)
--- @param (string) url -
+-- @param (string) url - Address to load: `./` relative path, Rainmeter variable, `host:port`, absolute path or URL.
+-- @return nothing. A refused or unresolvable URL is only logged. Called from inside a browser event, the navigation runs right after the event.
+-- @raise bad argument #1 to 'navigate' (string expected, got <type>) when `url` is not a string (numbers are converted).
 
 browser:navigate("./pages/settings.html")
 browser:navigate("#@#web\\index.html")
@@ -175,8 +179,10 @@ The `documentcomplete` event caused by `write()` itself is not forwarded to the 
 
 ```lua
 -- @usage browser:write(html)
--- @param (string) html -
--- @return
+-- @param (string) html - HTML document or fragment. Filtered according to the `sanitize` option.
+-- @return (boolean|nil) `true` when written or queued; `nil` on failure.
+-- @return (string|nil) `"deferred"` when the HTML will be written once `about:blank` has loaded; the error message when the first value is `nil` (`"The browser is closed"`, `"VBScript is blocked"`, ...).
+-- @raise `bad argument #1 to 'write' (string expected, got <type>)` when `html` is not a string (numbers are converted).
 
 callback = function(browser, event)
   if event.type == "documentcomplete" and not browser.written then
@@ -195,15 +201,16 @@ end
 
 ### :large_orange_diamond: Method `browser:execScript()`
 
-Runs JavaScript in the current document. The argument is the **body of a function**: use `return` to get a value back. If the argument is a single line ending in `.js`, it is treated as a file (`./`, Rainmeter variables and absolute paths are accepted) and the file's text is used as the body.
+Runs JavaScript in the current document. The argument is the **body of a function**: use `return` to get a value back. If the argument is a single line ending in `.js`, it is treated as a file (`./`, **Rainmeter** variables and absolute paths are accepted) and the file's text is used as the body.
 
 The result keeps its type: number, string, boolean, `nil` (`null` / `undefined`), or a COM proxy for objects. On failure it returns `nil, message`. It works in every document mode, including IE7/IE8 where `window.eval` does not exist.
 
 ```lua
 -- @usage browser:execScript(script)
--- @param (string) script -
--- @return (string|number|boolean|nil|table)
--- @return (string) Message
+-- @param (string) script - Body of a JavaScript function (use `return`), or a single line ending in `.js` naming a file (`./`, Rainmeter variables and absolute paths).
+-- @return (string|number|boolean|table|nil) The value returned by the script: string, number, boolean, a COM proxy for objects, `nil` for `null` / `undefined`.
+-- @return (string|nil) Error message, only when the call failed (`"The browser is closed"`, `"Script file not found"`, `"Failed to read script file"` or the script's own error); the first value is then `nil`.
+-- @raise `bad argument #1 to 'execScript' (string expected, got <type>)` when `script` is not a string (numbers are converted).
 
 -- Inline script (note the return)
 local count = browser:execScript("return document.getElementsByTagName('li').length")
@@ -213,11 +220,11 @@ browser:execScript("./js/init.js")
 browser:execScript("#@#js\\app.js")
 
 -- Return value types
--- JS: true/false       → Lua: boolean
--- JS: 42 / 3.14        → Lua: number
--- JS: "hello"          → Lua: string
--- JS: null / undefined → Lua: nil
--- JS: object           → Lua: COM proxy
+-- JS: true or false     → Lua: boolean
+-- JS: 42 or 3.14        → Lua: number
+-- JS: "hello"           → Lua: string
+-- JS: null or undefined → Lua: nil
+-- JS: object            → Lua: COM proxy
 ```
 
 > **Note:** `execScript` bypasses `sanitize` by design — Lua callers are considered trusted.
@@ -239,8 +246,12 @@ Exposes a Lua function to the page as `window.external.<name>(...)`. Arguments a
 
 ```lua
 -- @usage browser:bind(name, fn)
--- @param (string) name -
--- @param (function) fn -
+-- @param (string) name - Member name exposed to the page as `window.external.<name>`. It must not be empty and cannot be `call` (reserved) or another reserved name.
+-- @param (function) fn - Lua function. It receives the JavaScript arguments converted to Lua and its return value is converted back to JavaScript. An error raised inside `fn` reaches the page as a script error.
+-- @return nothing
+-- @raise `Browser not ready or externalDispatch missing` when the browser was closed or `external = false`.
+-- @raise `Failed to bind method '<name>' (empty or reserved name, or too many names)` when the name is refused.
+-- @raise `bad argument ... (string expected ...)` / `(function expected ...)` when `name` or `fn` have the wrong type.
 
 browser:bind("getSkinValue", function(key)
   return SKIN:GetVariable(key)
@@ -253,6 +264,43 @@ var v = window.external.getSkinValue("Width");
 
 <br>
 
+### JavaScript Bridge
+
+The module exposes a `window.external` object to the page. It works in both directions.
+
+> [!IMPORTANT]
+> **Security:** Nothing coming from the page is ever compiled or evaluated as Lua. Decode JSON with a JSON library inside `pcall`.
+
+#### Page → Lua: `window.external.call(name, data)`
+
+```js
+// JavaScript (inside your HTML)
+window.external.call("myEvent", JSON.stringify({ value: 42 }));
+window.external.call("ready");              // one argument: an event without data
+```
+
+```lua
+-- @see https://github.com/F4Jonatas/RainJIT/blob/main/assets/doc/JSON-README.md
+local JSON = require("json")
+
+-- Lua callback
+callback = function(browser, event)
+  if event.type == "external" and event.name == "myEvent" then
+    -- event.data is ALWAYS a string: decode it yourself, inside pcall
+    local ok, t = pcall(JSON.parse, event.data)
+    if ok then print(t.value) end -- 42
+  end
+end
+```
+
+| Parameter | Type   | Description                                                                                          |
+| :--:      | :--:   | :--:                                                                                                 |
+| `name`    | string | Delivered as `event.name`. The event type is always `"external"`: the page cannot spoof other types. |
+| `data`    | any    | Converted to a string and delivered as `event.data` (up to 32 KB; `name` up to 256 characters).      |
+
+
+<br>
+
 
 ### :large_orange_diamond: Method `browser:redraw()`
 
@@ -260,10 +308,11 @@ Re-applies the theme and the `data-*` attributes to the page.
 
 ```lua
 -- @usage browser:redraw([data [, theme]])
--- @param (table) data - Set/Replace every data-* attribute by the ones in the table (the theme is kept)
--- @param (string) theme - Set theme. "light", "dark", or (""|"auto") to follow Windows
--- @return (table|nil) - Atributes now in effect or nil if error
--- @return (string|"light"|"dark") - Theme in use or error message
+-- @param (table|nil) data - Replaces every `data-*` attribute by the ones in the table (`{}` removes them all; the theme is kept). `nil` keeps the current ones.
+-- @param (string|nil) theme - `"light"`, `"dark"`, or `""` / `"auto"` to follow the Windows theme. `nil` keeps the current choice.
+-- @return (table|nil) The data attributes now in effect (names without the `data-` prefix), or `nil` when an argument is invalid.
+-- @return (string) The theme in use (`"light"` or `"dark"`), or the error message when the first value is `nil`.
+-- @raise nothing: invalid arguments are reported as `nil, message` and nothing changes.
 
 -- follow the Windows theme when the user changes it
 local data, theme = browser:redraw()
@@ -272,7 +321,7 @@ print(theme, data.accent)
 -- new set of attributes: everything else is dropped and the theme is kept
 browser:redraw({ accent = "blue" })
 
--- force the dark theme and attributes is kept
+-- force the dark theme; the attributes are kept
 browser:redraw(nil, "dark")
 ```
 
@@ -284,6 +333,11 @@ browser:redraw(nil, "dark")
 Shows or hides the browser popup window without destroying it. The control remains alive and all COM interfaces stay connected.
 
 ```lua
+-- @usage browser:show()
+-- @usage browser:hide()
+-- @return nothing
+-- @raise nothing
+
 browser:hide()
 -- ... later ...
 browser:show()
@@ -296,6 +350,12 @@ browser:show()
 
 Destroys the browser control, disconnects the event sink, removes the subclass hooks, and releases all COM interfaces. The browser object becomes inert after this call: every method does nothing (or returns `nil, "The browser is closed"`). It is also called automatically when the browser object is garbage-collected and when the skin unloads. Called from inside a callback, it is deferred until the callback returns.
 
+```lua
+-- @usage browser:quit()
+-- @return nothing
+-- @raise nothing
+```
+
 <br>
 
 
@@ -304,7 +364,11 @@ Destroys the browser control, disconnects the event sink, removes the subclass h
 Enables or disables color-key transparency at runtime. If `colorKey` (`0xRRGGBB`) is provided it overrides the one set at creation time.
 
 ```lua
--- @usage browser:setTransparent(enable [, colorKey)
+-- @usage browser:setTransparent(enable [, colorKey])
+-- @param (boolean) enable - `true` enables the transparency, `false` disables it (any other value follows Lua truthiness).
+-- @param (number|nil) colorKey - `0xRRGGBB` key color. Omitted or not a number: the current key color is kept.
+-- @return nothing
+-- @raise nothing
 ```
 <br>
 
@@ -315,6 +379,9 @@ Enables or disables the browser context menu at runtime.
 
 ```lua
 -- @usage browser:setContextMenu(enable)
+-- @param (boolean) enable - `true` shows the browser context menu, `false` suppresses it (the right click is forwarded to the skin). Other types are ignored.
+-- @return nothing
+-- @raise nothing
 ```
 <br>
 
@@ -325,15 +392,23 @@ Returns the current location URL as a UTF-8 string, or `nil` if unavailable.
 
 ```lua
 -- @usage browser:getURL()
--- @return (string|nil)
+-- @return (string|nil) Current location URL (UTF-8), or `nil` when the browser is closed or has no location.
+-- @raise nothing
 ```
 
 <br>
 
 
-### :large_orange_diamond: Method `browser:back() forward`
+### :large_orange_diamond: Method `browser:back() · browser:forward()`
 
 Navigate backward or forward in the session history.
+
+```lua
+-- @usage browser:back()
+-- @usage browser:forward()
+-- @return nothing. Called from inside a browser event, the navigation runs right after the event.
+-- @raise nothing
+```
 
 <br>
 
@@ -342,6 +417,12 @@ Navigate backward or forward in the session history.
 
 Reloads the current page.
 
+```lua
+-- @usage browser:refresh()
+-- @return nothing. Called from inside a browser event, the reload runs right after the event.
+-- @raise nothing
+```
+
 <br>
 
 
@@ -349,12 +430,24 @@ Reloads the current page.
 
 Cancels any ongoing navigation or download.
 
+```lua
+-- @usage browser:stop()
+-- @return nothing
+-- @raise nothing
+```
+
 <br>
 
 
 ### :large_orange_diamond: Method `browser:reposition()`
 
 Forces the popup window to recalculate and reapply its position, size and z-order based on the current parent window location. Useful after the skin's position changes programmatically.
+
+```lua
+-- @usage browser:reposition()
+-- @return nothing
+-- @raise nothing
+```
 
 <br>
 
@@ -404,6 +497,9 @@ Forces the popup window to recalculate and reapply its position, size and z-orde
 Live properties (no parentheses) that return the page's `document` and `window` as COM proxies, or `nil` when there is no document yet. Properties and methods are dispatched through COM automation:
 
 ```lua
+-- @field document (table|nil) COM proxy of the page's `document`; `nil` when there is no document yet.
+-- @field window   (table|nil) COM proxy of the page's `window`; `nil` when there is no document yet.
+
 local doc   = browser.document
 local el    = doc.getElementById("app")   -- method  → proxy
 local title = doc.title                   -- property → string
@@ -418,6 +514,10 @@ browser.window.scrollTo(0, 0)
 
 The window handle (light userdata) of the browser popup.
 
+```lua
+-- @field hwnd (userdata) HWND of the popup window.
+```
+
 ---
 
 <br>
@@ -426,7 +526,7 @@ The window handle (light userdata) of the browser popup.
 
 ## Theme and Data Attributes
 
-MSHTML supports neither CSS custom properties (`var(--x)`) nor `light-dark()`. Trident therefore exposes the theme and your own values as **attributes on the `<html>` element**, which the page can style with attribute selectors (supported even in IE7 mode).
+MSHTML supports neither CSS custom properties (`var(--x)`) nor `light-dark()`. **Trident** therefore exposes the theme and your own values as **attributes on the `<html>` element**, which the page can style with attribute selectors (supported even in IE7 mode).
 
 ```lua
 local browser = trident.create({
@@ -551,42 +651,6 @@ end
 <br>
 
 
-## JavaScript Bridge
-
-The module exposes a `window.external` object to the page. It works in both directions.
-
-### Page → Lua: `window.external.call(name, data)`
-
-```js
-// JavaScript (inside your HTML)
-window.external.call("myEvent", JSON.stringify({ value: 42 }));
-window.external.call("ready");              // one argument: an event without data
-```
-
-```lua
--- Lua callback
-callback = function(browser, event)
-  if event.type == "external" and event.name == "myEvent" then
-    -- event.data is ALWAYS a string: decode it yourself, inside pcall
-    local ok, t = pcall(json.decode, event.data)
-    if ok then print(t.value) end -- 42
-  end
-end
-```
-
-| Parameter | Type   | Description                                                                                          |
-| :--:      | :--:   | :--:                                                                                                 |
-| `name`    | string | Delivered as `event.name`. The event type is always `"external"`: the page cannot spoof other types. |
-| `data`    | any    | Converted to a string and delivered as `event.data` (up to 32 KB; `name` up to 256 characters).      |
-
-> **Security:** Nothing coming from the page is ever compiled or evaluated as Lua. Decode JSON with a JSON library inside `pcall`.
-
----
-
-<br>
-<br>
-
-
 ## Link Navigation
 
 Every navigation — clicked links, `location=`, forms, meta refresh, frames, and the **final** URL after redirects — goes through the URL validator. Navigations that fail it are cancelled (or dropped to `about:blank` for redirects) and logged.
@@ -608,6 +672,9 @@ end
 ```
 
 `event.data` contains the target URL as a UTF-8 string. Frame navigations obey the validator but are not reported to Lua. The initial `about:blank` navigation does not fire a `"navigate"` event.
+
+> [!IMPORTANT]
+> `javascript:` URLs (and `jscript:`, `ecmascript:`, `livescript:`, `mocha:`) and `vbscript:` URLs are **always** refused, independently of `sanitize` and `allow_urls`. The check looks at the URL scheme only, so `https://site.com/?q=javascript:x` is fine. A link such as `<a href="javascript:void(0)">` therefore does nothing: use `onclick` (with `allow_events` when the HTML is sanitized) instead. `execScript()` is not affected.
 
 ### Locking the top level
 
@@ -655,8 +722,8 @@ All functions that accept a URL or file path — `url` in `create()`, `navigate(
 | `host:port`              | `127.0.0.1:8080/app`        | `http://127.0.0.1:8080/app`                                         |
 | Drive or UNC path        | `C:\skins\foo.html`         | Converted to a `file:///` URL                                       |
 | `./` relative path       | `./web/index.html`          | Expanded to `#CURRENTPATH#web\index.html`, then made absolute       |
-| Rainmeter variable       | `#@#web\index.html`         | Variables expanded, then made absolute                              |
-| Bare filename            | `index.html`                | Resolved relative to the skin like any **Rainmeter** path               |
+| **Rainmeter** variable   | `#@#web\index.html`         | Variables expanded, then made absolute                              |
+| Bare filename            | `index.html`                | Resolved relative to the skin like any **Rainmeter** path           |
 
 Local paths are converted to properly percent-encoded `file:///` URLs. A trailing `?query` or `#fragment` is kept as URL syntax unless the whole string names an existing file. Non-ASCII characters are left as they are.
 
@@ -681,7 +748,7 @@ HTML sanitization is applied to `write()` content before it reaches the browser,
 | Value   | Behavior                                                                              |
 | :--:    | :--:                                                                                  |
 | `true`  | `SANITIZE_ALL` — blocks scripts, events, dangerous CSS, overlays, DOM clobbering, and validates URLs (default). |
-| `false` | `SANITIZE_NONE` — no filtering. Use when you control all HTML content.                |
+| `false` | `SANITIZE_NONE` — no filtering. Use when you control all HTML content. VBScript, `javascript:` URLs and UNC paths are still refused. |
 | table   | Starts from `SANITIZE_ALL` and clears specific flags via string tokens.               |
 
 **Allow tokens:**
@@ -696,12 +763,12 @@ sanitize = { "allow_scripts", "allow_events", "allow_style", "allow_css", "allow
 | `"allow_events"`     | Permit `on*` event handler attributes (`onclick`, `onload`, etc.).                                                                             |
 | `"allow_style"`      | Pass the `style` attribute through entirely (implies `allow_css`).                                                                             |
 | `"allow_css"`        | Keep the `style` attribute but skip dangerous CSS declaration filtering.                                                                       |
-| `"allow_urls"`       | Skip URL validation on `href`/`src`/`action` attributes and on `navigate()` / `create{ url }`.                                                 |
+| `"allow_urls"`       | Skip URL validation on `href`/`src`/`action` attributes and on `navigate()` / `create{ url }`. `javascript:`, `vbscript:` and UNC URLs are still refused. |
 | `"allow_local"`      | Permit `file://` URLs (only the skin folder is readable). Needed for local URLs when `sanitize` is not `false`.                                |
 | `"allow_clobbering"` | Keep `id` / `name` values that shadow `document` / `window` / `form` members.                                                                  |
 | `"allow_overlay"`    | Keep `position: fixed` / `sticky` and very large `z-index` values.                                                                             |
 
-`//host` and `\\host\share` URLs are always rejected (SMB / NTLM leak).
+`javascript:` / `vbscript:` URLs and `//host` / `\\host\share` URLs are always rejected (the latter leak NTLM hashes over SMB).
 
 > **Note:** `execScript()` bypasses sanitization entirely — Lua callers are considered trusted.
 
@@ -716,6 +783,7 @@ sanitize = { "allow_scripts", "allow_events", "allow_style", "allow_css", "allow
 Besides the sanitizer, the module applies these protections regardless of the `sanitize` option:
 
 - **VBScript is always blocked.** The sanitizer drops VBScript `<script>`s, the `language` attribute, `vbscript:` values and the `Content-Script-Type` meta; `write()` with `sanitize = false` is refused when the text mentions VBScript; `navigate()` / links to `vbscript:` URLs and to local files that mention VBScript (or `.vbs`, `.hta`, `.htc`, ...) are blocked; the VBScript engines cannot be instantiated in the process; and a document that still ends up with a VBScript `<script>` is replaced by `about:blank`.
+- **`javascript:` URLs are always blocked.** `javascript:`, `jscript:`, `ecmascript:`, `livescript:` and `mocha:` are refused in `navigate()`, `create{ url }`, clicked links, `location=`, forms, frames and redirects, whatever `sanitize` or `allow_urls` say. The URL is normalized first (entities, whitespace and control characters, `\` as `/`), so `java\tscript:` and `&#106;avascript:` are caught; only the scheme is checked. Refusals are logged as `[SECURITY] ... blocked`.
 - **Navigation policy** on every navigation (see [**Link Navigation**](#link-navigation)).
 - **Popups** are cancelled unless the callback returns `true`; an allowed popup is opened in the default browser, and only for `http://`, `https://` and `mailto:` targets.
 - **Downloads** are cancelled unless `allowDownloads = true` (the event `"filedownload"` still fires).
@@ -726,7 +794,7 @@ Besides the sanitizer, the module applies these protections regardless of the `s
 - **Process hardening:** Internet Feature Controls (no ActiveX install prompts, downloads need a gesture, zone elevation, `mk:` protocol, `user:pass@host` URLs, ...) are enabled process-wide on the first `create()`.
 - **Bounded input:** the event queue, event texts, `window.external` names, arguments and error messages all have hard size limits.
 
-> **Note:** The engine still runs inside the Rainmeter process and cannot be sandboxed from the module. Treat remote content accordingly.
+> **Note:** The engine still runs inside the **Rainmeter** process and cannot be sandboxed from the module. Treat remote content accordingly.
 
 ---
 
@@ -793,8 +861,8 @@ Common values:
 These are inherent constraints of the approach, not implementation bugs:
 
 **Rendering engine**
-- Trident is frozen at IE11 level. No updates, no security patches for new web standards. Treat it as a local-content renderer, not a general-purpose browser.
-- Cross-origin `XMLHttpRequest` is blocked (same-origin policy enforced by Trident).
+- **Trident** is frozen at IE11 level. No updates, no security patches for new web standards. Treat it as a local-content renderer, not a general-purpose browser.
+- Cross-origin `XMLHttpRequest` is blocked (same-origin policy enforced by **Trident**).
 - No CSS custom properties or `light-dark()`: use [data attributes](#theme-and-data-attributes).
 
 **Transparency**
@@ -806,10 +874,10 @@ These are inherent constraints of the approach, not implementation bugs:
 **Windows version**
 - Requires Windows 7 or later (ATL, `SetWindowSubclass`).
 - On Windows 11 22H2+, `iexplore.exe` is retired, but `ieframe.dll` and `mshtml.dll` remain present and functional.
-- Not compatible with Windows on ARM (WoA) 64-bit native processes unless the Rainmeter build targets x86 or x86-64.
+- Not compatible with Windows on ARM (WoA) 64-bit native processes unless the **Rainmeter** build targets x86 or x86-64.
 
 **Threading**
-- All Lua callbacks run on the Rainmeter skin thread. Do not call blocking Win32 APIs or long-running Lua code from within a callback.
+- All Lua callbacks run on the **Rainmeter** skin thread. Do not call blocking Win32 APIs or long-running Lua code from within a callback.
 - Calling `quit()`, `navigate()`, `write()` and similar from inside a callback is safe, but the effect is deferred until the callback returns.
 
 **JavaScript bridge data**
@@ -826,7 +894,12 @@ These are inherent constraints of the approach, not implementation bugs:
 Licensed under the **GPL v2.0 License**.
 
 > [!NOTE]
-> This module uses the legacy Internet Explorer/Trident browser engine provided by **Microsoft Windows**.
+> This module uses [**Gumbo HTML Parser**](https://github.com/google/gumbo-parser), distributed under the **Apache License 2.0**.<br>
+> **Copyright 2010 Google Inc.**<br>
+> The Gumbo source code and its original license are available in the accompanying third-party license notices.<br>
+
+> [!NOTE]
+> This module uses the legacy Internet Explorer/**Trident** browser engine provided by **Microsoft Windows**. It is not distributed with the module.
 
 ---
 
@@ -835,7 +908,7 @@ Licensed under the **GPL v2.0 License**.
 
 
 <div align="center">
-  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+  For more information, visit the <b><a href="../../README.md">**RainJIT** documentation</a></b>
 </div>
 
 <br>

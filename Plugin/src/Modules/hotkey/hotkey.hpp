@@ -48,8 +48,8 @@
 struct Rain;
 
 
-/// @brief Keyboard event delivery message. (WM_APP+4)
-#define WM_HOTKEY_EVENT ( WM_APP + 4 )
+/// @brief Keyboard event delivery message. (WM_APP+6)
+#define WM_HOTKEY_EVENT ( WM_APP + 6 )
 
 /// @brief Mouse event delivery message. (WM_APP+5)
 #define WM_MOUSE_EVENT  ( WM_APP + 5 )

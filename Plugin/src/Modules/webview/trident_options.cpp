@@ -322,9 +322,9 @@ namespace trident {
 		}
 		lua_pop( L, 1 );
 
-		// Unconditional VBScript / local-file guard for the initial URL.
+		// Unconditional VBScript / javascript: / local-file guard for the initial URL.
 		if ( wurl != L"about:blank" && !IsNavigationAllowed( ctrl, wurl ) ) {
-			RN_LOG( rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] create() URL blocked (VBScript or disallowed) - about:blank. Blocked: " + wurl ).c_str() );
+			RN_LOG( rain, LOG_WARNING, ( L"[RainJIT:Trident] [SECURITY] create() URL blocked (VBScript, javascript: or disallowed) - about:blank. Blocked: " + wurl ).c_str() );
 			wurl = L"about:blank";
 		}
 

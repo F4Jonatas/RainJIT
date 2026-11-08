@@ -59,7 +59,7 @@ Regular **JSON** is still fully supported. Every valid **JSON** document is also
 - File helpers with **Rainmeter** variable support ([**`JSON.load()`**](#large_orange_diamond-method-jsonload), [**`JSON.save()`**](#large_orange_diamond-method-jsonsave))
 - Atomic file writes and automatic creation of missing directories
 - `JSON.null` sentinel, so `null` never breaks array length
-- Empty arrays and objects keep their type (`JSON.array`, `JSON.object`)
+- Empty arrays and objects keep their type ([**`JSON.array`**](#large_orange_diamond-method-jsonarray), [**`JSON.object`**](#large_orange_diamond-method-jsonobject))
 - Deterministic output (keys are always sorted)
 - Full number precision on output
 - Strict UTF-8 validation and depth limit
@@ -120,7 +120,7 @@ print(JSON.stringify({ 1, JSON.null, 3 }))  -- [1,null,3]
 ```
 
 > [!NOTE]
-> `nil` values are also written as `null` when passed directly to [**`JSON.stringify()`**](#large_orange_diamond-method-jsonstringify), but a `nil` inside a table does not exist in Lua, so it cannot be written. Use `JSON.null` when the `null` must be kept.
+> `nil` values are also written as `null` when passed directly to [**`JSON.stringify()`**](#large_orange_diamond-method-jsonstringify), but a `nil` inside a table does not exist in Lua, so it cannot be written. Use [**`JSON.null`**](diamond_shape_with_a_dot_inside-property-jsonnull) when the `null` must be kept.
 
 <br>
 
@@ -321,7 +321,7 @@ The original copyright and permission notice has been preserved.
 
 
 <div align="center">
-  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+  For more information, visit the <b><a href="../../README.md">**RainJIT** documentation</a></b>
 </div>
 
 <br>

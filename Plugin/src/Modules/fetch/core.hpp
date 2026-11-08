@@ -20,7 +20,7 @@
  * submodules - to avoid duplicating the constant across http.cpp, wininet.cpp
  * and lua.cpp.
  */
-#define WM_FETCH_COMPLETE ( WM_APP + 3 )
+#define WM_FETCH_COMPLETE ( WM_APP + 7 )
 
 #include <Windows.h>
 #include <atomic>

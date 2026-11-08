@@ -87,7 +87,7 @@
 #define WM_TRIDENT_EVENT ( WM_APP + 2 )
 
 /// Posted to the hidden window when a deferred close can run (see trident_lifetime.cpp).
-#define WM_TRIDENT_FLUSH ( WM_APP + 4 )
+#define WM_TRIDENT_FLUSH ( WM_APP + 3 )
 
 #ifndef DISPID_NEWWINDOW3
 	#define DISPID_NEWWINDOW3 273 ///< DWebBrowserEvents2::NewWindow3 (exdispid.h, Windows XP SP2+).

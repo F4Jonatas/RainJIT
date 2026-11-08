@@ -12,7 +12,7 @@
 
 
 ## Overview
-The Depot module is a sophisticated data persistence system for RainJIT that transcends simple INI file manipulation. Built on a modern C++ foundation with RAII design principles, it provides Lua scripts with seamless access to Windows-native configuration storage through an intelligent abstraction layer.<br>
+The Depot module is a sophisticated data persistence system for **RainJIT** that transcends simple INI file manipulation. Built on a modern C++ foundation with RAII design principles, it provides Lua scripts with seamless access to Windows-native configuration storage through an intelligent abstraction layer.<br>
 The module doesn't load entire files into memory – it maintains only the instance handle for continuous data manipulation.
 
 > 🚀 Future Plans:
@@ -355,7 +355,7 @@ Licensed under the **GPL v2.0 License**.
 <div align="center">
   <b>Depot makes data persistence in Rainmeter as easy as working with Lua tables, but with the durability of disk storage.</b>
   <br>
-  For more information, visit the <b><a href="../../README.md">RainJIT documentation</a></b>
+  For more information, visit the <b><a href="../../README.md">**RainJIT** documentation</a></b>
 </div>
 
 <br>

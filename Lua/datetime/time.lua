@@ -28,7 +28,7 @@ end
 -- @return (number) Unix timestamp.
 local function parsedatetime( value )
 	local year, month, day, hour, minute, second, zone =
-		value:match( '^(%d%d%d%d)%-(%d%d)%-(%d%d)[Tt ](%d%d):(%d%d):(%d%d)(.*)$' )
+		value:gsub( '^%s*(.-)%s*$', '%1' ):match( '^(%d%d%d%d)%-(%d%d)%-(%d%d)[Tt ](%d%d):(%d%d):(%d%d)(.*)$' )
 
 	assert( year, 'Invalid ISO 8601 datetime string' )
 

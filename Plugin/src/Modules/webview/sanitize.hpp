@@ -122,6 +122,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstddef>
+#include <cstring>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -1881,6 +1882,23 @@ namespace sanitize {
 	/// true if the URL (after entity decoding / whitespace stripping) uses the vbscript: scheme.
 	inline bool IsVbScriptUrl( const std::string &url ) {
 		return detail::HasVbScriptScheme( url );
+	}
+
+	/**
+	 * @brief true if the URL uses a script scheme: javascript:, jscript:, ecmascript:, livescript: or mocha:.
+	 *
+	 * The URL is normalised first (entities decoded, whitespace / control characters dropped, `\` as `/`), so
+	 * `java\tscript:` and `&#106;avascript:` are caught. Only the SCHEME is checked (the start of the URL):
+	 * an https URL that merely carries "javascript:" in its query string is not a script URL.
+	 */
+	inline bool IsScriptUrl( const std::string &url ) {
+		const std::string c = detail::NormalizeUrl( url );
+		static const char *const kSchemes[] = { "javascript:", "jscript:", "ecmascript:", "livescript:", "mocha:" };
+		for ( const char *s : kSchemes ) {
+			if ( c.compare( 0, std::strlen( s ), s ) == 0 )
+				return true;
+		}
+		return false;
 	}
 
 } // namespace sanitize
